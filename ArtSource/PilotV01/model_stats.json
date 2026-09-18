@@ -1,0 +1,33 @@
+{
+  "height_metres": 1.832,
+  "bones": 52,
+  "skinned_renderers": 2,
+  "materials": 4,
+  "meshes": {
+    "Pilot_Body": {
+      "vertices": 7680,
+      "triangles": 14764,
+      "material_slots": 3,
+      "unweighted_vertices": 0,
+      "max_weights": 2,
+      "non_unit_weight_vertices": 0
+    },
+    "Pilot_Head": {
+      "vertices": 1886,
+      "triangles": 3576,
+      "material_slots": 4,
+      "unweighted_vertices": 0,
+      "max_weights": 1,
+      "non_unit_weight_vertices": 0
+    }
+  },
+  "pose_frames": {
+    "TPose": 1,
+    "Neutral": 31,
+    "Guard": 61,
+    "Punch": 91,
+    "BentArm": 121,
+    "RaisedArm": 151
+  },
+  "total_triangles": 18340
+}

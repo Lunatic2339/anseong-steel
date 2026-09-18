@@ -1,0 +1,11 @@
+{
+    "serializedRigLoaded": true,
+    "keyboardMovesTarget": true,
+    "wristFollowsTarget": true,
+    "keyboardGripWorks": true,
+    "keyboardPoseWorks": true,
+    "pass": true,
+    "targetTravel": 0.02917686104774475,
+    "finalWristError": 1.9082797564351495e-7,
+    "error": ""
+}

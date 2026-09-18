@@ -1,0 +1,26 @@
+{
+    "unityVersion": "6000.3.24f1",
+    "scene": "Assets/_Project/02_Art/PilotV01/Scenes/PilotReview_v01.unity",
+    "headBonePosition": {
+        "x": 0.0,
+        "y": 1.5699998140335084,
+        "z": -1.1920928955078126e-7
+    },
+    "avatarValid": true,
+    "avatarHuman": true,
+    "localHeadExcluded": true,
+    "remoteHeadIncluded": true,
+    "maskRestored": true,
+    "runtimeIKConnected": false,
+    "headsetPerformanceTested": false,
+    "mappedHumanBones": 52,
+    "fingerBones": 30,
+    "skinnedRenderers": 2,
+    "importedVertices": 11866,
+    "triangles": 18340,
+    "materialSlots": 7,
+    "unweightedVertices": 0,
+    "badWeightSums": 0,
+    "nonFinitePosedVertices": 0,
+    "mountTransforms": 3
+}
