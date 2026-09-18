@@ -1,0 +1,133 @@
+{
+  "materials": [
+    {
+      "name": "Hull_Graphite",
+      "color": [
+        0.07,
+        0.095,
+        0.11
+      ],
+      "metallic": 0.75,
+      "roughness": 0.4,
+      "emission": 0
+    },
+    {
+      "name": "Panel_Steel",
+      "color": [
+        0.14,
+        0.18,
+        0.2
+      ],
+      "metallic": 0.7,
+      "roughness": 0.47,
+      "emission": 0
+    },
+    {
+      "name": "Edge_Alloy",
+      "color": [
+        0.32,
+        0.37,
+        0.39
+      ],
+      "metallic": 0.85,
+      "roughness": 0.31,
+      "emission": 0
+    },
+    {
+      "name": "Rubber",
+      "color": [
+        0.018,
+        0.024,
+        0.028
+      ],
+      "metallic": 0.05,
+      "roughness": 0.84,
+      "emission": 0
+    },
+    {
+      "name": "Inset_Black",
+      "color": [
+        0.012,
+        0.019,
+        0.023
+      ],
+      "metallic": 0.35,
+      "roughness": 0.5,
+      "emission": 0
+    },
+    {
+      "name": "Warning_Ochre",
+      "color": [
+        0.62,
+        0.31,
+        0.065
+      ],
+      "metallic": 0.45,
+      "roughness": 0.45,
+      "emission": 0
+    },
+    {
+      "name": "Signal_Cyan",
+      "color": [
+        0.08,
+        0.65,
+        0.84
+      ],
+      "metallic": 0.25,
+      "roughness": 0.32,
+      "emission": 2
+    },
+    {
+      "name": "Signal_Amber",
+      "color": [
+        0.95,
+        0.36,
+        0.07
+      ],
+      "metallic": 0.1,
+      "roughness": 0.35,
+      "emission": 2
+    },
+    {
+      "name": "Lettering",
+      "color": [
+        0.65,
+        0.76,
+        0.77
+      ],
+      "metallic": 0.1,
+      "roughness": 0.65,
+      "emission": 0
+    },
+    {
+      "name": "Screen_UI",
+      "color": [
+        0.023,
+        0.14,
+        0.2
+      ],
+      "metallic": 0.2,
+      "roughness": 0.35,
+      "emission": 0.6
+    },
+    {
+      "name": "Display_Feed",
+      "color": [
+        0.23,
+        0.38,
+        0.45
+      ],
+      "metallic": 0,
+      "roughness": 0.95,
+      "emission": 1
+    }
+  ],
+  "modules": 10,
+  "triangles": 122392,
+  "stationSpacing": 2.1,
+  "padRadius": 0.65,
+  "padTop": 0.2,
+  "eyeHeight": 1.65,
+  "ceilingHeight": 3.5,
+  "displayDegrees": 212
+}
