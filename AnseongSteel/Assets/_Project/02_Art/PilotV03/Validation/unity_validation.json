@@ -1,0 +1,152 @@
+{
+    "unityVersion": "6000.3.24f1",
+    "branch": "feat/pilot-v03-rig-review",
+    "scene": "Assets/_Project/02_Art/PilotV03/Scenes/PilotRigReview_v03.unity",
+    "master": {
+        "name": "Pilot_Detailed",
+        "avatarValid": true,
+        "pass": true,
+        "mappedBones": 52,
+        "fingerBones": 30,
+        "helperBones": 6,
+        "renderers": 2,
+        "triangles": 86032,
+        "maxWeights": 2,
+        "unweighted": 0,
+        "badWeightSums": 0,
+        "nonFiniteVertices": 0,
+        "maxFootDrift": 0.0,
+        "repeatDriftDegrees": 0.0,
+        "forearmResponseDegrees": 35.999969482421878,
+        "headResponseDegrees": 35.000030517578128,
+        "leftFingerTravel": 0.09475550055503845,
+        "rightFingerDrift": 0.0,
+        "poses": [
+            {
+                "index": 0,
+                "leftError": 1.2731557319511922e-7,
+                "rightError": 1.9140888696256298e-7,
+                "leftClamped": 0.0,
+                "rightClamped": 0.0,
+                "pass": true
+            },
+            {
+                "index": 1,
+                "leftError": 1.9082797564351495e-7,
+                "rightError": 1.2644053981603066e-7,
+                "leftClamped": 0.0,
+                "rightClamped": 0.0,
+                "pass": true
+            },
+            {
+                "index": 2,
+                "leftError": 2.9802322387695315e-8,
+                "rightError": 9.42432194506182e-8,
+                "leftClamped": 0.0,
+                "rightClamped": 0.0,
+                "pass": true
+            },
+            {
+                "index": 3,
+                "leftError": 2.920019426255749e-7,
+                "rightError": 1.2377833513710358e-7,
+                "leftClamped": 0.0,
+                "rightClamped": 0.0,
+                "pass": true
+            },
+            {
+                "index": 4,
+                "leftError": 1.2287812012345967e-7,
+                "rightError": 1.2287812012345967e-7,
+                "leftClamped": 0.0,
+                "rightClamped": 0.0,
+                "pass": true
+            },
+            {
+                "index": 5,
+                "leftError": 0.10853026062250138,
+                "rightError": 0.10853030532598496,
+                "leftClamped": 0.10853025317192078,
+                "rightClamped": 0.10853028297424317,
+                "pass": true
+            }
+        ]
+    },
+    "candidate": {
+        "name": "Pilot_Reduced",
+        "avatarValid": true,
+        "pass": true,
+        "mappedBones": 52,
+        "fingerBones": 30,
+        "helperBones": 6,
+        "renderers": 2,
+        "triangles": 39572,
+        "maxWeights": 3,
+        "unweighted": 0,
+        "badWeightSums": 0,
+        "nonFiniteVertices": 0,
+        "maxFootDrift": 0.0,
+        "repeatDriftDegrees": 0.0,
+        "forearmResponseDegrees": 35.99999237060547,
+        "headResponseDegrees": 35.000030517578128,
+        "leftFingerTravel": 0.09475568681955338,
+        "rightFingerDrift": 0.0,
+        "poses": [
+            {
+                "index": 0,
+                "leftError": 1.9140888696256298e-7,
+                "rightError": 1.2731557319511922e-7,
+                "leftClamped": 0.0,
+                "rightClamped": 0.0,
+                "pass": true
+            },
+            {
+                "index": 1,
+                "leftError": 1.2644053981603066e-7,
+                "rightError": 1.9082797564351495e-7,
+                "leftClamped": 0.0,
+                "rightClamped": 0.0,
+                "pass": true
+            },
+            {
+                "index": 2,
+                "leftError": 9.42432194506182e-8,
+                "rightError": 2.9802322387695315e-8,
+                "leftClamped": 0.0,
+                "rightClamped": 0.0,
+                "pass": true
+            },
+            {
+                "index": 3,
+                "leftError": 1.4901161193847657e-7,
+                "rightError": 1.4057727071303817e-7,
+                "leftClamped": 0.0,
+                "rightClamped": 0.0,
+                "pass": true
+            },
+            {
+                "index": 4,
+                "leftError": 1.2287812012345967e-7,
+                "rightError": 1.2287812012345967e-7,
+                "leftClamped": 0.0,
+                "rightClamped": 0.0,
+                "pass": true
+            },
+            {
+                "index": 5,
+                "leftError": 0.10853030532598496,
+                "rightError": 0.10853026062250138,
+                "leftClamped": 0.10853028297424317,
+                "rightClamped": 0.10853025317192078,
+                "pass": true
+            }
+        ]
+    },
+    "localHeadHidden": true,
+    "comparisonHeadVisible": true,
+    "localMaskRestored": true,
+    "pass": true,
+    "headsetTested": false,
+    "networkIncluded": false,
+    "animationClipsCreated": false
+}

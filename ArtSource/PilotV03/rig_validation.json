@@ -1,0 +1,108 @@
+{
+  "pose_checks": {
+    "TPose": {
+      "Left_target_error_m": 0.0,
+      "Left_ik_influence": 0.0,
+      "Right_target_error_m": 0.0,
+      "Right_ik_influence": 0.0
+    },
+    "Neutral": {
+      "Left_target_error_m": 6.365778852490731e-08,
+      "Left_ik_influence": 1.0,
+      "Right_target_error_m": 1.3514129182113002e-07,
+      "Right_ik_influence": 1.0
+    },
+    "Guard": {
+      "Left_target_error_m": 1.2644054553268208e-07,
+      "Left_ik_influence": 1.0,
+      "Right_target_error_m": 1.228781230931777e-07,
+      "Right_ik_influence": 1.0
+    },
+    "Punch": {
+      "Left_target_error_m": 2.2351741790771484e-08,
+      "Left_ik_influence": 1.0,
+      "Right_target_error_m": 2.421152116249788e-07,
+      "Right_ik_influence": 1.0
+    },
+    "BentArm": {
+      "Left_target_error_m": 1.341104507446289e-07,
+      "Left_ik_influence": 1.0,
+      "Right_target_error_m": 2.9802322387695312e-08,
+      "Right_ik_influence": 1.0
+    },
+    "RaisedArm": {
+      "Left_target_error_m": 1.284009809763289e-07,
+      "Left_ik_influence": 1.0,
+      "Right_target_error_m": 1.228781230931777e-07,
+      "Right_ik_influence": 1.0
+    },
+    "WristTwist": {
+      "Left_target_error_m": 2.9802322387695312e-08,
+      "Left_ik_influence": 1.0,
+      "Right_target_error_m": 1.3514129182113002e-07,
+      "Right_ik_influence": 1.0
+    }
+  },
+  "ik_motion_tests": [
+    {
+      "side": "Left",
+      "delta": [
+        -0.02,
+        -0.025,
+        0.035
+      ],
+      "error_m": 1.3181422660465637e-07
+    },
+    {
+      "side": "Left",
+      "delta": [
+        0.015,
+        -0.04,
+        0.06
+      ],
+      "error_m": 2.1086591032273927e-07
+    },
+    {
+      "side": "Left",
+      "delta": [
+        0,
+        0.015,
+        0.025
+      ],
+      "error_m": 9.541398640621973e-08
+    },
+    {
+      "side": "Right",
+      "delta": [
+        -0.02,
+        -0.025,
+        0.035
+      ],
+      "error_m": 8.429369702178807e-08
+    },
+    {
+      "side": "Right",
+      "delta": [
+        0.015,
+        -0.04,
+        0.06
+      ],
+      "error_m": 7.240492471013273e-07
+    },
+    {
+      "side": "Right",
+      "delta": [
+        0,
+        0.015,
+        0.025
+      ],
+      "error_m": 1.3348812510944096e-07
+    }
+  ],
+  "head_control_error_deg": 0.0,
+  "twist_distribution_degrees": {
+    "Left": 35.999990756507515,
+    "Right": 35.999990756507515
+  },
+  "pass": true
+}

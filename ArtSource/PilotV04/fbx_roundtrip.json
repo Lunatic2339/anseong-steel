@@ -1,0 +1,83 @@
+{
+  "armatures": [
+    {
+      "name": "AS_PilotRig",
+      "bones": 58,
+      "bone_names": [
+        "Hips",
+        "Spine",
+        "Chest",
+        "UpperChest",
+        "Neck",
+        "Head",
+        "LeftShoulder",
+        "LeftUpperArm",
+        "LeftLowerArm",
+        "LeftHand",
+        "LeftIndexProximal",
+        "LeftIndexIntermediate",
+        "LeftIndexDistal",
+        "LeftMiddleProximal",
+        "LeftMiddleIntermediate",
+        "LeftMiddleDistal",
+        "LeftRingProximal",
+        "LeftRingIntermediate",
+        "LeftRingDistal",
+        "LeftLittleProximal",
+        "LeftLittleIntermediate",
+        "LeftLittleDistal",
+        "LeftThumbProximal",
+        "LeftThumbIntermediate",
+        "LeftThumbDistal",
+        "LeftForearmTwist",
+        "LeftUpperArmTwist",
+        "LeftShoulderArmor",
+        "RightShoulder",
+        "RightUpperArm",
+        "RightLowerArm",
+        "RightHand",
+        "RightIndexProximal",
+        "RightIndexIntermediate",
+        "RightIndexDistal",
+        "RightMiddleProximal",
+        "RightMiddleIntermediate",
+        "RightMiddleDistal",
+        "RightRingProximal",
+        "RightRingIntermediate",
+        "RightRingDistal",
+        "RightLittleProximal",
+        "RightLittleIntermediate",
+        "RightLittleDistal",
+        "RightThumbProximal",
+        "RightThumbIntermediate",
+        "RightThumbDistal",
+        "RightForearmTwist",
+        "RightUpperArmTwist",
+        "RightShoulderArmor",
+        "LeftUpperLeg",
+        "LeftLowerLeg",
+        "LeftFoot",
+        "LeftToes",
+        "RightUpperLeg",
+        "RightLowerLeg",
+        "RightFoot",
+        "RightToes"
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Pilot_Head",
+      "vertices": 7808,
+      "vertex_groups": 1,
+      "armature_modifiers": 1
+    },
+    {
+      "name": "Pilot_Body",
+      "vertices": 36632,
+      "vertex_groups": 55,
+      "armature_modifiers": 1
+    }
+  ],
+  "pass": true
+}

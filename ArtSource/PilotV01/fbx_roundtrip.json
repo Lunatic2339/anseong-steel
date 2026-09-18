@@ -1,0 +1,77 @@
+{
+  "armatures": [
+    {
+      "name": "AS_PilotRig",
+      "bones": 52,
+      "bone_names": [
+        "Hips",
+        "Spine",
+        "Chest",
+        "UpperChest",
+        "Neck",
+        "Head",
+        "LeftShoulder",
+        "LeftUpperArm",
+        "LeftLowerArm",
+        "LeftHand",
+        "LeftIndexProximal",
+        "LeftIndexIntermediate",
+        "LeftIndexDistal",
+        "LeftMiddleProximal",
+        "LeftMiddleIntermediate",
+        "LeftMiddleDistal",
+        "LeftRingProximal",
+        "LeftRingIntermediate",
+        "LeftRingDistal",
+        "LeftLittleProximal",
+        "LeftLittleIntermediate",
+        "LeftLittleDistal",
+        "LeftThumbProximal",
+        "LeftThumbIntermediate",
+        "LeftThumbDistal",
+        "RightShoulder",
+        "RightUpperArm",
+        "RightLowerArm",
+        "RightHand",
+        "RightIndexProximal",
+        "RightIndexIntermediate",
+        "RightIndexDistal",
+        "RightMiddleProximal",
+        "RightMiddleIntermediate",
+        "RightMiddleDistal",
+        "RightRingProximal",
+        "RightRingIntermediate",
+        "RightRingDistal",
+        "RightLittleProximal",
+        "RightLittleIntermediate",
+        "RightLittleDistal",
+        "RightThumbProximal",
+        "RightThumbIntermediate",
+        "RightThumbDistal",
+        "LeftUpperLeg",
+        "LeftLowerLeg",
+        "LeftFoot",
+        "LeftToes",
+        "RightUpperLeg",
+        "RightLowerLeg",
+        "RightFoot",
+        "RightToes"
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Pilot_Head",
+      "vertices": 1886,
+      "vertex_groups": 1,
+      "armature_modifiers": 1
+    },
+    {
+      "name": "Pilot_Body",
+      "vertices": 7680,
+      "vertex_groups": 47,
+      "armature_modifiers": 1
+    }
+  ],
+  "pass": true
+}

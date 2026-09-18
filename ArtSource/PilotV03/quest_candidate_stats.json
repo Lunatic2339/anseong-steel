@@ -1,0 +1,19 @@
+{
+  "label": "Quest candidate; device performance untested",
+  "bones": 58,
+  "meshes": {
+    "Pilot_Body_Quest": {
+      "vertices": 17268,
+      "triangles": 32876,
+      "max_weights": 3,
+      "unweighted": 0
+    },
+    "Pilot_Head_Quest": {
+      "vertices": 3842,
+      "triangles": 6696,
+      "max_weights": 1,
+      "unweighted": 0
+    }
+  },
+  "total_triangles": 39572
+}

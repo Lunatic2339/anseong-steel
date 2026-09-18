@@ -1,0 +1,69 @@
+{
+  "ui_ik_fk_switch": {
+    "Left": {
+      "fk_position_error_m": 1.3657139822709083e-07,
+      "ik_position_error_m": 1.6049041769309353e-07,
+      "ik_rotation_error_deg": 0.0
+    },
+    "Right": {
+      "fk_position_error_m": 4.470348358154297e-08,
+      "ik_position_error_m": 2.494554078993679e-07,
+      "ik_rotation_error_deg": 0.0
+    }
+  },
+  "exports": {
+    "AS_Pilot_v04.fbx": {
+      "bone_count": 58,
+      "skinned_meshes": 2,
+      "meshes": {
+        "Pilot_Body": {
+          "vertices": 36632,
+          "triangles": 71472,
+          "unweighted_vertices": 0,
+          "bad_weight_sums": 0,
+          "maximum_weights": 2,
+          "bind_bounds_difference_m": 1.7881393432617188e-07,
+          "armature_modifiers": 1
+        },
+        "Pilot_Head": {
+          "vertices": 7808,
+          "triangles": 14560,
+          "unweighted_vertices": 0,
+          "bad_weight_sums": 0,
+          "maximum_weights": 1,
+          "bind_bounds_difference_m": 1.862645149230957e-07,
+          "armature_modifiers": 1
+        }
+      },
+      "max_arm_deformation_m": 0.3252557919430368,
+      "pass": true
+    },
+    "AS_Pilot_v04_QuestCandidate.fbx": {
+      "bone_count": 58,
+      "skinned_meshes": 2,
+      "meshes": {
+        "Pilot_Body_Quest": {
+          "vertices": 17268,
+          "triangles": 32876,
+          "unweighted_vertices": 0,
+          "bad_weight_sums": 0,
+          "maximum_weights": 3,
+          "bind_bounds_difference_m": 0.00022351741790771484,
+          "armature_modifiers": 1
+        },
+        "Pilot_Head_Quest": {
+          "vertices": 3842,
+          "triangles": 6696,
+          "unweighted_vertices": 0,
+          "bad_weight_sums": 0,
+          "maximum_weights": 1,
+          "bind_bounds_difference_m": 3.685802221298218e-05,
+          "armature_modifiers": 1
+        }
+      },
+      "max_arm_deformation_m": 0.32510974349484506,
+      "pass": true
+    }
+  },
+  "pass": true
+}
