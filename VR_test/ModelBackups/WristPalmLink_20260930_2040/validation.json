@@ -1,0 +1,15 @@
+{
+  "L": {
+    "sealed_wrist_boundary_edges": 16,
+    "shared_palm_attachment_vertex": 2618,
+    "added_vertices": 0,
+    "added_triangles": 14
+  },
+  "R": {
+    "sealed_wrist_boundary_edges": 15,
+    "shared_palm_attachment_vertex": 2654,
+    "added_vertices": 0,
+    "added_triangles": 13
+  },
+  "preserved": "Every existing property and array prefix of the palm-only FBX verified unchanged. Only inner wrist closure faces connecting to an existing palm vertex appended. Original geometry, UVs, normals, skin, bones and materials preserved."
+}
