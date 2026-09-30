@@ -1,0 +1,15 @@
+{
+  "MechaArm.L": {
+    "added_triangles": 34,
+    "closed_boundary_edges": 36,
+    "original_vertices": 2596,
+    "old_triangles": 4680
+  },
+  "MechaArm.R": {
+    "added_triangles": 35,
+    "closed_boundary_edges": 37,
+    "original_vertices": 2603,
+    "old_triangles": 4686
+  },
+  "preserved": "All non-geometry Objects, Connections and GlobalSettings identical; original vertices and all existing face/UV/normal data retained."
+}

@@ -1,0 +1,7 @@
+L bind hand=(-0.42800, 0.17400, -0.04650) palm=(0.84505, -0.33024, 0.42051) handle=(-0.44576, -0.00081, 0.89515) fingers=(-0.31785, -0.94268, -0.10157)
+L PASS: 6 simulated XR grip poses with deliberately mismatched aim Transform
+L PASS: 72 pose/frame/initial-target cases; max error=0 degrees; offset=(-0.9670297, 0.0645843, 0.2463278, 0.0022593); bind-palm=(0.84505, -0.33024, 0.42051)
+R bind hand=(0.42800, 0.17400, -0.04650) palm=(0.84301, 0.33125, -0.42379) handle=(0.44557, 0.01131, 0.89518) fingers=(0.31880, -0.94228, -0.10235)
+R PASS: 6 simulated XR grip poses with deliberately mismatched aim Transform
+R PASS: 72 pose/frame/initial-target cases; max error=0 degrees; offset=(0.2463637, 0.0014577, -0.9671690, 0.0623449); bind-palm=(0.84301, 0.33125, -0.42379)
+PASS: actual imported FBX skeleton and runtime ApplyTargetPose; no scene changes saved.

@@ -1,0 +1,17 @@
+{
+  "MechaArm.L": {
+    "added_triangles": 180,
+    "closed_boundary_edges": 36,
+    "original_vertices": 2596,
+    "added_interior_vertices": 73,
+    "old_triangles": 4680
+  },
+  "MechaArm.R": {
+    "added_triangles": 185,
+    "closed_boundary_edges": 37,
+    "original_vertices": 2603,
+    "added_interior_vertices": 75,
+    "old_triangles": 4686
+  },
+  "preserved": "Original vertex positions, faces, UVs, normals, materials, skeleton and original skin weights verified identical. Only interior palm cap geometry and its Hand weights appended."
+}
