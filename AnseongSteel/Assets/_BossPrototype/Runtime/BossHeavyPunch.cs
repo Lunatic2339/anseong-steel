@@ -27,6 +27,24 @@ namespace AnseongSteel.Bosses
         private float finishTime;
         private int activeLayers;
         private float elapsed;
+        private bool useAnimationEvents;
+
+        // The original capsule tests continue to use the timer by default.
+        public void ConfigureAnimationAttack(Transform point, float radius)
+        {
+            CancelAttack();
+            hitPoint = point;
+            hitRadius = radius;
+            useAnimationEvents = true;
+        }
+
+        public void AnimationImpact()
+        {
+            if (!useAnimationEvents || State != AttackState.Windup) return;
+            if (activeHitPoint == null) { CancelAttack(); return; }
+            State = AttackState.Recovery;
+            ImpactChecked?.Invoke(CollectHitCandidates());
+        }
 
         public AttackState State { get; private set; }
         public bool IsAttacking => State != AttackState.Idle;
@@ -83,6 +101,8 @@ namespace AnseongSteel.Bosses
             }
 
             elapsed += Time.deltaTime;
+
+            if (useAnimationEvents) return;
 
             if (State == AttackState.Windup && elapsed >= impactTime)
             {

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace AnseongSteel.Bosses
@@ -7,11 +8,23 @@ namespace AnseongSteel.Bosses
     {
         // 월드 Y축 기준 회전 속도: 도/초.
         [SerializeField, Min(0.01f)] private float rotationSpeed = 90f;
+        [SerializeField, Min(0.01f)] private float rotationAcceleration = 240f;
+        private float angularSpeed;
 
         // +값은 오른쪽, -값은 왼쪽으로 남은 회전 각도입니다.
         private float remainingAngle;
 
         public bool IsRotating { get; private set; }
+        public Func<float, bool> AnimatedTurnHandler { get; set; }
+        public event Action RotationStopped;
+        private bool animationDriven;
+
+        public void ApplyAnimatedDelta(float angle)
+        {
+            if (!IsRotating || !animationDriven) return;
+            transform.Rotate(0f, angle, 0f, Space.World);
+            remainingAngle -= angle;
+        }
 
         public void TurnLeft(float angle)
         {
@@ -69,20 +82,29 @@ namespace AnseongSteel.Bosses
         {
             IsRotating = false;
             remainingAngle = 0f;
+            angularSpeed = 0f;
+            animationDriven = false;
+            RotationStopped?.Invoke();
         }
 
         private void Update()
         {
             if (!IsRotating) return;
+            if (animationDriven) return;
 
-            if (!IsPositiveFinite(rotationSpeed))
+            if (!IsPositiveFinite(rotationSpeed) || !IsPositiveFinite(rotationAcceleration))
             {
                 Debug.LogWarning("Rotation Speed는 0보다 큰 유한한 수여야 합니다.", this);
                 StopRotate();
                 return;
             }
 
-            float maxStep = rotationSpeed * Time.deltaTime;
+            // Accelerate from rest and brake over the remaining angle.
+            // This smooths the root turn; a turn-in-place clip is still needed for footwork.
+            float brakingSpeed = Mathf.Sqrt(2f * rotationAcceleration * Mathf.Abs(remainingAngle));
+            angularSpeed = Mathf.MoveTowards(angularSpeed,
+                Mathf.Min(rotationSpeed, brakingSpeed), rotationAcceleration * Time.deltaTime);
+            float maxStep = angularSpeed * Time.deltaTime;
             float step = Mathf.Min(Mathf.Abs(remainingAngle), maxStep)
                 * Mathf.Sign(remainingAngle);
 
@@ -127,6 +149,7 @@ namespace AnseongSteel.Bosses
 
             remainingAngle = signedAngle;
             IsRotating = true;
+            animationDriven = AnimatedTurnHandler != null && AnimatedTurnHandler(signedAngle);
         }
 
         private void OnDisable()
