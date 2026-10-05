@@ -1,0 +1,98 @@
+{
+  "NEUTRAL": {
+    "max_matrix_change_during_render": 0.0,
+    "ankle_L_degrees": [
+      2.562737349233913,
+      12.079322735856366,
+      17.271205656076933
+    ],
+    "ankle_R_degrees": [
+      2.562737349233913,
+      -12.079322735856366,
+      -17.271205656076933
+    ],
+    "render_only_actions_frozen": true,
+    "studio_ground_hidden_for_motion_inspection": true,
+    "saved_blend_modified": false
+  },
+  "DEEP_KNEE": {
+    "max_matrix_change_during_render": 0.0,
+    "ankle_L_degrees": [
+      -25.00000012650595,
+      12.079322735856366,
+      17.271205656076933
+    ],
+    "ankle_R_degrees": [
+      2.562737349233913,
+      -12.079322735856366,
+      -17.271205656076933
+    ],
+    "render_only_actions_frozen": true,
+    "studio_ground_hidden_for_motion_inspection": true,
+    "saved_blend_modified": false
+  },
+  "ANKLE_DORSIFLEX35": {
+    "max_matrix_change_during_render": 0.0,
+    "ankle_L_degrees": [
+      37.562738038606426,
+      12.079322735856366,
+      17.271205656076933
+    ],
+    "ankle_R_degrees": [
+      37.562738038606426,
+      -12.079322735856366,
+      -17.271205656076933
+    ],
+    "render_only_actions_frozen": true,
+    "studio_ground_hidden_for_motion_inspection": true,
+    "saved_blend_modified": false
+  },
+  "ANKLE_PLANTAR35": {
+    "max_matrix_change_during_render": 0.0,
+    "ankle_L_degrees": [
+      -32.43726163259131,
+      12.079322735856366,
+      17.271205656076933
+    ],
+    "ankle_R_degrees": [
+      -32.43726163259131,
+      -12.079322735856366,
+      -17.271205656076933
+    ],
+    "render_only_actions_frozen": true,
+    "studio_ground_hidden_for_motion_inspection": true,
+    "saved_blend_modified": false
+  },
+  "ANKLE_INVERSION15": {
+    "max_matrix_change_during_render": 0.0,
+    "ankle_L_degrees": [
+      2.562737349233913,
+      27.079323153269392,
+      17.271205656076933
+    ],
+    "ankle_R_degrees": [
+      2.562737349233913,
+      -27.079323153269392,
+      -17.271205656076933
+    ],
+    "render_only_actions_frozen": true,
+    "studio_ground_hidden_for_motion_inspection": true,
+    "saved_blend_modified": false
+  },
+  "ANKLE_EVERSION15": {
+    "max_matrix_change_during_render": 0.0,
+    "ankle_L_degrees": [
+      2.562737349233913,
+      -2.9206772546698394,
+      17.271205656076933
+    ],
+    "ankle_R_degrees": [
+      2.562737349233913,
+      2.9206772546698394,
+      -17.271205656076933
+    ],
+    "render_only_actions_frozen": true,
+    "studio_ground_hidden_for_motion_inspection": true,
+    "saved_blend_modified": false
+  }
+}

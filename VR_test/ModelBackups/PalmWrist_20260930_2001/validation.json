@@ -1,0 +1,35 @@
+{
+  "L": {
+    "original_vertices": 2596,
+    "added_vertices": 456,
+    "original_triangles": 4714,
+    "added_triangles": 912,
+    "patch_closed": true,
+    "palm_front_x": 0.397,
+    "wrist_range_z": [
+      0.154,
+      0.232
+    ],
+    "palm_finger_occlusion": {
+      "tested_vertices": 10,
+      "uncovered_vertices": []
+    }
+  },
+  "R": {
+    "original_vertices": 2603,
+    "added_vertices": 456,
+    "original_triangles": 4721,
+    "added_triangles": 912,
+    "patch_closed": true,
+    "palm_front_x": -0.397,
+    "wrist_range_z": [
+      0.154,
+      0.232
+    ],
+    "palm_finger_occlusion": {
+      "tested_vertices": 10,
+      "uncovered_vertices": []
+    }
+  },
+  "preserved": "Original geometry, original skin weights, all bones/bind matrices, object/material IDs, connections, animation and global settings preserved; only patch geometry and its skin weights appended."
+}

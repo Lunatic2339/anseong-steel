@@ -1,0 +1,258 @@
+{
+  "blend_file": "E:\\CAPSTONE1\\blander\\Boss_v015_UVReady.blend",
+  "source": "E:\\CAPSTONE1\\blander\\Boss_v014_ChestSymmetryFix.blend",
+  "uv_channel": "UVMap",
+  "reference_resolution": 4096,
+  "packing_margin": 0.00390625,
+  "sets": {
+    "01_TorsoHead": {
+      "label": "몸통 / 머리",
+      "material": "MAT_Boss_01_TorsoHead",
+      "objects": 25,
+      "faces": 9788,
+      "islands": 379,
+      "uv_area_fraction": 0.5256832773454048,
+      "zero_uv_triangles": 0,
+      "out_of_01_loops": 0,
+      "marked_seam_edges": 3848,
+      "uv_min": [
+        0.003906237194314599,
+        0.003906197613105178
+      ],
+      "uv_max": [
+        0.9917309284210205,
+        0.9939274191856384
+      ],
+      "overlap_pairs_above_1e_minus10": 0
+    },
+    "02_Pelvis": {
+      "label": "골반 / 허리 하부",
+      "material": "MAT_Boss_02_Pelvis",
+      "objects": 12,
+      "faces": 7398,
+      "islands": 209,
+      "uv_area_fraction": 0.5185007678798588,
+      "zero_uv_triangles": 0,
+      "out_of_01_loops": 0,
+      "marked_seam_edges": 2814,
+      "uv_min": [
+        0.00390624743886292,
+        0.0039062241557985544
+      ],
+      "uv_max": [
+        0.9960939288139343,
+        0.9601777195930481
+      ],
+      "overlap_pairs_above_1e_minus10": 0
+    },
+    "03_Arm_L": {
+      "label": "왼팔 / 손",
+      "material": "MAT_Boss_03_Arm_L",
+      "objects": 35,
+      "faces": 26525,
+      "islands": 865,
+      "uv_area_fraction": 0.4867109922510111,
+      "zero_uv_triangles": 0,
+      "out_of_01_loops": 0,
+      "marked_seam_edges": 10573,
+      "uv_min": [
+        0.003906247206032276,
+        0.0039062476716935635
+      ],
+      "uv_max": [
+        0.99609375,
+        0.9807762503623962
+      ],
+      "overlap_pairs_above_1e_minus10": 0
+    },
+    "04_Arm_R": {
+      "label": "오른팔 / 손",
+      "material": "MAT_Boss_04_Arm_R",
+      "objects": 35,
+      "faces": 26573,
+      "islands": 906,
+      "uv_area_fraction": 0.48312322105540645,
+      "zero_uv_triangles": 0,
+      "out_of_01_loops": 0,
+      "marked_seam_edges": 10696,
+      "uv_min": [
+        0.003906247206032276,
+        0.0039062469732016325
+      ],
+      "uv_max": [
+        0.993131160736084,
+        0.9878096580505371
+      ],
+      "overlap_pairs_above_1e_minus10": 0
+    },
+    "05_Leg_L": {
+      "label": "왼다리 / 발",
+      "material": "MAT_Boss_05_Leg_L",
+      "objects": 23,
+      "faces": 10214,
+      "islands": 334,
+      "uv_area_fraction": 0.5466667215632062,
+      "zero_uv_triangles": 0,
+      "out_of_01_loops": 0,
+      "marked_seam_edges": 3991,
+      "uv_min": [
+        0.0039062034338712692,
+        0.0039062208961695433
+      ],
+      "uv_max": [
+        0.9960936903953552,
+        0.9800534248352051
+      ],
+      "overlap_pairs_above_1e_minus10": 0
+    },
+    "06_Leg_R": {
+      "label": "오른다리 / 발",
+      "material": "MAT_Boss_06_Leg_R",
+      "objects": 23,
+      "faces": 10214,
+      "islands": 332,
+      "uv_area_fraction": 0.5473508708477723,
+      "zero_uv_triangles": 0,
+      "out_of_01_loops": 0,
+      "marked_seam_edges": 3995,
+      "uv_min": [
+        0.0039062469732016325,
+        0.0039062397554516792
+      ],
+      "uv_max": [
+        0.9806774854660034,
+        0.99609375
+      ],
+      "overlap_pairs_above_1e_minus10": 0
+    },
+    "07_Shield": {
+      "label": "왼팔 방패",
+      "material": "MAT_Boss_07_Shield",
+      "objects": 18,
+      "faces": 14861,
+      "islands": 901,
+      "uv_area_fraction": 0.33608152758503995,
+      "zero_uv_triangles": 0,
+      "out_of_01_loops": 0,
+      "marked_seam_edges": 7414,
+      "uv_min": [
+        0.003906243247911334,
+        0.0039062167052179575
+      ],
+      "uv_max": [
+        0.9864219427108765,
+        0.9835686087608337
+      ],
+      "overlap_pairs_above_1e_minus10": 0
+    },
+    "08_Weapons": {
+      "label": "검 / 총 / 미사일 / 레이저",
+      "material": "MAT_Boss_08_Weapons",
+      "objects": 39,
+      "faces": 32795,
+      "islands": 1120,
+      "uv_area_fraction": 0.4205748980810571,
+      "zero_uv_triangles": 0,
+      "out_of_01_loops": 0,
+      "marked_seam_edges": 13955,
+      "uv_min": [
+        0.0039062476716935635,
+        0.003906233934685588
+      ],
+      "uv_max": [
+        0.9925966858863831,
+        0.9936904311180115
+      ],
+      "overlap_pairs_above_1e_minus10": 0
+    }
+  },
+  "preservation": {
+    "source_file_unchanged": true,
+    "object_transform_parent_changes": [],
+    "rest_bone_changes": [],
+    "pose_changes": [],
+    "objects_added": [],
+    "objects_removed": [],
+    "geometry_count": 210,
+    "bone_count": 67,
+    "socket_count": 15,
+    "rig_modifier_count": 210,
+    "remaining_nonrig_mesh_modifiers": [],
+    "source_evaluated_triangles": 282712,
+    "geometry_application_mismatches": []
+  },
+  "overlap_detail": {
+    "01_TorsoHead": {
+      "group": "01_TorsoHead",
+      "triangle_count": 17852,
+      "candidate_pairs": 62294,
+      "overlap_pairs": 0,
+      "max_overlap_area": 0,
+      "subpixel_pairs": 0,
+      "samples": []
+    },
+    "02_Pelvis": {
+      "group": "02_Pelvis",
+      "triangle_count": 15440,
+      "candidate_pairs": 47464,
+      "overlap_pairs": 0,
+      "max_overlap_area": 0,
+      "subpixel_pairs": 0,
+      "samples": []
+    },
+    "03_Arm_L": {
+      "group": "03_Arm_L",
+      "triangle_count": 54908,
+      "candidate_pairs": 168584,
+      "overlap_pairs": 0,
+      "max_overlap_area": 5.7573834588708905e-11,
+      "subpixel_pairs": 8,
+      "samples": []
+    },
+    "04_Arm_R": {
+      "group": "04_Arm_R",
+      "triangle_count": 55004,
+      "candidate_pairs": 169159,
+      "overlap_pairs": 0,
+      "max_overlap_area": 4.611849790947531e-11,
+      "subpixel_pairs": 28,
+      "samples": []
+    },
+    "05_Leg_L": {
+      "group": "05_Leg_L",
+      "triangle_count": 20928,
+      "candidate_pairs": 69510,
+      "overlap_pairs": 0,
+      "max_overlap_area": 0,
+      "subpixel_pairs": 0,
+      "samples": []
+    },
+    "06_Leg_R": {
+      "group": "06_Leg_R",
+      "triangle_count": 20928,
+      "candidate_pairs": 69033,
+      "overlap_pairs": 0,
+      "max_overlap_area": 8.650213878524937e-11,
+      "subpixel_pairs": 5,
+      "samples": []
+    },
+    "07_Shield": {
+      "group": "07_Shield",
+      "triangle_count": 29636,
+      "candidate_pairs": 76660,
+      "overlap_pairs": 0,
+      "max_overlap_area": 6.222562742852489e-11,
+      "subpixel_pairs": 59,
+      "samples": []
+    },
+    "08_Weapons": {
+      "group": "08_Weapons",
+      "triangle_count": 68016,
+      "candidate_pairs": 170285,
+      "overlap_pairs": 0,
+      "max_overlap_area": 1.3364309658925322e-11,
+      "subpixel_pairs": 1,
+      "samples": []
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "blend_sha256": "8c661557e82cbcd0f91230522497c25a403672f9909f6859fdb9e28174ff1111",
+  "baseline_sha256": "8b34224fcdc43b6d67e19a0b7b64dba91e0be3bf0b23e17961c8c3d2a7a9c2b4",
+  "height_m": 65.00000015475185,
+  "controls_and_attachment_nodes": 76,
+  "named_CTRL_controls": 55,
+  "frames_preserved": 281,
+  "foot_links_checked": 22,
+  "upper_ankle_mount_links_checked": 4,
+  "changed_original_meshes": 52,
+  "unchanged_original_meshes": 572,
+  "inspection_note": "See Korean review report for approximate reference camera registration and isolated views."
+}

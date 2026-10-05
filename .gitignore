@@ -1,2 +1,43 @@
 # Blender automatic backup files
 *.blend[0-9]*
+
+# Unity 캐시와 개인 설정
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+.utmp/
+
+# 빌드 결과물과 캡처
+[Bb]uild/
+[Bb]uilds/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# 개발 도구 캐시
+.vs/
+.idea/
+.gradle/
+
+# Unity가 생성하는 프로젝트 파일
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.user
+*.userprefs
+*.opendb
+*.VC.db
+
+# 오류 기록과 운영체제 임시 파일
+*.log
+sysinfo.txt
+mono_crash.*
+.DS_Store
+Thumbs.db
+
+# 이번 작업에서 만든 로컬 백업과 검사 결과
+MechaVR_*Backup_*/
+MechaVR_Validation/

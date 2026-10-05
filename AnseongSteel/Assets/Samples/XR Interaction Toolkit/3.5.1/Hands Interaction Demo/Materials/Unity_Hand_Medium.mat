@@ -27,6 +27,7 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _BUILTIN_SURFACE_TYPE_TRANSPARENT
+  - _SURFACE_TYPE_TRANSPARENT
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -123,6 +124,7 @@ Material:
     - Vector1_69b40c1ee2e1422cbfcae389f53b36a9: 1
     - Vector1_8671db567d5d4784b29e8ff511bd8f1e: 1
     - _AlphaClip: 0
+    - _AlphaToMask: 0
     - _BUILTIN_AlphaClip: 0
     - _BUILTIN_Blend: 0
     - _BUILTIN_CullMode: 2
@@ -140,7 +142,8 @@ Material:
     - _Cull: 2
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
-    - _DstBlend: 0
+    - _DstBlend: 10
+    - _DstBlendAlpha: 10
     - _EdgeHighlightPower: 5
     - _FadeSize: 0.02
     - _FadeStart: 0.12
@@ -175,7 +178,8 @@ Material:
     - _Scale: 0.16
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
-    - _SrcBlend: 1
+    - _SrcBlend: 5
+    - _SrcBlendAlpha: 1
     - _Surface: 1
     - _TransitionSize: 0.1
     - _UVSec: 0
@@ -185,7 +189,7 @@ Material:
     - _WristRangeScalarA: 1
     - _WristRangeScalarB: 1
     - _ZTest: 4
-    - _ZWrite: 1
+    - _ZWrite: 0
     - _ZWriteControl: 0
     m_Colors:
     - Color_d710c7c4aa1a4153a2a64167ef0bec76: {r: 0.2623709, g: 0.6187253, b: 0.8301887,

@@ -1,0 +1,30 @@
+{
+  "neutral_frame": 201,
+  "foot_armor_vs_ankle_mesh_pair_tests": 288,
+  "surface_intersections": [],
+  "minimum_new_part_world_z": {
+    "r11_foot_carrier_L": 3.051173686981201,
+    "r11_foot_carrier_R": 3.051173686981201,
+    "r11_forefoot_armor_L": 0.28022295236587524,
+    "r11_forefoot_armor_R": 0.2802227735519409,
+    "r11_forefoot_core_L": 0.1700652539730072,
+    "r11_forefoot_core_R": 0.1700652539730072,
+    "r11_forefoot_front_L": 0.12873639166355133,
+    "r11_forefoot_front_R": 0.12873651087284088,
+    "r11_forefoot_pad_L": -1.5475184511615225e-07,
+    "r11_forefoot_pad_R": -1.5475184511615225e-07,
+    "r11_forefoot_rear_L": 0.2600997984409332,
+    "r11_forefoot_rear_R": 0.2600997984409332,
+    "r11_heel_armor_L": 0.28033822774887085,
+    "r11_heel_armor_R": 0.28033822774887085,
+    "r11_heel_core_L": 0.17006534337997437,
+    "r11_heel_core_R": 0.17006534337997437,
+    "r11_heel_front_L": 0.25883859395980835,
+    "r11_heel_front_R": 0.2588387131690979,
+    "r11_heel_pad_L": -6.023504539598434e-08,
+    "r11_heel_pad_R": -6.023504539598434e-08,
+    "r11_heel_rear_L": 0.2598596215248108,
+    "r11_heel_rear_R": 0.25985953211784363
+  },
+  "scope": "Also checks armor against same-parent ankle hardware; intended carrier/core insertions excluded. No structural strength or universal motion claim."
+}

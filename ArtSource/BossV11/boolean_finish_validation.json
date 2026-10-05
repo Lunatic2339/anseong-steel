@@ -1,0 +1,34 @@
+[
+  {
+    "mesh": "r11_forefoot_armor_L",
+    "before_bad_edges": 7,
+    "before_edge_lengths": [
+      0.07075884193181992,
+      0.07075884193181992,
+      0.17543381452560425,
+      0.17543381452560425,
+      0.17543387413024902,
+      5.960464477539063e-08,
+      0.17543387413024902
+    ],
+    "filled_faces": 2,
+    "repaired_local_surface_area_m2": 8.062866829305904e-06,
+    "after_bad_edges": 0
+  },
+  {
+    "mesh": "r11_forefoot_armor_R",
+    "before_bad_edges": 7,
+    "before_edge_lengths": [
+      0.07075884193181992,
+      0.07075884193181992,
+      0.17543381452560425,
+      0.17543381452560425,
+      0.17543387413024902,
+      5.960464477539063e-08,
+      0.17543387413024902
+    ],
+    "filled_faces": 2,
+    "repaired_local_surface_area_m2": 8.062866829305904e-06,
+    "after_bad_edges": 0
+  }
+]

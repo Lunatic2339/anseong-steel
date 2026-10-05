@@ -1,0 +1,25 @@
+{
+  "L": {
+    "removed_hand_triangles": 644,
+    "new_hand_triangles": 4286,
+    "new_vertices": 2145,
+    "original_vertex_count": 2596,
+    "single_component": true,
+    "boundary_edges": 0,
+    "nonmanifold_edges": 0,
+    "euler": 2,
+    "texture_transferred_triangles": 0
+  },
+  "R": {
+    "removed_hand_triangles": 644,
+    "new_hand_triangles": 4376,
+    "new_vertices": 2190,
+    "original_vertex_count": 2603,
+    "single_component": true,
+    "boundary_edges": 0,
+    "nonmanifold_edges": 0,
+    "euler": 2,
+    "texture_transferred_triangles": 0
+  },
+  "preserved": "Skeleton, bind transforms, animations, object/material IDs, original weights and non-hand geometry preserved. Replaced only hand/wrist/proximal-finger surfaces; new vertices have blended weights."
+}
