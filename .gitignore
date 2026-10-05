@@ -41,3 +41,5 @@ Thumbs.db
 # 이번 작업에서 만든 로컬 백업과 검사 결과
 MechaVR_*Backup_*/
 MechaVR_Validation/
+# Robot play prototype local test reports and development player
+AnseongSteel/RobotPlayValidation/
