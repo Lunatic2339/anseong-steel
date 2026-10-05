@@ -40,8 +40,8 @@ namespace AnseongSteel.PlayerMotion
         }
         void OnGUI()
         {
-            GUILayout.BeginArea(new Rect(10, 190, 420, 90), GUI.skin.box);
-            GUILayout.Label("Cockpit display camera: " + selected);
+            GUILayout.BeginArea(new Rect(10, 355, 560, 90), GUI.skin.box);
+            GUILayout.Label("Robot camera mount: " + selected);
             GUILayout.BeginHorizontal();
             foreach (Mount mount in System.Enum.GetValues(typeof(Mount)))
                 if (GUILayout.Button(mount.ToString())) Select(mount);

@@ -70,6 +70,15 @@ namespace AnseongSteel.PlayerMotion
             Phase = MotionPhase.TrackingLost;
         }
 
+        // A render stall invalidates a stroke's velocity history, not its calibrated
+        // pose origin. Keep completed observations and require neutral before rearming.
+        public void DiscardInterruptedStroke()
+        {
+            hasPrevious = false; count = 0; homeSince = quietSince = -1;
+            Candidate = new PunchObservation { reason = "Sample gap: return to ready pose" };
+            Phase = MotionPhase.WaitingForNeutral;
+        }
+
         public void Sample(Vector3 position, Quaternion rotation, float now)
         {
             if (Phase == MotionPhase.TrackingLost) return;

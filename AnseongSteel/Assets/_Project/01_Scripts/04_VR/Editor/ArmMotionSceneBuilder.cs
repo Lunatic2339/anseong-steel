@@ -15,7 +15,7 @@ namespace AnseongSteel.PlayerMotion.Editor
         const string Art = "Assets/_Project/02_Art/";
         public const string ScenePath = "Assets/_Project/04_Scenes/ArmMotionTest.unity";
         public const string PrefabPath = "Assets/_Project/05_Prefabs/TrackedRobotArms.prefab";
-        const string ModelPath = Art + "01_Models/mecha-red-points-mixamo-v025.fbx";
+        public const string ModelPath = Art + "01_Models/mecha-finger-rig-mixamo-v026.fbx";
         [MenuItem("Anseong Steel/Player Motion/Create controller tracking scene")]
         public static void Build()
         {
@@ -27,6 +27,7 @@ namespace AnseongSteel.PlayerMotion.Editor
             model.transform.SetParent(frame, false); model.transform.localScale = Vector3.one * 6; model.transform.localPosition = new Vector3(0, -3.15f, 0);
             foreach (var animator in model.GetComponentsInChildren<Animator>()) animator.enabled = false;
             var bones = model.GetComponentsInChildren<Transform>();
+            Debug.Log("V26_HAND_BONES: " + string.Join(", ", bones.Where(t => t.name.Contains("Hand")).Select(t => t.name)));
             Transform Bone(string suffix) => bones.First(t => t.name.EndsWith(suffix, StringComparison.Ordinal));
             if (Bone("LeftArm").position.x > Bone("RightArm").position.x) model.transform.localRotation = Quaternion.Euler(0, 180, 0);
             var followers = new ControllerArmFollower[2];
@@ -61,6 +62,11 @@ namespace AnseongSteel.PlayerMotion.Editor
                 renderer.sharedMaterials = renderer.sharedMaterials.Select(m => m.name.Contains("CE121D") ? Material("ArmMotion_Boss_Red", new Color(.8f, .045f, .025f), false) : m).ToArray();
             skin.sharedMaterials = skin.sharedMaterials.Select(m => m.name.Contains("CE121D") ? Material("ArmMotion_Player_Blue", new Color(.02f, .4f, 1f), false)
                 : m.name.Contains("7C7C7C") || m.name.Contains("E7E7E7") ? Material("ArmMotion_Player_Armor_Blue", new Color(.035f, .18f, .52f), false) : m).ToArray();
+            foreach (var robot in new[] { model, boss }) foreach (string side in new[] { "Left", "Right" })
+            {
+                var hand = robot.GetComponentsInChildren<Transform>().First(t => t.name == "mixamorig:" + side + "Hand");
+                hand.gameObject.AddComponent<DefaultFistPose>().Configure(hand, side);
+            }
             // Pose the same arm bones on the opponent into a comparable neutral guard.
             foreach (var source in followers)
             {
@@ -92,6 +98,9 @@ namespace AnseongSteel.PlayerMotion.Editor
             input.pilotSeat.position = input.leftSeat.position;
             var head = CameraObject("Cockpit HMD Camera", input.pilotSeat, Vector3.up * 1.65f, 75, 25);
             head.tag = "MainCamera"; head.gameObject.AddComponent<AudioListener>(); input.cockpitCamera = head;
+            input.leftAvatar = CreatePilot(input.leftSeat, "Left station - Pilot V04");
+            input.rightAvatar = CreatePilot(input.rightSeat, "Right station - Pilot V04");
+            head.transform.localPosition = input.leftAvatar.neutralEye;
             var exterior = CameraObject("Robot optical mount - independent of pilot HMD", frame, new Vector3(0, 1.8f, -.35f), 70, 40);
             var leftCamera = CameraObject("Robot left panorama sector", exterior.transform, Vector3.zero, 70, 40);
             var rightCamera = CameraObject("Robot right panorama sector", exterior.transform, Vector3.zero, 70, 40);
@@ -144,6 +153,25 @@ namespace AnseongSteel.PlayerMotion.Editor
             Debug.Log("ARM_MOTION_SCENE_BUILT");
         }
 
+        static CockpitPilotAvatar CreatePilot(Transform seat, string name)
+        {
+            const string path = Art + "PilotV04/Prefabs/AS_Pilot_Reduced_Review.prefab";
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (!prefab) throw new Exception("Existing PilotV04 prefab missing: " + path);
+            var pilot = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            pilot.name = name; pilot.transform.SetPositionAndRotation(seat.position, seat.rotation);
+            var rig = pilot.GetComponentInChildren<AnseongSteel.PilotV04.PilotReviewRig>();
+            rig.RestoreBindPose();
+            var head = rig.GetComponent<Animator>().GetBoneTransform(HumanBodyBones.Head);
+            var eye = new GameObject("Pilot eye reference - visor centre").transform;
+            eye.SetParent(head, false);
+            // V04 source visor is centred at 1.665 m. No eye bone is authored;
+            // place an explicit editable eye reference inside that visor.
+            eye.SetPositionAndRotation(rig.transform.TransformPoint(new Vector3(0, 1.665f, .075f)), pilot.transform.rotation);
+            var avatar = pilot.AddComponent<CockpitPilotAvatar>(); avatar.Configure(rig, eye);
+            return avatar;
+        }
+
         static RenderTexture PanoramaFeed(string side)
         {
             string path = Art + "02_Textures/ArmMotionPanorama" + side + ".renderTexture";
@@ -194,18 +222,16 @@ namespace AnseongSteel.PlayerMotion.Editor
                 renderer.enabled = false;
                 int Remap(int index)
                 { if (index >= oldBones.Length || !oldBones[index]) return 0; var bone = oldBones[index]; int mapped = bones.IndexOf(bone); if (mapped < 0) { mapped = bones.Count; bones.Add(bone); } return mapped; }
-                // Evaluate the source skin in model space explicitly. BakeMesh includes
-                // inherited FBX scale on this rig, which would apply the robot scale twice.
-                var bindposes = mesh.bindposes;
-                var matrices = oldBones.Select((b, i) => model.transform.worldToLocalMatrix * b.localToWorldMatrix * bindposes[i]).ToArray();
+                // v26's imported finger bind matrices offset some rigid pieces even
+                // at rest. Rebind the original unposed geometry to the imported rest
+                // skeleton instead of baking those offsets into the derived mesh.
+                var geometry = model.transform.worldToLocalMatrix * renderer.transform.localToWorldMatrix;
+                var normalMatrix = geometry.inverse.transpose;
                 var oldVertices = mesh.vertices; var oldNormals = mesh.normals; var oldUv = mesh.uv; int offset = vertices.Count;
                 for (int i = 0; i < oldVertices.Length; i++)
                 {
                     var w = oldWeights[i]; var v = oldVertices[i]; var n = oldNormals[i];
-                    Vector3 vertex = Vector3.zero, normal = Vector3.zero;
-                    void Add(int bone, float weight) { if (weight <= 0) return; vertex += matrices[bone].MultiplyPoint3x4(v) * weight; normal += matrices[bone].MultiplyVector(n) * weight; }
-                    Add(w.boneIndex0, w.weight0); Add(w.boneIndex1, w.weight1); Add(w.boneIndex2, w.weight2); Add(w.boneIndex3, w.weight3);
-                    vertices.Add(vertex); normals.Add(normal.normalized);
+                    vertices.Add(geometry.MultiplyPoint3x4(v)); normals.Add(normalMatrix.MultiplyVector(n).normalized);
                     uv.Add(i < oldUv.Length ? oldUv[i] : Vector2.zero);
                     weights.Add(new BoneWeight { boneIndex0 = Remap(w.boneIndex0), boneIndex1 = Remap(w.boneIndex1), boneIndex2 = Remap(w.boneIndex2), boneIndex3 = Remap(w.boneIndex3), weight0 = w.weight0, weight1 = w.weight1, weight2 = w.weight2, weight3 = w.weight3 });
                 }

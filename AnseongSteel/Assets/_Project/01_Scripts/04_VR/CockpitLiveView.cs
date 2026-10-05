@@ -9,6 +9,7 @@ namespace AnseongSteel.PlayerMotion
     {
         public Camera exteriorCamera, leftCamera, rightCamera;
         public Camera cockpitCamera;
+        public Camera inspectionCamera;
         public Renderer screen, playerBody, firstPersonArms;
         public int materialSlot;
         public RenderTexture centerFeed, leftFeed, rightFeed;
@@ -26,7 +27,7 @@ namespace AnseongSteel.PlayerMotion
             RenderPipelineManager.beginCameraRendering += BeginCamera;
             RenderPipelineManager.endCameraRendering += EndCamera;
         }
-        bool IsRobotCamera(Camera camera) => camera == exteriorCamera || camera == leftCamera || camera == rightCamera;
+        bool IsRobotCamera(Camera camera) => camera == exteriorCamera || camera == leftCamera || camera == rightCamera || camera == inspectionCamera;
         void BeginCamera(ScriptableRenderContext context, Camera camera)
         {
             if (!IsRobotCamera(camera) || renderingFeed) return;
