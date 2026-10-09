@@ -13,6 +13,7 @@ namespace AnseongSteel.PlayerMotion
         public Transform head, neck, chest;
         public Mount selected;
         public TextMesh status;
+        public bool showDebugPanels = true;
         public InputAction cycle = new InputAction("Cycle cockpit view", InputActionType.Button,
             "<XRController>{RightHand}/thumbstickClicked");
         public Transform Current => selected == Mount.Head ? head : selected == Mount.Neck ? neck : chest;
@@ -40,6 +41,7 @@ namespace AnseongSteel.PlayerMotion
         }
         void OnGUI()
         {
+            if (!showDebugPanels) return;
             GUILayout.BeginArea(new Rect(10, 355, 560, 90), GUI.skin.box);
             GUILayout.Label("Robot camera mount: " + selected);
             GUILayout.BeginHorizontal();

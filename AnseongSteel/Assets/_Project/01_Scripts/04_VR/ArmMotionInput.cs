@@ -24,6 +24,7 @@ namespace AnseongSteel.PlayerMotion
         public bool recognizePunches = true;
         public bool updateBeforeRender = true;
         public bool showHandDirections = true;
+        public bool showDebugPanels = true;
         public float calibrationStillSeconds = .35f;
         public float calibrationStillSpeed = .18f;
         public InputAction headPosition = PoseAction("Head position", "<XRHMD>/centerEyePosition", "Vector3");
@@ -303,6 +304,7 @@ namespace AnseongSteel.PlayerMotion
         }
         void OnGUI()
         {
+            if (!showDebugPanels) return;
             GUILayout.BeginArea(new Rect(10, 10, 560, 335), GUI.skin.box);
             GUILayout.Label($"ASSIGNED HAND: {(leftPilot ? "LEFT" : "RIGHT")} | {InputStatus}");
             GUILayout.Label(Status);
