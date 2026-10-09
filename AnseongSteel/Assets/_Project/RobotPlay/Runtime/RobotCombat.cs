@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using AnseongSteel.PlayerMotion;
 
 namespace AnseongSteel.RobotPlay
 {
@@ -12,11 +13,14 @@ namespace AnseongSteel.RobotPlay
     [Serializable]
     public sealed class CombatTuning
     {
+        // Legacy serialized values remain compatible; recognition is configured below.
         public float minimumSpeed = .65f, minimumTravel = .12f, strokeSeconds = .7f;
         public float rearmRadius = .22f, rearmSeconds = .12f, guardHeight = .4f, hookWindup = .45f;
         public float comboSeconds = 2.4f, minimumComboGap = .15f, boostMultiplier = 2f;
         public int jabDamage = 8, hookDamage = 20, bossHealth = 160, robotHealth = 100;
         public bool standaloneHookDamage;
+        public float controllerMotionScale = 2.6f;
+        public TrajectoryTuning recognition = new TrajectoryTuning();
     }
 
     // Pure state machine. All times and poses are supplied by the authoritative simulation.
@@ -29,6 +33,8 @@ namespace AnseongSteel.RobotPlay
             public bool initialized, armed, guarding, boosted, finishing, hookPrepared;
             public float homeSince = -1, expires, lastSample = -1;
             public Strike strike;
+            public PunchTrajectoryRecognizer trajectory;
+            public bool contactConsumed;
         }
         public readonly Arm[] arms = { new Arm(), new Arm() };
         public readonly CombatTuning tuning;
@@ -45,21 +51,26 @@ namespace AnseongSteel.RobotPlay
         public void Reset()
         {
             BossHealth = tuning.bossHealth; RobotHealth = tuning.robotHealth; HitCount = 0;
-            ClearCombo(); for (int i=0;i<2;i++) arms[i] = new Arm();
+            ClearCombo(); for (int i=0;i<2;i++) arms[i] = NewArm(i);
+        }
+        Arm NewArm(int side)
+        {
+            var arm = new Arm { trajectory = new PunchTrajectoryRecognizer(side == 0, tuning.recognition) };
+            arm.trajectory.Calibrate(Vector3.zero); return arm;
         }
         public void Tick(float now)
         {
             if (ComboStep > 0 && now > ComboDeadline) ClearCombo();
-            foreach (var arm in arms) if (arm.strike != Strike.None && now > arm.expires) EndStroke(arm);
+            foreach (var arm in arms) if (arm.strike != Strike.None && now > arm.expires) { EndStroke(arm); arm.contactConsumed = true; }
         }
         public void Invalidate(int side)
         {
             if (side<0 || side>1) return;
-            arms[side]=new Arm(); ClearCombo();
+            arms[side]=NewArm(side); ClearCombo();
         }
         public void Sample(int side, Vector3 offset, bool boostPressed, float now)
         {
-            if (side<0 || side>1 || !Finite(offset) || BossHealth<=0 || RobotHealth<=0) return;
+            if (side<0 || side>1 || !Finite(offset) || !float.IsFinite(now) || BossHealth<=0 || RobotHealth<=0) return;
             Tick(now); var arm=arms[side];
             if (arm.initialized && now<=arm.lastSample) return;
             float dt=arm.initialized ? now-arm.lastSample : 0;
@@ -67,29 +78,31 @@ namespace AnseongSteel.RobotPlay
             if (!arm.initialized || dt>.25f)
             {
                 arm.initialized=true; arm.previous=offset; arm.armed=false; arm.homeSince=-1;
-                arm.guarding=false; EndStroke(arm); return;
+                arm.guarding=false; EndStroke(arm); arm.contactConsumed=false;
+                arm.trajectory.Calibrate(Vector3.zero);
             }
-            Vector3 velocity=(offset-arm.previous)/dt; arm.previous=offset;
-            arm.guarding=offset.y>=tuning.guardHeight && arm.strike==Strike.None;
-            if (offset.magnitude<tuning.rearmRadius && arm.strike==Strike.None)
+            var previousPhase=arm.trajectory.Phase;
+            arm.trajectory.Sample(offset/Mathf.Max(.1f,tuning.controllerMotionScale),Quaternion.identity,now);
+            if(arm.trajectory.Phase==MotionPhase.TrackingLost)
+            { arm.trajectory.DiscardInterruptedStroke(); EndStroke(arm); arm.contactConsumed=true; arm.guarding=false; return; }
+            if(previousPhase!=MotionPhase.Moving && arm.trajectory.Phase==MotionPhase.Moving)
+                arm.contactConsumed=false;
+            arm.previous=offset;
+            arm.armed=arm.trajectory.Phase==MotionPhase.Ready;
+            arm.guarding=offset.y>=tuning.guardHeight && arm.trajectory.Phase!=MotionPhase.Moving;
+            // Reuse the same real-controller trajectory classifier as ArmMotionTest.
+            // A candidate does not deal damage; the existing swept fist contact must confirm it.
+            var kind=arm.trajectory.Candidate.kind;
+            if(!arm.contactConsumed && !arm.guarding && arm.trajectory.Phase==MotionPhase.Moving)
             {
-                arm.hookPrepared=false;
-                if (arm.homeSince<0) arm.homeSince=now;
-                if (now-arm.homeSince>=tuning.rearmSeconds) arm.armed=true;
-            }
-            else arm.homeSince=-1;
-            if(offset.x*(side==0?-1:1)>tuning.hookWindup && offset.z>.25f)arm.hookPrepared=true;
-            float inward=velocity.x*(side==0?1:-1);
-            if (arm.armed && !arm.guarding && arm.strike==Strike.None && offset.magnitude>=tuning.minimumTravel)
-            {
-                Strike kind=Strike.None;
-                if (inward>=tuning.minimumSpeed && inward>Mathf.Abs(velocity.z)*1.15f && offset.z>.25f) kind=Strike.Hook;
-                else if (!arm.hookPrepared && velocity.z>=tuning.minimumSpeed && velocity.z>Mathf.Abs(velocity.x)*1.15f && offset.z>Mathf.Abs(offset.x)*1.25f) kind=Strike.Jab;
-                if (kind!=Strike.None)
+                Strike observed=kind==ObservedPunch.Jab?Strike.Jab:kind==ObservedPunch.Hook?Strike.Hook:Strike.None;
+                if(observed!=Strike.None)
                 {
-                    arm.strike=kind; arm.armed=false; arm.expires=now+tuning.strokeSeconds;
-                    arm.finishing=kind==Strike.Hook && ComboStep==2 && NextSide==side;
+                    if(arm.strike==Strike.None)arm.expires=now+tuning.strokeSeconds;
+                    arm.strike=observed;
+                    arm.finishing=observed==Strike.Hook && ComboStep==2 && NextSide==side;
                 }
+                else arm.strike=Strike.None;
             }
             // A held button before a hook cannot preload a boost. The input adapter sends edges.
             if (boostPressed && arm.strike==Strike.Hook && arm.finishing && ComboStep==2 && NextSide==side && !arm.boosted)
@@ -100,7 +113,16 @@ namespace AnseongSteel.RobotPlay
         public bool Hit(int side, float now, bool vulnerable)
         {
             if (side<0 || side>1 || BossHealth<=0 || RobotHealth<=0) return false;
-            Tick(now); var arm=arms[side]; if (arm.strike==Strike.None) return false;
+            Tick(now); var arm=arms[side];
+            if(arm.contactConsumed)return false;
+            var motion=arm.trajectory;
+            if(motion.Phase!=MotionPhase.Moving && arm.strike==Strike.None)return false;
+            if(motion.Phase==MotionPhase.Moving)motion.ConfirmContact(now,Quaternion.identity);
+            var observed=motion.LastCompleted.kind;
+            if(observed==ObservedPunch.Unknown){EndStroke(arm);arm.contactConsumed=true;return false;}
+            arm.strike=observed==ObservedPunch.Jab?Strike.Jab:Strike.Hook;
+            arm.contactConsumed=true;
+            arm.finishing=arm.strike==Strike.Hook && ComboStep==2 && NextSide==side;
             Strike kind=arm.strike; bool finish=arm.finishing && ComboStep==2 && NextSide==side;
             bool boosted=arm.boosted; EndStroke(arm);
             if (!vulnerable) { ClearCombo(); return false; }

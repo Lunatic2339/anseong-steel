@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace AnseongSteel.RobotPlay
 {
-    public enum PrototypeInput { DesktopBoth, XRSinglePilot }
+    public enum PrototypeInput { DesktopBoth, XRSinglePilot, XRLocalBoth }
     [DefaultExecutionOrder(-100)]
     public sealed class RobotPilotInput : MonoBehaviour
     {
@@ -16,6 +16,8 @@ namespace AnseongSteel.RobotPlay
         [Header("Editable XR bindings. Trigger = boost edge; opposite stick = provisional movement")]
         public InputAction leftPosition=new InputAction("Left pose",InputActionType.Value,"<XRController>{LeftHand}/devicePosition",expectedControlType:"Vector3");
         public InputAction rightPosition=new InputAction("Right pose",InputActionType.Value,"<XRController>{RightHand}/devicePosition",expectedControlType:"Vector3");
+        public InputAction leftRotation=new InputAction("Left rotation",InputActionType.Value,"<XRController>{LeftHand}/deviceRotation",expectedControlType:"Quaternion");
+        public InputAction rightRotation=new InputAction("Right rotation",InputActionType.Value,"<XRController>{RightHand}/deviceRotation",expectedControlType:"Quaternion");
         public InputAction leftTracked=new InputAction("Left tracked",InputActionType.Button,"<XRController>{LeftHand}/isTracked");
         public InputAction rightTracked=new InputAction("Right tracked",InputActionType.Button,"<XRController>{RightHand}/isTracked");
         public InputAction leftBoost=new InputAction("Left boost",InputActionType.Button,"<XRController>{LeftHand}/trigger");
@@ -28,6 +30,7 @@ namespace AnseongSteel.RobotPlay
         public enum Startup { Offline, Host, Client }
         public Startup startup;
         readonly Vector3[] baseline=new Vector3[2];
+        readonly Quaternion[] rotationBaseline={Quaternion.identity,Quaternion.identity};
         readonly bool[] calibrated=new bool[2],pendingBoost=new bool[2];
         readonly float[] animationStart={-100,-100};
         readonly bool[] hook=new bool[2];
@@ -37,7 +40,7 @@ namespace AnseongSteel.RobotPlay
         float nextSend;
         uint sequence;
         int lastSide=-1;
-        InputAction[] Actions => new[]{leftPosition,rightPosition,leftTracked,rightTracked,leftBoost,rightBoost,leftStick,rightStick,headPosition,headRotation,recenter};
+        InputAction[] Actions => new[]{leftPosition,rightPosition,leftRotation,rightRotation,leftTracked,rightTracked,leftBoost,rightBoost,leftStick,rightStick,headPosition,headRotation,recenter};
         void OnEnable(){foreach(var action in Actions)action.Enable();}
         void OnDisable(){foreach(var action in Actions)action.Disable();Recenter();}
         void Start(){if(startup!=Startup.Offline)session.StartNetwork(startup==Startup.Host);}
@@ -48,11 +51,18 @@ namespace AnseongSteel.RobotPlay
             int side=session.NetworkActive?session.LocalSide:(int)offlineSide;
             if(side!=lastSide){lastSide=side;Recenter();}
             if(seat)seat.localPosition=new Vector3(side==0?-.48f:.48f,0,-1.8f);
-            if(source==PrototypeInput.XRSinglePilot)ReadXR(side);else ReadDesktop();
+            if (source == PrototypeInput.XRLocalBoth)
+            {
+                // Debug input owns both arms only while offline. LAN roles remain unchanged.
+                if (session.NetworkActive || Time.time < nextSend) return;
+                if (recenter.WasPressedThisFrame()) Recenter();
+                ReadXR(0); ReadXR(1); nextSend = Time.time + .02f;
+            }
+            else if(source==PrototypeInput.XRSinglePilot)ReadXR(side);else ReadDesktop();
         }
         void ReadXR(int side)
         {
-            if(recenter.WasPressedThisFrame())Recenter();
+            if(source != PrototypeInput.XRLocalBoth && recenter.WasPressedThisFrame())Recenter();
             var position=side==0?leftPosition:rightPosition;
             var tracked=side==0?leftTracked:rightTracked;
             var button=side==0?leftBoost:rightBoost;
@@ -67,10 +77,13 @@ namespace AnseongSteel.RobotPlay
             if(!tracked.IsPressed()||position.activeControl==null)
             {calibrated[side]=false;pendingBoost[side]=false;return;}
             Vector3 p=position.ReadValue<Vector3>();
-            if(!calibrated[side]){baseline[side]=p;calibrated[side]=true;return;}
+            var rotationAction=side==0?leftRotation:rightRotation;
+            var handRotation=rotationAction.activeControl!=null?trackingToRobot*rotationAction.ReadValue<Quaternion>():Quaternion.identity;
+            if(!calibrated[side]){baseline[side]=p;rotationBaseline[side]=handRotation;calibrated[side]=true;return;}
+            session.SetLocalHandRotation(side,handRotation*Quaternion.Inverse(rotationBaseline[side]));
             pendingBoost[side]|=button.WasPressedThisFrame();
-            if(Time.time<nextSend)return;
-            nextSend=Time.time+.02f;
+            if(source != PrototypeInput.XRLocalBoth && Time.time<nextSend)return;
+            if(source != PrototypeInput.XRLocalBoth)nextSend=Time.time+.02f;
             session.Submit(side,Vector3.ClampMagnitude(trackingToRobot*(p-baseline[side])*motionScale,2.45f),pendingBoost[side],(side==0?rightStick:leftStick).ReadValue<Vector2>(),++sequence);
             pendingBoost[side]=false;
         }
@@ -109,7 +122,7 @@ namespace AnseongSteel.RobotPlay
             // Wind-up travels diagonally (not a jab); inward sweep then crosses the target.
             Vector3 windup=new Vector3(sign*.85f,0,.8f),end=new Vector3(-sign*.58f,.03f,1.08f);
             if(t<.28f)return Vector3.Lerp(Vector3.zero,windup,t/.28f);
-            if(t<.5f)return Vector3.Lerp(windup,end,(t-.28f)/.22f);
+            if(t<.5f) { float u=(t-.28f)/.22f; return Vector3.Lerp(windup,end,u)+Vector3.forward*.35f*Mathf.Sin(u*Mathf.PI); }
             return Vector3.Lerp(end,Vector3.zero,(t-.5f)/.25f);
         }
         void OnGUI()

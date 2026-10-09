@@ -2,6 +2,7 @@ using System;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
+using AnseongSteel.PlayerMotion;
 
 namespace AnseongSteel.RobotPlay
 {
@@ -50,6 +51,9 @@ namespace AnseongSteel.RobotPlay
         int phase,attackSide,attackCount;
         bool both;
         ulong rightClient=ulong.MaxValue;
+        readonly ControllerArmFollower[] followers = new ControllerArmFollower[2];
+        readonly ControllerElbowHint[] elbowHints = { new ControllerElbowHint(), new ControllerElbowHint() };
+        readonly Quaternion[] localRotations = { Quaternion.identity, Quaternion.identity };
         public bool NetworkActive => NetworkManager.Singleton && NetworkManager.Singleton.IsListening;
         public bool Authority => !NetworkActive || (IsSpawned&&IsServer);
         public int LocalSide => NetworkActive && !NetworkManager.Singleton.IsHost ? 1 : 0;
@@ -142,6 +146,8 @@ namespace AnseongSteel.RobotPlay
                     UpdateBoss(now);
                 }
                 contact.ConstrainPose();
+                // Confirm an initially ambiguous stroke only while fist contact continues.
+                for(int side=0;side<2;side++)if(contact.arms[side].IsBlocked && now-received[side]<=.25f)TryPunchContact(side);
                 offline=new RobotSnapshot {bossHealth=Combat.BossHealth,robotHealth=Combat.RobotHealth,combo=Combat.ComboStep,next=Combat.NextSide,hits=Combat.HitCount,phase=phase,attackSide=attackSide,both=both,leftGuard=Combat.arms[0].guarding,rightGuard=Combat.arms[1].guarding,left=input[0],right=input[1],body=robotRoot.position};
                 if(IsSpawned&&IsServer&&now>=nextPublish){replicated.Value=offline;nextPublish=now+.033f;}
             }
@@ -166,28 +172,41 @@ namespace AnseongSteel.RobotPlay
             if(!Authority)return;
             int side=target.LastArm=="L"?0:target.LastArm=="R"?1:-1;
             if(side<0||!contact.arms[side].ContactPart.Contains("Fist"))return;
+            TryPunchContact(side);
+        }
+        void TryPunchContact(int side)
+        {
+            var arm=Combat.arms[side];
+            if(!contact.arms[side].ContactPart.Contains("Fist") || arm.trajectory.Phase!=MotionPhase.Moving
+                || arm.trajectory.Candidate.kind==ObservedPunch.Unknown)return;
             Combat.Hit(side,Time.time,trainingWindow||phase==1);
         }
         public void ResetSimulation()
         {
             if(Combat==null)return;
             Combat.Reset();phase=0;attackCount=0;attackSide=0;both=false;phaseEnd=Time.time+telegraphSeconds;
-            for(int i=0;i<2;i++){received[i]=-100;input[i]=Vector3.zero;boost[i]=false;sequences[i]=0;}
+            for(int i=0;i<2;i++){received[i]=-100;input[i]=Vector3.zero;boost[i]=false;sequences[i]=0;elbowHints[i].Reset();localRotations[i]=Quaternion.identity;}
             move=Vector2.zero;if(robotRoot)robotRoot.position=Vector3.zero;if(contact)contact.ResetContactState();
         }
         // Two rigid segments. The existing contact solver restricts these requested rotations.
+        public void SetLocalHandRotation(int side,Quaternion delta)
+        {
+            if(!NetworkActive && side>=0 && side<2 && PunchTrajectoryRecognizer.Finite(delta))localRotations[side]=delta;
+        }
         public void Pose(int side,Vector3 offset)
         {
-            var arm=contact.arms[side];Vector3 shoulder=arm.upperArm.position;
-            Vector3 goal=robotRoot.TransformPoint(Neutral(side)+offset);
-            Vector3 delta=goal-shoulder;float distance=Mathf.Clamp(delta.magnitude,.08f,1.89f);
-            Vector3 direction=delta.normalized;if(direction.sqrMagnitude<.5f)direction=Vector3.forward;
-            Vector3 bend=Vector3.ProjectOnPlane(robotRoot.TransformDirection(new Vector3(side==0?-1:1,-1,0)),direction).normalized;
-            if(bend.sqrMagnitude<.5f)bend=Vector3.up;
-            Vector3 elbow=shoulder+direction*(distance*.5f)+bend*Mathf.Sqrt(.95f*.95f-distance*distance*.25f);
-            arm.upperArm.rotation=Quaternion.LookRotation(elbow-shoulder,robotRoot.up);
-            arm.forearm.rotation=Quaternion.LookRotation(shoulder+direction*distance-elbow,robotRoot.up);
-            arm.hand.rotation=robotRoot.rotation;
+            var arm=contact.arms[side];
+            if(!followers[side])
+            {
+                var follower=arm.upperArm.GetComponent<ControllerArmFollower>();
+                if(!follower)follower=arm.upperArm.gameObject.AddComponent<ControllerArmFollower>();
+                follower.upper=arm.upperArm;follower.forearm=arm.forearm;follower.hand=arm.hand;follower.robotFrame=robotRoot;
+                follower.neutralTarget=Neutral(side);follower.bendDirection=new Vector3(side==0?-1:1,-1,0);
+                follower.Initialize();followers[side]=follower;
+            }
+            var delta=offset/Mathf.Max(.1f,tuning.controllerMotionScale);
+            followers[side].elbowLift=elbowHints[side].Update(delta,Time.deltaTime);
+            followers[side].Follow(delta,NetworkActive?Quaternion.identity:localRotations[side]);
         }
         void PublishFeedback(FeedbackKind kind,PilotSide side,float strength)
         {
