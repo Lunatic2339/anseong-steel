@@ -20,7 +20,7 @@ namespace AnseongSteel.Bosses.Editor
    string hipPath=AnimationUtility.GetCurveBindings(idle).First(b=>b.path.EndsWith("mixamorig:Hips")).path;
    string prefix=hipPath.Substring(0,hipPath.IndexOf("mixamorig:",StringComparison.Ordinal));
    var sources=new Dictionary<string,AnimationClip>();
-   foreach(string name in new[]{"SwordSlash","OverheadSmash","AlternatingCombo","Grab","SwordIdle","GroundCast","PowerUp","Stagger","Death","DrawReach","DrawPull"})sources[name]=Source(name);
+   foreach(string name in new[]{"SwordSlash","OverheadSmash","AlternatingCombo","Grab","SwordIdle","GroundCast","PowerUp","Stagger","Death"})sources[name]=Source(name);
    foreach(var entry in sources)Debug.Log("COMBAT SOURCE "+entry.Key+" firstBinding="+AnimationUtility.GetCurveBindings(entry.Value)[0].path+" / "+AnimationUtility.GetCurveBindings(entry.Value)[0].propertyName);
    var clips=new Dictionary<string,AnimationClip>();
    foreach(var entry in sources)
@@ -28,9 +28,7 @@ namespace AnseongSteel.Bosses.Editor
     float duration=entry.Key=="Grab"?1.15f:entry.Value.length;
     clips[entry.Key]=Bake(entry.Key,new[]{entry.Value},duration,t=>(entry.Value,Mathf.Min(t,duration)),prefix,hipPath,idle,entry.Key=="SwordIdle");
    }
-   var reach=sources["DrawReach"];var pull=sources["DrawPull"];float total=reach.length+pull.length;
-   clips["DrawSword"]=Bake("DrawSword",new[]{reach,pull},total,t=>t<=reach.length?(reach,t):(pull,t-reach.length),prefix,hipPath,idle,false);
-   clips["SheatheSword"]=Bake("SheatheSword",new[]{reach,pull},total,t=>total-t<=reach.length?(reach,total-t):(pull,total-t-reach.length),prefix,hipPath,idle,false);
+   StabilizeLowerBody(clips["SwordIdle"],idle);
    var slash=sources["OverheadSmash"];float feintLength=.75f+slash.length*.9f;
    clips["Feint"]=Bake("Feint",new[]{slash},feintLength,t=>(slash,t<.45f?Mathf.Lerp(0,slash.length*.3f,t/.45f):t<.75f?Mathf.Lerp(slash.length*.3f,slash.length*.1f,(t-.45f)/.3f):slash.length*.1f+t-.75f),prefix,hipPath,idle,false);
    foreach(var item in new[]{("SwordSlash","SwordSlash",.24f,.67f),("OverheadSmash","OverheadSmash",.28f,.63f),("AlternatingCombo","AlternatingCombo",.14f,.42f),("Grab","Grab",.55f,.91f),("ArmLock","Grab",.55f,.91f),("WeaponBreak","SwordSlash",.24f,.67f),("Shockwave","GroundCast",.4f,.72f),("EMP","PowerUp",.28f,.75f),("SensorJam","PowerUp",.28f,.75f),("VisionDisruption","PowerUp",.28f,.75f),("Feint","Feint",.46f,.80f)})
@@ -39,14 +37,65 @@ namespace AnseongSteel.Bosses.Editor
     if(d.kind==BossAttackKind.AlternatingCombo)d.strikeTimes=new[]{.2f,.63f};
     EditorUtility.SetDirty(d);
    }
-   foreach(string name in new[]{"SwordIdle","DrawSword","SheatheSword","Stagger","Death"})
+   foreach(string name in new[]{"SwordIdle","Stagger","Death"})
    {
     var sm=controller.layers[0].stateMachine;var state=sm.states.Select(s=>s.state).FirstOrDefault(s=>s.name==name)??sm.AddState(name);state.motion=clips[name];state.writeDefaultValues=false;
    }
    EditorUtility.SetDirty(controller);AssetDatabase.SaveAssets();BossCombatInstaller.BindClips();
    BossCombatInstaller.Install();
    CalibrateSword(clips["SwordIdle"]);
+   BossAttackFootPolish.Apply();
+   BossSwordEquipBuilder.Build();
    Debug.Log("COMBAT ANIMATIONS PASS: same-v026 Generic curves retargeted to "+prefix+"; ground-plane hip drift removed.");
+  }
+  [MenuItem("Tools/Boss Prototype/Stabilize Sword Idle Feet")]
+  public static void StabilizeSwordIdle()
+  {
+   var controller=AssetDatabase.LoadAssetAtPath<AnimatorController>(Root+"/Generated/BossAnimator.controller");
+   StabilizeLowerBody(controller.animationClips.Single(c=>c.name=="SwordIdle"),controller.animationClips.Single(c=>c.name=="Idle"));
+   AssetDatabase.SaveAssets();
+   Debug.Log("SWORD IDLE STANCE SAVED");
+  }
+  static void StabilizeLowerBody(AnimationClip stance,AnimationClip idle)
+  {
+   // Keep the sword guard's upper body, but plant both legs in the neutral stance.
+   bool Lower(EditorCurveBinding b)=>b.type==typeof(Transform)&&(b.path.EndsWith("mixamorig:Hips")||b.path.Contains("mixamorig:LeftUpLeg")||b.path.Contains("mixamorig:RightUpLeg"));
+   var bindings=AnimationUtility.GetCurveBindings(stance).Concat(AnimationUtility.GetCurveBindings(idle)).Where(Lower).GroupBy(b=>b.path+"|"+b.propertyName).Select(g=>g.First()).ToArray();
+   foreach(var binding in bindings)
+   {
+    var reference=AnimationUtility.GetEditorCurve(idle,binding);
+    if(reference==null)throw new InvalidOperationException("Idle stance channel missing: "+binding.path+" / "+binding.propertyName);
+    AnimationUtility.SetEditorCurve(stance,binding,AnimationCurve.Constant(0,stance.length,reference.Evaluate(0)));
+   }
+   stance.EnsureQuaternionContinuity();EditorUtility.SetDirty(stance);
+  }
+  public static void StabilizeAndReview()
+  {
+   StabilizeSwordIdle();
+   var prefab=PrefabUtility.LoadPrefabContents(Root+"/Generated/BossMecha.prefab");
+   try
+   {
+    var animator=prefab.GetComponent<BossAnimationDriver>().animator;
+    var idle=animator.runtimeAnimatorController.animationClips.Single(c=>c.name=="Idle");
+    var stance=animator.runtimeAnimatorController.animationClips.Single(c=>c.name=="SwordIdle");
+    var feet=animator.GetComponentsInChildren<Transform>().Where(t=>t.name.Contains("Foot")||t.name.Contains("ToeBase")).ToArray();
+    if(feet.Length<4)throw new InvalidOperationException("Foot markers missing");
+    idle.SampleAnimation(animator.gameObject,0);
+    var positions=feet.Select(t=>t.position).ToArray();var rotations=feet.Select(t=>t.rotation).ToArray();
+    float drift=0;
+    for(int frame=0;frame<=120;frame++)
+    {
+     stance.SampleAnimation(animator.gameObject,stance.length*frame/120f);
+     for(int i=0;i<feet.Length;i++)
+     {
+      drift=Mathf.Max(drift,Vector3.Distance(positions[i],feet[i].position));
+      if(drift>.001f||Quaternion.Angle(rotations[i],feet[i].rotation)>.1f)throw new InvalidOperationException("Sword idle foot slipped: "+feet[i].name+" drift="+drift);
+     }
+    }
+    Debug.Log("SWORD IDLE FEET PASS: 121 samples, maximum drift="+drift);
+   }
+   finally{PrefabUtility.UnloadPrefabContents(prefab);}
+   BossHandRigWorkshop.Review();BossCombatPoseReview.Capture();
   }
   static AnimationClip Bake(string name,AnimationClip[] inputs,float duration,Func<float,(AnimationClip,float)> sample,string prefix,string hipPath,AnimationClip idle,bool loop)
   {
@@ -87,4 +136,3 @@ namespace AnseongSteel.Bosses.Editor
   }
  }
 }
-

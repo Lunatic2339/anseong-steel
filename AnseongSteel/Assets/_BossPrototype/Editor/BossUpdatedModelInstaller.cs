@@ -148,6 +148,7 @@ namespace AnseongSteel.Bosses.Editor
             EditorUtility.SetDirty(driver);
             UnityEngine.Object.DestroyImmediate(old.gameObject);
             BossSwordPolishInstaller.ConfigureGrip(driver);
+            if(driver.GetComponent<BossHandPose>())BossHandPoseInstaller.Configure(driver);
         }
         public static void Audit()
         {

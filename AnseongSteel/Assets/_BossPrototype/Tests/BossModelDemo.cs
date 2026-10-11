@@ -76,11 +76,17 @@ namespace AnseongSteel.Bosses
             yield return new WaitUntil(() => !driver.movement.IsMoving);
             yield return new WaitForSeconds(0.4f);
             status = "Punch";
-            driver.TryPunch();
+            TryDemoPunch();
             yield return new WaitUntil(() => !driver.IsAttacking);
             yield return new WaitForSeconds(0.8f);
             status = "Demo complete - use buttons to repeat";
             demo = null;
+        }
+
+        public bool TryDemoPunch()
+        {
+            var combat=driver.GetComponent<BossCombatController>();
+            return combat?combat.TryAttack(BossAttackKind.HeavyPunch):driver.TryPunch();
         }
 
         public void FaceTarget()
@@ -123,7 +129,7 @@ namespace AnseongSteel.Bosses
             if (GUILayout.Button("Face target", GUILayout.Height(28))) FaceTarget();
             if (GUILayout.Button("Walk to target", GUILayout.Height(28))) WalkToTarget();
             if (GUILayout.Button("Stop / Idle", GUILayout.Height(28))) driver.ResetMotion();
-            if (GUILayout.Button("Punch", GUILayout.Height(28))) { status = "Punch"; driver.TryPunch(); }
+            if (GUILayout.Button("Punch", GUILayout.Height(28))) { status = "Punch"; TryDemoPunch(); }
             if (GUILayout.Button("Turn left 90", GUILayout.Height(28))) driver.rotation.TurnLeft(90f);
             if (GUILayout.Button("Turn right 90", GUILayout.Height(28))) driver.rotation.TurnRight(90f);
             GUI.enabled = true;
@@ -138,5 +144,6 @@ namespace AnseongSteel.Bosses
         }
     }
 }
+
 
 

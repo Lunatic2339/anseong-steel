@@ -59,6 +59,7 @@ namespace AnseongSteel.Bosses.Editor
    a.backSocket.position=driver.transform.TransformPoint(new Vector3(.37f,2.55f,-.34f));
    a.backSocket.rotation=driver.transform.rotation*Quaternion.Euler(0,0,-25);
    EditorUtility.SetDirty(a);
+   if(driver.GetComponent<BossHandPose>())BossHandPoseInstaller.Configure(driver);
   }
   static void BuildBackwardWalk()
   {

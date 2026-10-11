@@ -29,6 +29,8 @@ namespace AnseongSteel.Bosses
             if(combat.UsingPlaceholder)GUILayout.Label("CLIP MISSING: timing / hit-volume preview");
             GUILayout.Label($"Distance: {Vector3.Distance(combat.transform.position,combat.target.transform.position):0.00} m");
             positionForAttack=GUILayout.Toggle(positionForAttack,"Move to selected attack distance");
+            if(GUILayout.Button("Draw sword")){if(!combat.IsBusy){CancelPreparation();combat.GetComponent<BossSwordEquip>().TryDraw();}}
+            if(GUILayout.Button("Sheathe sword")){if(!combat.IsBusy){CancelPreparation();combat.GetComponent<BossSwordEquip>().TrySheathe();}}
             if(GUILayout.Button("Sword distance / face target")){CancelPreparation();approach=StartCoroutine(Approach(swordTestDistance));}
             if(GUILayout.Button("Punch distance / face target")){CancelPreparation();approach=StartCoroutine(Approach(1.05f));}
             foreach(var definition in combat.attacks)
@@ -67,9 +69,14 @@ namespace AnseongSteel.Bosses
         }
         IEnumerator Approach(float distance)
         {
-            demo.StopDemo();demo.FaceTarget();yield return new WaitUntil(()=>!demo.driver.IsTurning&&!demo.driver.rotation.IsRotating);
+            demo.StopDemo();
+            var equip=combat.GetComponent<BossSwordEquip>();
+            bool needsMove=Mathf.Abs(Vector3.ProjectOnPlane(combat.target.transform.position-combat.transform.position,Vector3.up).magnitude-distance)>.05f;
+            if(needsMove&&equip&&combat.sword.IsDrawn){equip.TrySheathe();yield return new WaitUntil(()=>!equip.IsBusy);}
+            demo.FaceTarget();yield return new WaitUntil(()=>!demo.driver.IsTurning&&!demo.driver.rotation.IsRotating);
             demo.WalkToTarget(distance);yield return new WaitUntil(()=>!demo.driver.movement.IsMoving);
             yield return new WaitForSeconds(.16f);
         }
     }
 }
+

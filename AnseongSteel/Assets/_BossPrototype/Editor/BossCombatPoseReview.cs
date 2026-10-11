@@ -19,13 +19,15 @@ namespace AnseongSteel.Bosses.Editor
    var cam=Camera.main;cam.transform.position=new Vector3(5,3.7f,6);cam.transform.LookAt(new Vector3(0,1.4f,0));cam.fieldOfView=43;
    foreach(var item in new[]{("SwordIdle",.1f),("OverheadSmash",.45f),("OverheadSmash",.7f),("SwordSlash",.85f),("SwordSlash",1.1f),("AlternatingCombo",.4f),("Grab",1f),("LaserCharge",.1f),("LaserFire",.1f)})
    {
-    if(item.Item1=="AlternatingCombo")sword.Sheathe();
+    if(item.Item1=="AlternatingCombo"||item.Item1=="Grab")sword.Sheathe();
     bool laserPose=item.Item1.StartsWith("Laser");
     if(laserPose)sword.Sheathe();
     var clip=laserPose?demo.driver.animator.runtimeAnimatorController.animationClips.Single(c=>c.name=="Idle"):AssetDatabase.LoadAssetAtPath<AnimationClip>("Assets/_BossPrototype/Animation/Combat/"+item.Item1+".anim");
     clip.SampleAnimation(demo.driver.animator.gameObject,item.Item2);var combat=actor.GetComponent<BossCombatController>();
     var definition=combat.attacks.FirstOrDefault(d=>d.kind.ToString()==item.Item1);
     sword.ApplyGripPose(item.Item1=="SwordIdle"?1:0,definition?definition.bladeRoll.Evaluate(item.Item2/clip.length):0);
+    var hands=actor.GetComponent<BossHandPose>();
+    if(hands)hands.Apply(item.Item1=="AlternatingCombo"?1:0,sword.IsDrawn||laserPose||item.Item1=="Grab"?1:0,sword.IsDrawn?1:0,sword.IsDrawn?sword.SupportWeight:0,item.Item1=="Grab"?1:0);
     if(laserPose){combat.laser.Initialize();combat.laser.Charge(.75f);if(item.Item1=="LaserFire")combat.laser.Fire(combat.laser.Origin+Quaternion.AngleAxis(-16,Vector3.up)*Vector3.forward*8); }
     // SampleAnimation changes bones immediately; bake skinning explicitly because
     // several poses are rendered in a single editor frame.
@@ -62,10 +64,12 @@ namespace AnseongSteel.Bosses.Editor
     RenderTexture.active=previous;Object.DestroyImmediate(image);target.Release();Object.DestroyImmediate(target);
     }
     foreach(var go in bakedObjects){Object.DestroyImmediate(go.GetComponent<MeshFilter>().sharedMesh);Object.DestroyImmediate(go);}
+    if(hands)hands.Restore();
    }
    Debug.Log("COMBAT POSE CAPTURE PASS");
   }
  }
 }
+
 
 

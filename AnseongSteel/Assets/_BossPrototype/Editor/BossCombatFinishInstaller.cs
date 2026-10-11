@@ -11,6 +11,12 @@ namespace AnseongSteel.Bosses.Editor
  {
   const string Root="Assets/_BossPrototype";
   public static void ApplyAndReview(){Apply();Review();}
+  public static void RebakeAndReview()
+  {
+   EditorSceneManager.OpenScene(BossModelTestBuilder.ScenePath);var c=UnityEngine.Object.FindFirstObjectByType<BossCombatController>();
+   foreach(var d in c.attacks.Where(d=>d.IsSword&&d.clip))BakeEdge(c.driver,c.sword,d);
+   AssetDatabase.SaveAssets();Review();
+  }
   public static void Review()
   {
    EditorSceneManager.OpenScene(BossModelTestBuilder.ScenePath);
@@ -63,7 +69,13 @@ namespace AnseongSteel.Bosses.Editor
   }
   static void BakeEdge(BossAnimationDriver driver,BossSwordAttachment sword,BossAttackDefinition d)
   {
-   int count=Mathf.CeilToInt(d.clip.length*120);var tips=new Vector3[count+1];var rotations=new Quaternion[count+1];
+   int count=Mathf.CeilToInt(d.clip.length*240);var tips=new Vector3[count+1];var rotations=new Quaternion[count+1];
+   Vector3 TipAt(float n)
+   {
+    d.clip.SampleAnimation(driver.animator.gameObject,Mathf.Clamp01(n)*d.clip.length);
+    var rotation=sword.rightHand.rotation*Quaternion.Euler(sword.handEuler);
+    return sword.rightHand.TransformPoint(sword.handPosition)+rotation*Vector3.down*(2.25f*(sword.rightGripY-.015f));
+   }
    for(int i=0;i<=count;i++)
    {
     d.clip.SampleAnimation(driver.animator.gameObject,d.clip.length*i/count);
@@ -74,7 +86,9 @@ namespace AnseongSteel.Bosses.Editor
    for(int i=Mathf.CeilToInt(d.windupEnd*count);i<=Mathf.FloorToInt(d.activeEnd*count);i++)
    {
     var up=rotations[i]*Vector3.up;
-    var velocity=Vector3.ProjectOnPlane(tips[Mathf.Min(count,i+1)]-tips[Mathf.Max(0,i-1)],up);
+    // Use a fixed normalized derivative window, including slow casts where
+    // a one-frame difference is too sensitive to changing sample rate.
+    var velocity=Vector3.ProjectOnPlane(TipAt((float)i/count+.002f)-TipAt((float)i/count-.002f),up);
     if(velocity.sqrMagnitude<.000001f)continue;
     float angle=Vector3.SignedAngle(rotations[i]*Vector3.right,velocity,up);
     // Both edges cut: unwrap modulo 180 to avoid unnecessary handle spins.

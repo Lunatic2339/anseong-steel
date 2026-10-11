@@ -3,7 +3,7 @@ using UnityEngine;
 namespace AnseongSteel.Bosses
 {
     public enum BossAttackKind { HeavyPunch, SwordSlash, OverheadSmash, AlternatingCombo, MissileBarrage, Grab, Feint, Shockwave, LaserSweep, EMP, SensorJam, VisionDisruption, ArmLock, WeaponBreak }
-    public enum BossCombatState { Idle, Windup, Active, Recovery, Holding, CoreExposed, Stunned, Dead }
+    public enum BossCombatState { Idle, Windup, Active, Recovery, Holding, CoreExposed, Stunned, Dead, Equipping }
     [Flags] public enum BossArm { None=0, Left=1, Right=2, Both=3 }
     [Flags] public enum BossStatus { None=0, HudDisabled=1, LeftSensorHidden=2, RightVisionDistorted=4, LeftArmDisabled=8, RightArmDisabled=16, WeaponsDisabled=32 }
     public enum BossHitResult { Miss, Hit, Blocked, Parried, Grabbed }
@@ -50,4 +50,5 @@ namespace AnseongSteel.Bosses
             damage>=0&&cooldown>=0&&windupEnd>0&&activeEnd>windupEnd&&activeEnd<1;
     }
 }
+
 

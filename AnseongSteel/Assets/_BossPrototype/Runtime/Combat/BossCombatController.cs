@@ -42,10 +42,13 @@ namespace AnseongSteel.Bosses
         float started,windup,activeTime,recovery,deadline;
         int sequence=-1;
         bool clipPlaying,legacy,previousValid;
+        BossSwordEquip equip;
+        BossAttackKind pendingAttack;
         Vector3 previousA,previousB;
         public IReadOnlyList<BossMissile> Missiles=>missiles;
         void Awake()
         {
+            equip=GetComponent<BossSwordEquip>();
             Health=maximumHealth;
             driver.MotionReset+=CancelAttack;driver.attack.ImpactChecked+=OnLegacyPunch;
             var go=new GameObject("Combat_Debug_Volume");go.transform.SetParent(transform,false);
@@ -65,6 +68,12 @@ namespace AnseongSteel.Bosses
             if(!radial&&Vector3.Angle(transform.forward,delta)>definition.facingAngle)return Reject("Face target first");
             var pattern=GetComponents<BossAttackPattern>().FirstOrDefault(p=>p.Kind==kind&&p.enabled);
             if(!pattern)return Reject("Attack module missing or disabled");
+            if(equip&&sword&&sword.IsDrawn!=definition.IsSword)
+            {
+                if(!equip.TryChange(definition.IsSword))return Reject("Equipment change unavailable");
+                pendingAttack=kind;CurrentAttack=kind;SetState(BossCombatState.Equipping);
+                LastMessage=definition.IsSword?"Drawing sword":"Sheathing sword";return true;
+            }
             clipPlaying=definition.clip&&driver.animator.HasState(0,Animator.StringToHash(definition.StateName));
             legacy=kind==BossAttackKind.HeavyPunch;
             if(legacy)
@@ -91,6 +100,11 @@ namespace AnseongSteel.Bosses
         void LateUpdate()
         {
             missiles.RemoveAll(m=>!m||m.Resolved);
+            if(State==BossCombatState.Equipping)
+            {
+                if(equip&&equip.IsBusy)return;
+                SetState(BossCombatState.Idle);TryAttack(pendingAttack);return;
+            }
             if(State==BossCombatState.Dead)return;
             if(State==BossCombatState.Holding)
             {if(!target||target.GrabbedArm==BossArm.None||Time.time>=deadline){target?.ReleaseGrab();Complete();}return;}
@@ -196,6 +210,7 @@ namespace AnseongSteel.Bosses
         }
         public void CancelAttack()
         {
+            if(equip)equip.Cancel();
             laser?.Stop();
             Generation++;foreach(var m in missiles.ToArray())if(m)m.Cancel();missiles.Clear();
             if(CoreIsExposed)CoreExposureChanged?.Invoke(false);
@@ -235,6 +250,7 @@ namespace AnseongSteel.Bosses
         void OnDestroy(){if(driver){driver.MotionReset-=CancelAttack;if(driver.attack)driver.attack.ImpactChecked-=OnLegacyPunch;}}
     }
 }
+
 
 
 

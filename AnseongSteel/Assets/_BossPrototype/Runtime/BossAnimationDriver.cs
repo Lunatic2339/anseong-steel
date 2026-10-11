@@ -67,7 +67,7 @@ namespace AnseongSteel.Bosses
                 return;
             }
             if (turning || externalAction) return;
-            if(movement.IsMoving && swordAttachment) swordAttachment.Sheathe();
+            // Equipment changes are animated by BossSwordEquip; movement must not teleport the sword.
             bool backward=Vector3.Dot(movement.TravelDirection,transform.forward)<-.1f && animator.HasState(0,Animator.StringToHash("WalkBackward"));
             PlayState(movement.IsMoving && !movement.IsJumping ? (backward?"WalkBackward":"Walk") : IdleState, 0.12f);
         }
@@ -223,6 +223,7 @@ namespace AnseongSteel.Bosses
         }
     }
 }
+
 
 
 
