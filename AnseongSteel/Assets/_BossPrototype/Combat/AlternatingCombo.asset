@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbdf73c1750925f4aa90656b218ecd94, type: 3}
+  m_Name: AlternatingCombo
+  m_EditorClassIdentifier: Assembly-CSharp::AnseongSteel.Bosses.BossAttackDefinition
+  kind: 3
+  windup: 0.8
+  active: 1.2
+  recovery: 0.7
+  cooldown: 1
+  range: 1.8
+  preferredDistance: 1.05
+  facingAngle: 75
+  damage: 12
+  requiredGuard: 3
+  status: 0
+  statusSeconds: 4
+  hitRadius: 0.18
+  coreExposureSeconds: 0
+  holdSeconds: 4
+  projectileCount: 6
+  projectileSpeed: 3
+  clip: {fileID: 7400000, guid: fc421ed5663022a498b2911d5d647dc7, type: 2}
+  bladeRoll:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  strikeTimes:
+  - 0.2
+  - 0.63
+  windupEnd: 0.14
+  activeEnd: 0.42

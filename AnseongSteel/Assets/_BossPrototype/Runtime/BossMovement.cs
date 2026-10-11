@@ -25,6 +25,7 @@ namespace AnseongSteel.Bosses
 
         // 점프도 진행 중인 이동 요청에 포함합니다.
         public bool IsMoving => mode != MovementMode.None;
+        public Vector3 TravelDirection => mode == MovementMode.Linear ? (destination-transform.position).normalized : Vector3.zero;
         public bool IsJumping => mode == MovementMode.Jump;
 
         public void MoveLeft(float distance)

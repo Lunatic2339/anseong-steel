@@ -20,7 +20,12 @@ namespace AnseongSteel.Bosses
         private bool rotationWasEnabled;
         private float punchDeadline;
         private string currentState;
-        public bool IsAttacking => punching;
+        private bool externalAction;
+        private BossSwordAttachment swordAttachment;
+        private string IdleState => swordAttachment && swordAttachment.IsDrawn && animator.HasState(0, Animator.StringToHash("SwordIdle")) ? "SwordIdle" : "Idle";
+        private bool externalMovementEnabled, externalRotationEnabled;
+        public event System.Action MotionReset;
+        public bool IsAttacking => punching || externalAction;
         public bool IsTurning => turning;
         private bool turning;
         private bool turnMovementWasEnabled;
@@ -36,6 +41,7 @@ namespace AnseongSteel.Bosses
         private void Awake()
         {
             animator.applyRootMotion = false;
+            swordAttachment=GetComponent<BossSwordAttachment>();
             // Use the actual clip duration so reimporting/replacing the clip cannot
             // leave an old serialized timeout that cuts the recovery short.
             foreach (var clip in animator.runtimeAnimatorController.animationClips)
@@ -49,7 +55,7 @@ namespace AnseongSteel.Bosses
             attack.ConfigureAnimationAttack(hitPoint, hitRadius);
         }
 
-        private void Start() => PlayState("Idle", 0f);
+        private void Start() => PlayState(IdleState, 0f);
 
         private void Update()
         {
@@ -60,13 +66,15 @@ namespace AnseongSteel.Bosses
                     OnPunchFinished();
                 return;
             }
-            if (turning) return;
-            PlayState(movement.IsMoving && !movement.IsJumping ? "Walk" : "Idle", 0.12f);
+            if (turning || externalAction) return;
+            if(movement.IsMoving && swordAttachment) swordAttachment.Sheathe();
+            bool backward=Vector3.Dot(movement.TravelDirection,transform.forward)<-.1f && animator.HasState(0,Animator.StringToHash("WalkBackward"));
+            PlayState(movement.IsMoving && !movement.IsJumping ? (backward?"WalkBackward":"Walk") : IdleState, 0.12f);
         }
 
         public bool TryPunch()
         {
-            if (!isActiveAndEnabled || punching || turning || !animator.isActiveAndEnabled ||
+            if (!isActiveAndEnabled || punching || externalAction || turning || !animator.isActiveAndEnabled ||
                 !attack.TryHeavyPunch()) return false;
             movementWasEnabled = movement.enabled;
             rotationWasEnabled = rotation.enabled;
@@ -92,19 +100,34 @@ namespace AnseongSteel.Bosses
             punching = false;
             movement.enabled = movementWasEnabled;
             rotation.enabled = rotationWasEnabled;
-            PlayState("Idle", 0.12f);
+            PlayState(IdleState, 0.12f);
         }
 
-        public void ResetMotion()
+        public void ResetMotion(float fade=0f)
         {
+            MotionReset?.Invoke();
+            EndCombatAction();
             OnPunchFinished();
             attack.CancelAttack();
             movement.StopMove();
             rotation.StopRotate();
             currentState = null;
-            PlayState("Idle", 0f);
+            PlayState(IdleState, fade);
         }
 
+        public bool TryBeginCombatAction(string state)
+        {
+            if(!isActiveAndEnabled||punching||turning||externalAction||!animator.isActiveAndEnabled)return false;
+            externalMovementEnabled=movement.enabled;externalRotationEnabled=rotation.enabled;
+            movement.StopMove();rotation.StopRotate();movement.enabled=false;rotation.enabled=false;externalAction=true;
+            currentState=null;PlayState(string.IsNullOrEmpty(state)?"Idle":state,.08f);return true;
+        }
+        public void EndCombatAction()
+        {
+            if(!externalAction)return;
+            externalAction=false;movement.enabled=externalMovementEnabled;rotation.enabled=externalRotationEnabled;
+            currentState=null;PlayState(IdleState,.12f);
+        }
         private void PlayState(string state, float fade)
         {
             if (currentState == state) return;
@@ -114,13 +137,15 @@ namespace AnseongSteel.Bosses
 
         private void OnDisable()
         {
+            MotionReset?.Invoke();
+            EndCombatAction();
             if (punching) OnPunchFinished();
             if (turning) rotation.StopRotate();
         }
 
         private bool BeginTurn(float signedAngle)
         {
-            if (!isActiveAndEnabled || punching || leftTurnDuration <= 0f || rightTurnDuration <= 0f)
+            if (!isActiveAndEnabled || punching || externalAction || leftTurnDuration <= 0f || rightTurnDuration <= 0f)
                 return false;
             turning = true;
             settlingTurn = false;
@@ -176,7 +201,7 @@ namespace AnseongSteel.Bosses
                 // Keep movement locked until the feet have blended back to Idle.
                 settlingTurn = true;
                 turnDeadline = Time.time + .28f;
-                PlayState("Idle", .28f);
+                PlayState(IdleState, .28f);
             }
         }
 
@@ -187,7 +212,7 @@ namespace AnseongSteel.Bosses
             settlingTurn = false;
             movement.enabled = turnMovementWasEnabled;
             turnRemaining = 0f;
-            PlayState("Idle", 0.28f);
+            PlayState(IdleState, 0.28f);
         }
 
         private void OnDestroy()
@@ -198,3 +223,7 @@ namespace AnseongSteel.Bosses
         }
     }
 }
+
+
+
+

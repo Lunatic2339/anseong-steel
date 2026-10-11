@@ -1,0 +1,4116 @@
+{
+  "materials": [
+    {
+      "name": "Armor_JointOriginal_p63_v020",
+      "texture": "texture-033.png",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_JointOriginal_p87_v020",
+      "texture": "texture-048.png",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p10",
+      "texture": "texture-007.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p100",
+      "texture": "texture-055.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p103",
+      "texture": "texture-056.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p105",
+      "texture": "texture-057.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p106",
+      "texture": "texture-058.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p108",
+      "texture": "texture-059.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p111",
+      "texture": "texture-060.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p114",
+      "texture": "texture-061.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p115",
+      "texture": "texture-062.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p118",
+      "texture": "texture-063.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p119",
+      "texture": "texture-064.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p120",
+      "texture": "texture-065.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p122",
+      "texture": "texture-066.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p125",
+      "texture": "texture-067.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p127",
+      "texture": "texture-068.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p128",
+      "texture": "texture-069.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p131",
+      "texture": "texture-070.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p133",
+      "texture": "texture-071.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p135",
+      "texture": "texture-072.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p137",
+      "texture": "texture-073.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p139",
+      "texture": "texture-074.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p141",
+      "texture": "texture-075.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p143",
+      "texture": "texture-076.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p145",
+      "texture": "texture-077.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p147",
+      "texture": "texture-078.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p152",
+      "texture": "texture-079.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p153",
+      "texture": "texture-080.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p155",
+      "texture": "texture-081.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p156",
+      "texture": "texture-082.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p157",
+      "texture": "texture-083.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p162",
+      "texture": "texture-084.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p163",
+      "texture": "texture-085.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p166",
+      "texture": "texture-086.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p167",
+      "texture": "texture-087.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p168",
+      "texture": "texture-088.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p169",
+      "texture": "texture-089.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p17",
+      "texture": "texture-008.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p172",
+      "texture": "texture-090.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p173",
+      "texture": "texture-091.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p174",
+      "texture": "texture-092.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p175",
+      "texture": "texture-093.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p177",
+      "texture": "texture-094.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p181",
+      "texture": "texture-095.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p183",
+      "texture": "texture-096.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p184",
+      "texture": "texture-097.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p186",
+      "texture": "texture-098.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p188",
+      "texture": "texture-099.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p189",
+      "texture": "texture-100.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p19",
+      "texture": "texture-009.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p190",
+      "texture": "texture-101.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p191",
+      "texture": "texture-102.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p192",
+      "texture": "texture-103.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p193",
+      "texture": "texture-104.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p197",
+      "texture": "texture-105.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p198",
+      "texture": "texture-106.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p2",
+      "texture": "texture-000.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p20",
+      "texture": "texture-010.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p200",
+      "texture": "texture-107.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p201",
+      "texture": "texture-108.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p202",
+      "texture": "texture-109.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p204",
+      "texture": "texture-110.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p205",
+      "texture": "texture-111.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p208",
+      "texture": "texture-112.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p209",
+      "texture": "texture-113.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p215",
+      "texture": "texture-114.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p22",
+      "texture": "texture-011.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p229",
+      "texture": "texture-115.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p230",
+      "texture": "texture-116.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p231",
+      "texture": "texture-117.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p232",
+      "texture": "texture-118.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p233",
+      "texture": "texture-119.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p234",
+      "texture": "texture-120.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p235",
+      "texture": "texture-121.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p25",
+      "texture": "texture-012.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p27",
+      "texture": "texture-013.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p28",
+      "texture": "texture-014.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p30",
+      "texture": "texture-015.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p31",
+      "texture": "texture-016.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p33",
+      "texture": "texture-017.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p34",
+      "texture": "texture-018.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p35",
+      "texture": "texture-019.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p38",
+      "texture": "texture-020.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p39",
+      "texture": "texture-021.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p4",
+      "texture": "texture-001.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p40",
+      "texture": "texture-022.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p43",
+      "texture": "texture-023.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p44",
+      "texture": "texture-024.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p46",
+      "texture": "texture-025.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p47",
+      "texture": "texture-026.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p5",
+      "texture": "texture-002.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p52",
+      "texture": "texture-027.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p54",
+      "texture": "texture-028.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p56",
+      "texture": "texture-029.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p57",
+      "texture": "texture-030.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p6",
+      "texture": "texture-003.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p60",
+      "texture": "texture-031.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p62",
+      "texture": "texture-032.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p64",
+      "texture": "texture-034.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p65",
+      "texture": "texture-035.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p66",
+      "texture": "texture-036.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p68",
+      "texture": "texture-037.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p7",
+      "texture": "texture-004.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p70",
+      "texture": "texture-038.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p71",
+      "texture": "texture-039.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p72",
+      "texture": "texture-040.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p74",
+      "texture": "texture-041.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p75",
+      "texture": "texture-042.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p77",
+      "texture": "texture-043.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p8",
+      "texture": "texture-005.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p80",
+      "texture": "texture-044.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p83",
+      "texture": "texture-045.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p84",
+      "texture": "texture-046.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p85",
+      "texture": "texture-047.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p88",
+      "texture": "texture-049.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p89",
+      "texture": "texture-050.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p9",
+      "texture": "texture-006.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p91",
+      "texture": "texture-051.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p93",
+      "texture": "texture-052.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p95",
+      "texture": "texture-053.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Armor_OriginalResolution_p97",
+      "texture": "texture-054.png",
+      "color": [
+        0.20000000298023224,
+        0.20000000298023224,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "RED_Emission_Floor_Only",
+      "texture": "",
+      "color": [
+        0.6200000047683716,
+        0.006000000052154064,
+        0.012000000104308128,
+        1.0
+      ],
+      "metallic": 0.10000000149011612,
+      "roughness": 0.4000000059604645,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    },
+    {
+      "name": "Ring_Metal_Frame",
+      "texture": "",
+      "color": [
+        0.08500000089406967,
+        0.0949999988079071,
+        0.11500000208616257,
+        1.0
+      ],
+      "metallic": 0.25,
+      "roughness": 0.6499999761581421,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "strength": 0.0
+    }
+  ],
+  "objects": [
+    {
+      "name": "ARMOR_p0_i1.C",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "ARMOR_p100_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p100"
+      ]
+    },
+    {
+      "name": "ARMOR_p100_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p100"
+      ]
+    },
+    {
+      "name": "ARMOR_p103_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p103"
+      ]
+    },
+    {
+      "name": "ARMOR_p103_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p103"
+      ]
+    },
+    {
+      "name": "ARMOR_p104_i1.L",
+      "materials": [
+        "Armor_JointOriginal_p63_v020"
+      ]
+    },
+    {
+      "name": "ARMOR_p104_i1.R",
+      "materials": [
+        "Armor_JointOriginal_p63_v020"
+      ]
+    },
+    {
+      "name": "ARMOR_p105_i1.C",
+      "materials": [
+        "Armor_OriginalResolution_p105"
+      ]
+    },
+    {
+      "name": "ARMOR_p106_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p106"
+      ]
+    },
+    {
+      "name": "ARMOR_p106_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p106"
+      ]
+    },
+    {
+      "name": "ARMOR_p108_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p108"
+      ]
+    },
+    {
+      "name": "ARMOR_p108_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p108"
+      ]
+    },
+    {
+      "name": "ARMOR_p10_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p10"
+      ]
+    },
+    {
+      "name": "ARMOR_p10_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p10"
+      ]
+    },
+    {
+      "name": "ARMOR_p111_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p111"
+      ]
+    },
+    {
+      "name": "ARMOR_p111_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p111"
+      ]
+    },
+    {
+      "name": "ARMOR_p114_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p114"
+      ]
+    },
+    {
+      "name": "ARMOR_p114_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p114"
+      ]
+    },
+    {
+      "name": "ARMOR_p115_i1.C",
+      "materials": [
+        "Armor_OriginalResolution_p115"
+      ]
+    },
+    {
+      "name": "ARMOR_p118_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p118"
+      ]
+    },
+    {
+      "name": "ARMOR_p118_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p118"
+      ]
+    },
+    {
+      "name": "ARMOR_p119_i1.C",
+      "materials": [
+        "Armor_OriginalResolution_p119"
+      ]
+    },
+    {
+      "name": "ARMOR_p120_i1.C",
+      "materials": [
+        "Armor_OriginalResolution_p120"
+      ]
+    },
+    {
+      "name": "ARMOR_p122_i1.C",
+      "materials": [
+        "Armor_OriginalResolution_p122"
+      ]
+    },
+    {
+      "name": "ARMOR_p125_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p125"
+      ]
+    },
+    {
+      "name": "ARMOR_p125_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p125"
+      ]
+    },
+    {
+      "name": "ARMOR_p127_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p127",
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "ARMOR_p127_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p127",
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "ARMOR_p128_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p128"
+      ]
+    },
+    {
+      "name": "ARMOR_p128_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p128"
+      ]
+    },
+    {
+      "name": "ARMOR_p131_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p131",
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "ARMOR_p131_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p131",
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "ARMOR_p133_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p133"
+      ]
+    },
+    {
+      "name": "ARMOR_p133_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p133"
+      ]
+    },
+    {
+      "name": "ARMOR_p135_i1.C",
+      "materials": [
+        "Armor_OriginalResolution_p135"
+      ]
+    },
+    {
+      "name": "ARMOR_p137_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p137"
+      ]
+    },
+    {
+      "name": "ARMOR_p137_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p137"
+      ]
+    },
+    {
+      "name": "ARMOR_p139_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p139"
+      ]
+    },
+    {
+      "name": "ARMOR_p139_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p139"
+      ]
+    },
+    {
+      "name": "ARMOR_p141_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p141"
+      ]
+    },
+    {
+      "name": "ARMOR_p141_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p141"
+      ]
+    },
+    {
+      "name": "ARMOR_p143_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p143"
+      ]
+    },
+    {
+      "name": "ARMOR_p143_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p143"
+      ]
+    },
+    {
+      "name": "ARMOR_p145_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p145"
+      ]
+    },
+    {
+      "name": "ARMOR_p145_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p145"
+      ]
+    },
+    {
+      "name": "ARMOR_p147_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p147"
+      ]
+    },
+    {
+      "name": "ARMOR_p147_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p147"
+      ]
+    },
+    {
+      "name": "ARMOR_p152_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p152"
+      ]
+    },
+    {
+      "name": "ARMOR_p152_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p152"
+      ]
+    },
+    {
+      "name": "ARMOR_p153_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p153"
+      ]
+    },
+    {
+      "name": "ARMOR_p153_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p153"
+      ]
+    },
+    {
+      "name": "ARMOR_p155_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p155"
+      ]
+    },
+    {
+      "name": "ARMOR_p155_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p155"
+      ]
+    },
+    {
+      "name": "ARMOR_p156_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p156"
+      ]
+    },
+    {
+      "name": "ARMOR_p156_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p156"
+      ]
+    },
+    {
+      "name": "ARMOR_p157_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p157"
+      ]
+    },
+    {
+      "name": "ARMOR_p157_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p157"
+      ]
+    },
+    {
+      "name": "ARMOR_p162_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p162"
+      ]
+    },
+    {
+      "name": "ARMOR_p162_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p162"
+      ]
+    },
+    {
+      "name": "ARMOR_p163_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p163"
+      ]
+    },
+    {
+      "name": "ARMOR_p163_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p163"
+      ]
+    },
+    {
+      "name": "ARMOR_p166_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p166"
+      ]
+    },
+    {
+      "name": "ARMOR_p166_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p166"
+      ]
+    },
+    {
+      "name": "ARMOR_p167_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p167"
+      ]
+    },
+    {
+      "name": "ARMOR_p167_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p167"
+      ]
+    },
+    {
+      "name": "ARMOR_p168_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p168"
+      ]
+    },
+    {
+      "name": "ARMOR_p168_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p168"
+      ]
+    },
+    {
+      "name": "ARMOR_p169_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p169"
+      ]
+    },
+    {
+      "name": "ARMOR_p169_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p169"
+      ]
+    },
+    {
+      "name": "ARMOR_p172_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p172"
+      ]
+    },
+    {
+      "name": "ARMOR_p172_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p172"
+      ]
+    },
+    {
+      "name": "ARMOR_p173_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p173"
+      ]
+    },
+    {
+      "name": "ARMOR_p173_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p173"
+      ]
+    },
+    {
+      "name": "ARMOR_p174_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p174"
+      ]
+    },
+    {
+      "name": "ARMOR_p174_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p174"
+      ]
+    },
+    {
+      "name": "ARMOR_p175_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p175"
+      ]
+    },
+    {
+      "name": "ARMOR_p175_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p175"
+      ]
+    },
+    {
+      "name": "ARMOR_p177_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p177"
+      ]
+    },
+    {
+      "name": "ARMOR_p177_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p177"
+      ]
+    },
+    {
+      "name": "ARMOR_p17_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p17"
+      ]
+    },
+    {
+      "name": "ARMOR_p17_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p17"
+      ]
+    },
+    {
+      "name": "ARMOR_p181_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p181"
+      ]
+    },
+    {
+      "name": "ARMOR_p181_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p181"
+      ]
+    },
+    {
+      "name": "ARMOR_p183_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p183"
+      ]
+    },
+    {
+      "name": "ARMOR_p183_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p183"
+      ]
+    },
+    {
+      "name": "ARMOR_p184_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p184"
+      ]
+    },
+    {
+      "name": "ARMOR_p184_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p184"
+      ]
+    },
+    {
+      "name": "ARMOR_p186_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p186"
+      ]
+    },
+    {
+      "name": "ARMOR_p186_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p186"
+      ]
+    },
+    {
+      "name": "ARMOR_p188_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p188"
+      ]
+    },
+    {
+      "name": "ARMOR_p188_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p188"
+      ]
+    },
+    {
+      "name": "ARMOR_p189_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p189"
+      ]
+    },
+    {
+      "name": "ARMOR_p189_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p189"
+      ]
+    },
+    {
+      "name": "ARMOR_p190_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p190"
+      ]
+    },
+    {
+      "name": "ARMOR_p190_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p190"
+      ]
+    },
+    {
+      "name": "ARMOR_p191_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p191"
+      ]
+    },
+    {
+      "name": "ARMOR_p191_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p191"
+      ]
+    },
+    {
+      "name": "ARMOR_p192_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p192"
+      ]
+    },
+    {
+      "name": "ARMOR_p192_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p192"
+      ]
+    },
+    {
+      "name": "ARMOR_p193_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p193"
+      ]
+    },
+    {
+      "name": "ARMOR_p193_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p193"
+      ]
+    },
+    {
+      "name": "ARMOR_p197_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p197"
+      ]
+    },
+    {
+      "name": "ARMOR_p197_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p197"
+      ]
+    },
+    {
+      "name": "ARMOR_p198_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p198"
+      ]
+    },
+    {
+      "name": "ARMOR_p198_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p198"
+      ]
+    },
+    {
+      "name": "ARMOR_p19_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p19"
+      ]
+    },
+    {
+      "name": "ARMOR_p19_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p19"
+      ]
+    },
+    {
+      "name": "ARMOR_p200_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p200"
+      ]
+    },
+    {
+      "name": "ARMOR_p200_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p200"
+      ]
+    },
+    {
+      "name": "ARMOR_p201_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p201"
+      ]
+    },
+    {
+      "name": "ARMOR_p201_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p201"
+      ]
+    },
+    {
+      "name": "ARMOR_p202_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p202"
+      ]
+    },
+    {
+      "name": "ARMOR_p202_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p202"
+      ]
+    },
+    {
+      "name": "ARMOR_p204_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p204"
+      ]
+    },
+    {
+      "name": "ARMOR_p204_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p204"
+      ]
+    },
+    {
+      "name": "ARMOR_p205_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p205"
+      ]
+    },
+    {
+      "name": "ARMOR_p205_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p205"
+      ]
+    },
+    {
+      "name": "ARMOR_p208_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p208"
+      ]
+    },
+    {
+      "name": "ARMOR_p208_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p208"
+      ]
+    },
+    {
+      "name": "ARMOR_p209_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p209"
+      ]
+    },
+    {
+      "name": "ARMOR_p209_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p209"
+      ]
+    },
+    {
+      "name": "ARMOR_p20_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p20"
+      ]
+    },
+    {
+      "name": "ARMOR_p20_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p20"
+      ]
+    },
+    {
+      "name": "ARMOR_p215_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p215"
+      ]
+    },
+    {
+      "name": "ARMOR_p215_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p215"
+      ]
+    },
+    {
+      "name": "ARMOR_p22_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p22"
+      ]
+    },
+    {
+      "name": "ARMOR_p22_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p22"
+      ]
+    },
+    {
+      "name": "ARMOR_p233_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p229"
+      ]
+    },
+    {
+      "name": "ARMOR_p233_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p229"
+      ]
+    },
+    {
+      "name": "ARMOR_p234_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p230"
+      ]
+    },
+    {
+      "name": "ARMOR_p234_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p230"
+      ]
+    },
+    {
+      "name": "ARMOR_p236_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p231"
+      ]
+    },
+    {
+      "name": "ARMOR_p236_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p231"
+      ]
+    },
+    {
+      "name": "ARMOR_p237_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p232"
+      ]
+    },
+    {
+      "name": "ARMOR_p237_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p232"
+      ]
+    },
+    {
+      "name": "ARMOR_p240_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p233"
+      ]
+    },
+    {
+      "name": "ARMOR_p240_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p233"
+      ]
+    },
+    {
+      "name": "ARMOR_p241_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p234"
+      ]
+    },
+    {
+      "name": "ARMOR_p241_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p234"
+      ]
+    },
+    {
+      "name": "ARMOR_p242_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p235"
+      ]
+    },
+    {
+      "name": "ARMOR_p242_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p235"
+      ]
+    },
+    {
+      "name": "ARMOR_p25_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p25",
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "ARMOR_p25_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p25",
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "ARMOR_p27_i2.L",
+      "materials": [
+        "Armor_OriginalResolution_p27"
+      ]
+    },
+    {
+      "name": "ARMOR_p27_i2.R",
+      "materials": [
+        "Armor_OriginalResolution_p27"
+      ]
+    },
+    {
+      "name": "ARMOR_p28_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p28"
+      ]
+    },
+    {
+      "name": "ARMOR_p28_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p28"
+      ]
+    },
+    {
+      "name": "ARMOR_p2_i2.L",
+      "materials": [
+        "Armor_OriginalResolution_p2"
+      ]
+    },
+    {
+      "name": "ARMOR_p2_i2.R",
+      "materials": [
+        "Armor_OriginalResolution_p2"
+      ]
+    },
+    {
+      "name": "ARMOR_p30_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p30"
+      ]
+    },
+    {
+      "name": "ARMOR_p30_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p30"
+      ]
+    },
+    {
+      "name": "ARMOR_p31_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p31"
+      ]
+    },
+    {
+      "name": "ARMOR_p31_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p31"
+      ]
+    },
+    {
+      "name": "ARMOR_p33_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p33"
+      ]
+    },
+    {
+      "name": "ARMOR_p33_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p33"
+      ]
+    },
+    {
+      "name": "ARMOR_p34_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p34"
+      ]
+    },
+    {
+      "name": "ARMOR_p34_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p34"
+      ]
+    },
+    {
+      "name": "ARMOR_p35_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p35"
+      ]
+    },
+    {
+      "name": "ARMOR_p35_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p35"
+      ]
+    },
+    {
+      "name": "ARMOR_p38_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p38"
+      ]
+    },
+    {
+      "name": "ARMOR_p38_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p38"
+      ]
+    },
+    {
+      "name": "ARMOR_p39_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p39"
+      ]
+    },
+    {
+      "name": "ARMOR_p39_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p39"
+      ]
+    },
+    {
+      "name": "ARMOR_p40_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p40"
+      ]
+    },
+    {
+      "name": "ARMOR_p40_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p40"
+      ]
+    },
+    {
+      "name": "ARMOR_p43_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p43"
+      ]
+    },
+    {
+      "name": "ARMOR_p43_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p43"
+      ]
+    },
+    {
+      "name": "ARMOR_p44_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p44"
+      ]
+    },
+    {
+      "name": "ARMOR_p44_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p44"
+      ]
+    },
+    {
+      "name": "ARMOR_p46_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p46"
+      ]
+    },
+    {
+      "name": "ARMOR_p46_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p46"
+      ]
+    },
+    {
+      "name": "ARMOR_p47_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p47"
+      ]
+    },
+    {
+      "name": "ARMOR_p47_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p47"
+      ]
+    },
+    {
+      "name": "ARMOR_p4_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p4"
+      ]
+    },
+    {
+      "name": "ARMOR_p4_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p4"
+      ]
+    },
+    {
+      "name": "ARMOR_p52_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p52"
+      ]
+    },
+    {
+      "name": "ARMOR_p52_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p52"
+      ]
+    },
+    {
+      "name": "ARMOR_p54_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p54"
+      ]
+    },
+    {
+      "name": "ARMOR_p54_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p54"
+      ]
+    },
+    {
+      "name": "ARMOR_p56_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p56"
+      ]
+    },
+    {
+      "name": "ARMOR_p56_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p56"
+      ]
+    },
+    {
+      "name": "ARMOR_p57_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p57"
+      ]
+    },
+    {
+      "name": "ARMOR_p57_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p57"
+      ]
+    },
+    {
+      "name": "ARMOR_p5_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p5"
+      ]
+    },
+    {
+      "name": "ARMOR_p5_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p5"
+      ]
+    },
+    {
+      "name": "ARMOR_p60_i1.C",
+      "materials": [
+        "Armor_OriginalResolution_p60"
+      ]
+    },
+    {
+      "name": "ARMOR_p62_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p62"
+      ]
+    },
+    {
+      "name": "ARMOR_p62_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p62"
+      ]
+    },
+    {
+      "name": "ARMOR_p64_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p64"
+      ]
+    },
+    {
+      "name": "ARMOR_p64_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p64"
+      ]
+    },
+    {
+      "name": "ARMOR_p65_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p65"
+      ]
+    },
+    {
+      "name": "ARMOR_p65_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p65"
+      ]
+    },
+    {
+      "name": "ARMOR_p66_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p66"
+      ]
+    },
+    {
+      "name": "ARMOR_p66_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p66"
+      ]
+    },
+    {
+      "name": "ARMOR_p68_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p68"
+      ]
+    },
+    {
+      "name": "ARMOR_p68_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p68"
+      ]
+    },
+    {
+      "name": "ARMOR_p6_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p6"
+      ]
+    },
+    {
+      "name": "ARMOR_p6_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p6"
+      ]
+    },
+    {
+      "name": "ARMOR_p6_i2.L",
+      "materials": [
+        "Armor_OriginalResolution_p6"
+      ]
+    },
+    {
+      "name": "ARMOR_p6_i2.R",
+      "materials": [
+        "Armor_OriginalResolution_p6"
+      ]
+    },
+    {
+      "name": "ARMOR_p70_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p70"
+      ]
+    },
+    {
+      "name": "ARMOR_p70_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p70"
+      ]
+    },
+    {
+      "name": "ARMOR_p71_i1.C",
+      "materials": [
+        "Armor_OriginalResolution_p71"
+      ]
+    },
+    {
+      "name": "ARMOR_p72_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p72"
+      ]
+    },
+    {
+      "name": "ARMOR_p72_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p72"
+      ]
+    },
+    {
+      "name": "ARMOR_p74_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p74"
+      ]
+    },
+    {
+      "name": "ARMOR_p74_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p74"
+      ]
+    },
+    {
+      "name": "ARMOR_p75_i1.C",
+      "materials": [
+        "Armor_OriginalResolution_p75"
+      ]
+    },
+    {
+      "name": "ARMOR_p77_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p77"
+      ]
+    },
+    {
+      "name": "ARMOR_p77_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p77"
+      ]
+    },
+    {
+      "name": "ARMOR_p7_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p7"
+      ]
+    },
+    {
+      "name": "ARMOR_p7_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p7"
+      ]
+    },
+    {
+      "name": "ARMOR_p80_i1.C",
+      "materials": [
+        "Armor_OriginalResolution_p80",
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "ARMOR_p83_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p83"
+      ]
+    },
+    {
+      "name": "ARMOR_p83_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p83"
+      ]
+    },
+    {
+      "name": "ARMOR_p84_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p84"
+      ]
+    },
+    {
+      "name": "ARMOR_p84_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p84"
+      ]
+    },
+    {
+      "name": "ARMOR_p85_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p85"
+      ]
+    },
+    {
+      "name": "ARMOR_p85_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p85"
+      ]
+    },
+    {
+      "name": "ARMOR_p88_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p88"
+      ]
+    },
+    {
+      "name": "ARMOR_p88_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p88"
+      ]
+    },
+    {
+      "name": "ARMOR_p89_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p89"
+      ]
+    },
+    {
+      "name": "ARMOR_p89_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p89"
+      ]
+    },
+    {
+      "name": "ARMOR_p8_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p8"
+      ]
+    },
+    {
+      "name": "ARMOR_p8_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p8"
+      ]
+    },
+    {
+      "name": "ARMOR_p91_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p91"
+      ]
+    },
+    {
+      "name": "ARMOR_p91_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p91"
+      ]
+    },
+    {
+      "name": "ARMOR_p93_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p93"
+      ]
+    },
+    {
+      "name": "ARMOR_p93_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p93"
+      ]
+    },
+    {
+      "name": "ARMOR_p95_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p95"
+      ]
+    },
+    {
+      "name": "ARMOR_p95_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p95"
+      ]
+    },
+    {
+      "name": "ARMOR_p97_i1.L",
+      "materials": [
+        "Armor_OriginalResolution_p97"
+      ]
+    },
+    {
+      "name": "ARMOR_p97_i1.R",
+      "materials": [
+        "Armor_OriginalResolution_p97"
+      ]
+    },
+    {
+      "name": "ARMOR_p98_i1.L",
+      "materials": [
+        "Armor_JointOriginal_p87_v020"
+      ]
+    },
+    {
+      "name": "ARMOR_p98_i1.R",
+      "materials": [
+        "Armor_JointOriginal_p87_v020"
+      ]
+    },
+    {
+      "name": "ARMOR_p9_i1.C",
+      "materials": [
+        "Armor_OriginalResolution_p9",
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "HOUSING_Chest_Triangle_Walls_And_Rim_p9_i1.C",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Forearm_Back_Walls_And_Rim_p95_i1.L",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Forearm_Back_Walls_And_Rim_p95_i1.R",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Forearm_Front_Walls_And_Rim_p95_i1.L",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Forearm_Front_Walls_And_Rim_p95_i1.R",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Knee_Inner_Walls_And_Rim_p125_i1.L",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Knee_Inner_Walls_And_Rim_p125_i1.R",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Knee_Lower_Walls_And_Rim_p125_i1.L",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Knee_Lower_Walls_And_Rim_p125_i1.R",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Knee_Outer_Walls_And_Rim_p125_i1.L",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Knee_Outer_Walls_And_Rim_p125_i1.R",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Shin_Inner_Walls_And_Rim_p20_i1.L",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Shin_Inner_Walls_And_Rim_p20_i1.R",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Shin_Outer_Walls_And_Rim_p20_i1.L",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Shin_Outer_Walls_And_Rim_p20_i1.R",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Shoulder_Back_Walls_And_Rim_p33_i1.L",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Shoulder_Back_Walls_And_Rim_p33_i1.R",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Shoulder_Front_Walls_And_Rim_p33_i1.L",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Shoulder_Front_Walls_And_Rim_p33_i1.R",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Toe_Inner_Walls_And_Rim_p133_i1.L",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Toe_Inner_Walls_And_Rim_p133_i1.R",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Toe_Outer_Walls_And_Rim_p133_i1.L",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Toe_Outer_Walls_And_Rim_p133_i1.R",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Upperarm_Walls_And_Rim_p28_i1.L",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Upperarm_Walls_And_Rim_p28_i1.R",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Visor_Walls_And_Rim_p119_i1.C",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "HOUSING_Visor_Walls_And_Rim_p60_i1.C",
+      "materials": [
+        "Ring_Metal_Frame"
+      ]
+    },
+    {
+      "name": "RED_Chest_Triangle_Floor_p9_i1.C",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Forearm_Back_Floor_p95_i1.L",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Forearm_Back_Floor_p95_i1.R",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Forearm_Front_Floor_p95_i1.L",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Forearm_Front_Floor_p95_i1.R",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Knee_Inner_Floor_p125_i1.L",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Knee_Inner_Floor_p125_i1.R",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Knee_Lower_Floor_p125_i1.L",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Knee_Lower_Floor_p125_i1.R",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Knee_Outer_Floor_p125_i1.L",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Knee_Outer_Floor_p125_i1.R",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Ring_Back_Floor_p0_i1.C",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Ring_Front_Floor_p0_i1.C",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Shin_Inner_Floor_p20_i1.L",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Shin_Inner_Floor_p20_i1.R",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Shin_Outer_Floor_p20_i1.L",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Shin_Outer_Floor_p20_i1.R",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Shoulder_Back_Floor_p33_i1.L",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Shoulder_Back_Floor_p33_i1.R",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Shoulder_Front_Floor_p33_i1.L",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Shoulder_Front_Floor_p33_i1.R",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Toe_Inner_Floor_p133_i1.L",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Toe_Inner_Floor_p133_i1.R",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Toe_Outer_Floor_p133_i1.L",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Toe_Outer_Floor_p133_i1.R",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Upperarm_Floor_p28_i1.L",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Upperarm_Floor_p28_i1.R",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    },
+    {
+      "name": "RED_Visor_Floor_p119_i1.C",
+      "materials": [
+        "RED_Emission_Floor_Only"
+      ]
+    }
+  ]
+}

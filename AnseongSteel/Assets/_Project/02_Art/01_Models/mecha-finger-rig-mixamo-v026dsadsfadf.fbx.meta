@@ -1,0 +1,731 @@
+fileFormatVersion: 2
+guid: ac0ae18012ff00c47b76eb05f2d569b6
+ModelImporter:
+  serializedVersion: 24300
+  internalIDToNameTable: []
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_JointOriginal_p63_v020
+    second: {fileID: 2100000, guid: 86e2fde17b5926742a0b7a31500ede91, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_JointOriginal_p87_v020
+    second: {fileID: 2100000, guid: 5089b4f20a86fb345881cfced68a2729, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p10
+    second: {fileID: 2100000, guid: 98f1eca9c13167a45ad8bb41e8584115, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p100
+    second: {fileID: 2100000, guid: b4562294702f9364cb0ad73d23b90b37, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p103
+    second: {fileID: 2100000, guid: a35a4a710a98b414b9fab3b474af4354, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p105
+    second: {fileID: 2100000, guid: a13602915e7997341ac16c11b7781a1e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p106
+    second: {fileID: 2100000, guid: a2c107a3258b0c54eb0089c7535fbbf4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p108
+    second: {fileID: 2100000, guid: 38449a44d348e8d4fab9116fa5af2fb5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p111
+    second: {fileID: 2100000, guid: e5619c123dd41894789b4e859b4573e1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p114
+    second: {fileID: 2100000, guid: 6d7ec58787366374c9585554e8eac08f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p115
+    second: {fileID: 2100000, guid: d4c9e952e5560954ebca7c8217e8ed68, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p118
+    second: {fileID: 2100000, guid: 518f5585779ae034dbef6487be44ae70, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p119
+    second: {fileID: 2100000, guid: 9ed2db27ed04e85438e82ff12ca0c018, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p120
+    second: {fileID: 2100000, guid: 6090813d3f4831c47ac428e38d91dff4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p122
+    second: {fileID: 2100000, guid: 2fb3bf80aee50534eaff4ed6f409559b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p125
+    second: {fileID: 2100000, guid: f31f529d1e2294347b039fa9a54182e9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p127
+    second: {fileID: 2100000, guid: 2b2ee1a8d551c73419558e6dc5ef9c50, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p128
+    second: {fileID: 2100000, guid: d44adecf133203a4aa2393b4fa5ad2c8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p131
+    second: {fileID: 2100000, guid: 28d6654db4faded49bf1abbc36aa91e6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p133
+    second: {fileID: 2100000, guid: b8f154578f6e6634f9e8d550367b190f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p135
+    second: {fileID: 2100000, guid: 9988539eb610a2a45af6b55d4bb00d6a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p137
+    second: {fileID: 2100000, guid: ed29be061c32aa64ea2c999d620442bf, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p139
+    second: {fileID: 2100000, guid: 1cea3dde45cf7a04f93edd6626f445f8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p141
+    second: {fileID: 2100000, guid: 43be160620e2456429d489569b961367, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p143
+    second: {fileID: 2100000, guid: 2bef977490686fa4bb6df7394e4820e5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p145
+    second: {fileID: 2100000, guid: ffe276fd2e0155e4ea06c881487ddce0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p147
+    second: {fileID: 2100000, guid: 3c6e8bdf2006ae64382c21efa9e66ec4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p152
+    second: {fileID: 2100000, guid: 72fd5db7c9c372046805c603a9dfa62d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p153
+    second: {fileID: 2100000, guid: a8b396c31338d4a4cbbf9abfd93fe04e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p155
+    second: {fileID: 2100000, guid: e4496bb452252c641acec7898577f0cb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p156
+    second: {fileID: 2100000, guid: 261aae304e41acf4cb47c6eb5ae92317, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p157
+    second: {fileID: 2100000, guid: a706215823acbd842b95f46f2881970f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p162
+    second: {fileID: 2100000, guid: 6f286761ad968d74fb461084123c4b32, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p163
+    second: {fileID: 2100000, guid: 8456cfc8c2e463046924025aa8bebeae, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p166
+    second: {fileID: 2100000, guid: 86580c338b32004469891cc343dac89e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p167
+    second: {fileID: 2100000, guid: 4af2f990bdede6d44a9ff9ec94f5b985, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p168
+    second: {fileID: 2100000, guid: ff05104962e118d459c475c7b637f658, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p169
+    second: {fileID: 2100000, guid: 956b1a51447c4f840917de6362649d2f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p17
+    second: {fileID: 2100000, guid: 9f7bd90a04d6b7441a26f1ad624db780, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p172
+    second: {fileID: 2100000, guid: 1a446a52c3069a841a4ba0980872d55f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p173
+    second: {fileID: 2100000, guid: a7c56b928090b6c448466ff37d0653bb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p174
+    second: {fileID: 2100000, guid: 6f4d818b2d1e94b4fa2d5475160d53eb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p175
+    second: {fileID: 2100000, guid: ea1021960666ca64d91f6eabf3ea0621, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p177
+    second: {fileID: 2100000, guid: a45dd03b1cd6cc14d9f5b00a1cc6779d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p181
+    second: {fileID: 2100000, guid: 0fe29bad5c2c2584e87e726281e55a7c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p183
+    second: {fileID: 2100000, guid: 3b739581804d3504296f21d3e34f6e5b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p184
+    second: {fileID: 2100000, guid: 8f35a5e923355814991530ef261be665, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p186
+    second: {fileID: 2100000, guid: ce3e08d679542544698e2b0f4a395a3c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p188
+    second: {fileID: 2100000, guid: 1d718a612cc42464490a5db85bc0226d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p189
+    second: {fileID: 2100000, guid: 85bf62a49a7eebd4ab35145cd1fbb989, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p19
+    second: {fileID: 2100000, guid: 38239e31ba17be3479953dae7848fbc2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p190
+    second: {fileID: 2100000, guid: 1e3c871cacad14a44a2487fb4bfc6343, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p191
+    second: {fileID: 2100000, guid: 11683bf53868a5b4ca4cf1038606d931, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p192
+    second: {fileID: 2100000, guid: 1c6abd9d822cbd74d84f7eb1375652f8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p193
+    second: {fileID: 2100000, guid: 43fed84304cd97c43b61d7674db8d4fb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p197
+    second: {fileID: 2100000, guid: 8aeb07324e04b3a419e67705de96476b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p198
+    second: {fileID: 2100000, guid: f5309a73f50b6e9488fda74cf58e38eb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p2
+    second: {fileID: 2100000, guid: 86c4e2cc88003434eb493e36852983fd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p20
+    second: {fileID: 2100000, guid: fa129026e68af0c43a78b083aaf2dfbb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p200
+    second: {fileID: 2100000, guid: a20fb6454c07b9249b6c30caad058540, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p201
+    second: {fileID: 2100000, guid: 84ec9df348d82c04196e05e7297c24d9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p202
+    second: {fileID: 2100000, guid: 1aaff9f9ac2a2a6468f4d6c2aef8e101, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p204
+    second: {fileID: 2100000, guid: e026b9d71d62e454580fa3c5d90cf7c2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p205
+    second: {fileID: 2100000, guid: 748acee36b529014e92e7ad6904b5de8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p208
+    second: {fileID: 2100000, guid: f3c673aae353bc14bba8dd5af20b21ef, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p209
+    second: {fileID: 2100000, guid: 83bb6a8573ba78f4396e82c21db84190, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p215
+    second: {fileID: 2100000, guid: 8059ec3bb86418a4cb86e1565cd36fb3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p22
+    second: {fileID: 2100000, guid: 5ed9fda685d64c2459ee89d335e02bcf, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p229
+    second: {fileID: 2100000, guid: 6f5fcd4bb818789459ee3bdecf73a285, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p230
+    second: {fileID: 2100000, guid: 52d54f74f6988d14f9102ffef0566ea5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p231
+    second: {fileID: 2100000, guid: 3cdde3f6afeec3a4f80cf218868379e0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p232
+    second: {fileID: 2100000, guid: b0529029c5e840241bb386cdbb240c32, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p233
+    second: {fileID: 2100000, guid: 8419c810d0b2d914c9ca16ceada24c57, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p234
+    second: {fileID: 2100000, guid: 7f6871d15871b0347a25f670755d125d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p235
+    second: {fileID: 2100000, guid: 928343d957fa5dc47b7f60f68ef18d21, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p25
+    second: {fileID: 2100000, guid: ca6b931314bacc54e9d94a4433b8bacb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p27
+    second: {fileID: 2100000, guid: cc16c642293257d438c065eefcda23f8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p28
+    second: {fileID: 2100000, guid: fc4eebfdd0ddb1d449ba4523db7a55a6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p30
+    second: {fileID: 2100000, guid: 881e682583872f44195845be16519d2a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p31
+    second: {fileID: 2100000, guid: 360422378435363488c63259451a18b1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p33
+    second: {fileID: 2100000, guid: a655db8a01076a940b9d97cc4487fd7f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p34
+    second: {fileID: 2100000, guid: 02bbfc0098ac4c340b2969540a6dc8ab, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p35
+    second: {fileID: 2100000, guid: f993988530f95c0478ad9c9050f1e8fe, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p38
+    second: {fileID: 2100000, guid: 02d99f11df9f5d84090d8d0badd77ab6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p39
+    second: {fileID: 2100000, guid: ba84d693f8a093f4f945ce2d3b2ef97c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p4
+    second: {fileID: 2100000, guid: 1a659ec5325a3fb478b2e599058fe221, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p40
+    second: {fileID: 2100000, guid: cea7450d7ed0fe64fad1ad61edbd9ad9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p43
+    second: {fileID: 2100000, guid: c1aa7ce001194834fb14d64be3da56bf, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p44
+    second: {fileID: 2100000, guid: 93ff6d34ed2c5df45a637170efafcd62, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p46
+    second: {fileID: 2100000, guid: b1a4ad043e9ad69419cdabb47fc5eb69, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p47
+    second: {fileID: 2100000, guid: 98a26d1cd9f0d27428d526f76e4e726d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p5
+    second: {fileID: 2100000, guid: 50ecc8df2b984d944ae6c6f81df5fb05, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p52
+    second: {fileID: 2100000, guid: 0249b7c53ce328842b7dad0545107585, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p54
+    second: {fileID: 2100000, guid: 69aec0c4736aaf942ac8ef896a9b24bd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p56
+    second: {fileID: 2100000, guid: 42bfd906f3e14434180f50fc61b87a52, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p57
+    second: {fileID: 2100000, guid: 95341986f39ea2f4991a9cebf7fb0f4b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p6
+    second: {fileID: 2100000, guid: 83efd6d2b8313b041ae63007518dd79b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p60
+    second: {fileID: 2100000, guid: 89ccf77e48f24e2459c3ef32792a1beb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p62
+    second: {fileID: 2100000, guid: df78a1c967bda0945a62aca47701bf39, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p64
+    second: {fileID: 2100000, guid: 7deb8fb58ab887d45b602017d5c146e8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p65
+    second: {fileID: 2100000, guid: 314a02082ca88564cac7f9fec395a8c0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p66
+    second: {fileID: 2100000, guid: 2eebb48ae034e8f4bb692dc8ed4c7f72, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p68
+    second: {fileID: 2100000, guid: 0ee3aa4d7e49e774db51f734274f98d0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p7
+    second: {fileID: 2100000, guid: 7a37a9ba126eb234aa3a7ef74db0a44a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p70
+    second: {fileID: 2100000, guid: 268088168c1a5b749b07625b55a304de, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p71
+    second: {fileID: 2100000, guid: dd731c1a746fdb84db964d1f77c728f0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p72
+    second: {fileID: 2100000, guid: 1b6ca20dedf474844a0396d74234db1c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p74
+    second: {fileID: 2100000, guid: 2914ed9b811781e4a8050898782cade6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p75
+    second: {fileID: 2100000, guid: 25600635989309f44a8d602faac13813, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p77
+    second: {fileID: 2100000, guid: 3fade3dbb16995a4a81de50a79c581e6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p8
+    second: {fileID: 2100000, guid: c6a58d4f545facb419404e50e9468345, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p80
+    second: {fileID: 2100000, guid: b2849d91123c3cc46ad6fc9de45966f7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p83
+    second: {fileID: 2100000, guid: 757381dca3af11947885da7df1cd3728, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p84
+    second: {fileID: 2100000, guid: c623429ecf0cef04f8e78d567e36ed94, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p85
+    second: {fileID: 2100000, guid: d37cae9a9a8a8b6459dbbd8c105a2139, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p88
+    second: {fileID: 2100000, guid: 1993a474e5254864084951a203e5bbc8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p89
+    second: {fileID: 2100000, guid: 8b22f0afbc7925348b1a9dc63c1c7c89, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p9
+    second: {fileID: 2100000, guid: 600f5df31e7cde847a416c829c762566, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p91
+    second: {fileID: 2100000, guid: 81f33235faff0d74db302cee978a8b7d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p93
+    second: {fileID: 2100000, guid: be19f02328070f440b8dd6885b8ef002, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p95
+    second: {fileID: 2100000, guid: 9fa34f0b3b563e744a1fae670258fc9f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Armor_OriginalResolution_p97
+    second: {fileID: 2100000, guid: e49480134316cb440852c6b406a0a6df, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: RED_Emission_Floor_Only
+    second: {fileID: 2100000, guid: 58fd49359680f3348aae4a9595f0ee8b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Ring_Metal_Frame
+    second: {fileID: 2100000, guid: 59030e2f4b744474ea6adc238abf4fbd, type: 2}
+  materials:
+    materialImportMode: 2
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+    searchTexturesGlobally: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    nodeNameCollisionStrategy: 1
+    fileIdsGeneration: 2
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    meshOptimizationFlags: -1
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 1
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    strictVertexDataChecks: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  referencedClips: []
+  importAnimation: 1
+  humanDescription:
+    serializedVersion: 3
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 2
+  humanoidOversampling: 1
+  avatarSetup: 1
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  importBlendShapeDeformPercent: 1
+  remapMaterialsIfMaterialImportModeIsNone: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
