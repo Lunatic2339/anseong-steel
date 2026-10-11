@@ -24,8 +24,11 @@ namespace AnseongSteel.Hud
         public float HudScale { get; private set; }=1;
         public int ObservedPunchCount { get; private set; }
         GameObject statusRoot,menuRoot,eventSystem;
-        Font font; Text linkText; Slider opacitySlider,scaleSlider,volumeSlider;
-        Text guideAction;
+        Font font; Material textMaterial; Text linkText; Slider opacitySlider,scaleSlider,volumeSlider;
+        Text guideAction, conditionText, responseText;
+        RectTransform pilotDetail, conditionDetail, responseDetail, damageFrame;
+        SuitHudDetail conditionGraphic;
+        float lastPunchTime=-100;
         CockpitViewPosition mounts;
         Camera[] cameras; int[] masks;
         bool priorInputDebug,priorMountDebug,priorDirections,priorContact,subscribed,initialized,contactCaptured;
@@ -37,7 +40,8 @@ namespace AnseongSteel.Hud
         static void Bootstrap()
         {
             // Explicit opt-in test scene; original punch test scene remains unchanged.
-            if(SceneManager.GetActiveScene().name!="Hud_V02_Test") return;
+            var sceneName=SceneManager.GetActiveScene().name;
+            if(sceneName!="Hud_V02_Test" && sceneName!="sunwoo_HUDTest") return;
             var input=FindFirstObjectByType<ArmMotionInput>(); var feed=FindFirstObjectByType<CockpitLiveView>();
             if(input && feed) Attach(input,feed);
         }
@@ -50,6 +54,7 @@ namespace AnseongSteel.Hud
         {
             if(initialized) return;
             Input=input; Feed=feed; initialized=true; font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            textMaterial=new Material(Shader.Find("AnseongSteel/HudUiText"));
             mounts=FindFirstObjectByType<CockpitViewPosition>(); priorVolume=AudioListener.volume;
             priorInputDebug=input.showDebugPanels; input.showDebugPanels=false;
             priorDirections=input.showHandDirections; input.showHandDirections=false;
@@ -71,10 +76,19 @@ namespace AnseongSteel.Hud
             rect.localPosition=new Vector3(0,0,.95f); rect.localRotation=Quaternion.identity; rect.localScale=Vector3.one*.001f;
             HelmetCanvas.gameObject.AddComponent<GraphicRaycaster>();
             statusRoot=Node("Battle status - no background",HelmetCanvas.transform,Vector2.zero,new Vector2(1000,650)).gameObject;
-            Wireframe=Node("Accumulated robot condition",statusRoot.transform,new Vector2(-375,-225),new Vector2(58,86)).gameObject.AddComponent<SuitWireframe>();
+            Wireframe=Node("Accumulated robot condition",statusRoot.transform,new Vector2(-375,-225),new Vector2(88,132)).gameObject.AddComponent<SuitWireframe>();
             Wireframe.Bind(Damage);
+            pilotDetail=Detail("Pilot link rings",new Vector2(180,76),0);
+            conditionDetail=Detail("Suit condition bars",new Vector2(196,84),1);
+            conditionGraphic=conditionDetail.GetComponent<SuitHudDetail>();
+            responseDetail=Detail("Suit response trace",new Vector2(190,42),2);
+            damageFrame=Detail("Condition outline",new Vector2(118,164),3);
+            Label("Link heading",pilotDetail,new Vector2(0,49),new Vector2(160,20),"P I L O T   L I N K",12);
+            Label("Condition heading",conditionDetail,new Vector2(0,54),new Vector2(176,20),"S U I T   S T A T U S",12);
+            conditionText=Label("Condition value",conditionDetail,new Vector2(70,0),new Vector2(40,60),"",12); conditionText.lineSpacing=1.5f;
+            responseText=Label("Response",responseDetail,new Vector2(0,34),new Vector2(190,20),"INPUT STANDBY",12);
             linkText=Label("Pilot",statusRoot.transform,new Vector2(-380,230),new Vector2(110,24),"L / LINK",17);
-            Label("Prototype flag",statusRoot.transform,new Vector2(-375,-285),new Vector2(80,16),"TEST",9);
+            Label("Prototype flag",statusRoot.transform,new Vector2(-375,-285),new Vector2(80,16),"TEST / CONDITION",9);
             BuildMenu();
             Guide=new GameObject("Tutorial path - robot world feed only").AddComponent<BattlefieldGuide>(); Guide.Initialize();
             Guide.SetOpacity(GuideOpacity);
@@ -89,7 +103,7 @@ namespace AnseongSteel.Hud
         void Subscribe() { if(initialized&&!subscribed) { Input.PunchCompleted+=OnPunch; subscribed=true; } }
         void OnPunch(PunchObservation observation)
         {
-            ObservedPunchCount++;
+            ObservedPunchCount++; lastPunchTime=Time.unscaledTime;
             // Recognition informs tutorial type only; outgoing punches never damage our robot.
             if(!demoGuide) return;
             if(observation.kind==ObservedPunch.Jab) hook=false;
@@ -106,7 +120,14 @@ namespace AnseongSteel.Hud
             if(!initialized) return;
             LayoutHelmet(Input.cockpitCamera.aspect);
             if(!contactCaptured && Input.ContactTest) { priorContact=Input.ContactTest.visible; Input.ContactTest.visible=false; contactCaptured=true; }
-            linkText.text=(Input.leftPilot?"L":"R")+" / "+(Input.TrackingValid?"LINK":"--");
+            linkText.text=(Input.leftPilot?"L":"R")+" / "+(Input.TrackingValid?"LINK":"NO XR");
+            // Three groups: head/torso, arms, legs; all use actual shared condition state.
+            float upper=1-(Damage[SuitPart.Head]+Damage[SuitPart.Torso])*.5f;
+            float arms=1-(Damage[SuitPart.LeftArm]+Damage[SuitPart.RightArm])*.5f;
+            float legs=1-(Damage[SuitPart.LeftLeg]+Damage[SuitPart.RightLeg])*.5f;
+            conditionGraphic.SetConditions(upper,arms,legs);
+            conditionText.text=Mathf.RoundToInt(upper*100)+"%\n"+Mathf.RoundToInt(arms*100)+"%\n"+Mathf.RoundToInt(legs*100)+"%";
+            responseText.text=Time.unscaledTime-lastPunchTime<1.5f?"PUNCH OBSERVED":Input.TrackingValid?"READY":"INPUT STANDBY";
             Guide.gameObject.SetActive(GuideEnabled&&!MenuOpen&&isActiveAndEnabled);
             if(!demoGuide) return;
             // One shared robot path/target, independent of which pilot is selected.
@@ -123,9 +144,13 @@ namespace AnseongSteel.Hud
             float width=height*aspect;
             ((RectTransform)HelmetCanvas.transform).sizeDelta=new Vector2(width,height);
             ((RectTransform)statusRoot.transform).sizeDelta=new Vector2(width,height);
-            Wireframe.rectTransform.anchoredPosition=new Vector2(-width*.5f+95,-height*.5f+115);
-            linkText.rectTransform.anchoredPosition=new Vector2(-width*.5f+125,height*.5f-85);
-            statusRoot.transform.Find("Prototype flag").GetComponent<RectTransform>().anchoredPosition=new Vector2(-width*.5f+100,-height*.5f+48);
+            Wireframe.rectTransform.anchoredPosition=new Vector2(-width*.5f+132,-height*.5f+160);
+            damageFrame.anchoredPosition=Wireframe.rectTransform.anchoredPosition;
+            pilotDetail.anchoredPosition=new Vector2(-width*.5f+180,height*.5f-146);
+            conditionDetail.anchoredPosition=new Vector2(width*.5f-190,height*.5f-146);
+            responseDetail.anchoredPosition=new Vector2(width*.5f-190,-height*.5f+105);
+            linkText.rectTransform.anchoredPosition=new Vector2(-width*.5f+140,height*.5f-207);
+            statusRoot.transform.Find("Prototype flag").GetComponent<RectTransform>().anchoredPosition=new Vector2(-width*.5f+85,-height*.5f+59);
         }
         public void UseTutorialDemo(bool useHook) { demoGuide=true; hook=useHook; hasPath=false; }
         public void SetMenuOpen(bool open)
@@ -146,6 +171,11 @@ namespace AnseongSteel.Hud
         public void ResetSettings() { SetGuideOpacity(.25f); SetHudScale(1); SetAudio(priorVolume); SetGuideEnabled(true); }
         public void ShowDamageDemo()
         { Damage.Reset(); Damage.SetDamage(SuitPart.LeftArm,.45f); Damage.SetDamage(SuitPart.RightLeg,.85f); }
+        RectTransform Detail(string name,Vector2 size,int mode)
+        {
+            var r=Node(name,statusRoot.transform,Vector2.zero,size);
+            r.gameObject.AddComponent<SuitHudDetail>().mode=mode; return r;
+        }
         void BuildMenu()
         {
             menuRoot=Node("Settings - separate mode",HelmetCanvas.transform,new Vector2(-40,15),new Vector2(420,360)).gameObject;
@@ -177,7 +207,7 @@ namespace AnseongSteel.Hud
         }
         Text Label(string name,Transform parent,Vector2 p,Vector2 size,string value,int fontSize)
         {
-            var text=Node(name,parent,p,size).gameObject.AddComponent<Text>(); text.font=font; text.fontSize=fontSize;
+            var text=Node(name,parent,p,size).gameObject.AddComponent<Text>(); text.font=font; text.material=textMaterial; text.fontSize=fontSize;
             text.text=value; text.color=new Color(.45f,.84f,1,.9f); text.alignment=TextAnchor.MiddleLeft;
             text.horizontalOverflow=HorizontalWrapMode.Overflow; text.verticalOverflow=VerticalWrapMode.Overflow; text.raycastTarget=false; return text;
         }
@@ -197,7 +227,7 @@ namespace AnseongSteel.Hud
             if(mounts) mounts.showDebugPanels=priorMountDebug; if(statusRenderer) statusRenderer.enabled=priorStatusRenderer;
             if(mountRenderer) mountRenderer.enabled=priorMountRenderer;
             for(int i=0;i<cameras.Length;i++) if(cameras[i]) cameras[i].cullingMask=masks[i];
-            AudioListener.volume=priorVolume;
+            AudioListener.volume=priorVolume; if(textMaterial) Destroy(textMaterial);
             if(HelmetCanvas) Destroy(HelmetCanvas.gameObject); if(Guide) Destroy(Guide.gameObject); if(eventSystem) Destroy(eventSystem);
         }
     }

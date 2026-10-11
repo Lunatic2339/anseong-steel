@@ -33,6 +33,22 @@ namespace AnseongSteel.Hud.Editor
             EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(),Root+"/Scenes/Hud_V02_Test.unity");
             AssetDatabase.Refresh();
         }
+        [MenuItem("Anseong Steel/HUD/Open sunwoo HUD Test")]
+        public static void BuildSunwooScene()
+        {
+            const string path="Assets/_Project/04_Scenes/sunwoo_HUDTest.unity";
+            // Never overwrite an existing authored scene.
+            if(File.Exists(path)) { EditorSceneManager.OpenScene(path); return; }
+            EditorSceneManager.OpenScene(Root+"/Scenes/Hud_V02_Test.unity");
+            if(!EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(),path))
+                throw new Exception("Could not save sunwoo HUD scene");
+            AssetDatabase.Refresh();
+        }
+        public static void RunSunwoo()
+        {
+            Directory.CreateDirectory(Output);
+            BuildSunwooScene(); SessionState.SetBool(Active,true); EditorApplication.isPlaying=true;
+        }
         public static void Run()
         {
             Directory.CreateDirectory(Output);
@@ -66,6 +82,8 @@ namespace AnseongSteel.Hud.Editor
             var hud=UnityEngine.Object.FindFirstObjectByType<SuitHudController>();
             Check(hud && hud.Input && hud.Feed,"HUD attached to existing V02 feed and punch input");
             var input=hud.Input; var cam=input.cockpitCamera; var feed=hud.Feed;
+            Check(hud.HelmetCanvas.GetComponentsInChildren<SuitHudDetail>(true).Length==4,"reference-sheet line modules present without background plates");
+            Check(hud.HelmetCanvas.GetComponentsInChildren<SuitHudDetail>(true)[0].raycastTarget==false,"battle ornaments do not consume pointer input");
             Check(hud.HelmetCanvas.transform.parent==cam.transform,"status anchored to HMD, not display mesh");
             Check(hud.HelmetCanvas.renderMode==RenderMode.WorldSpace,"stereo-compatible world canvas, not screen overlay");
             hud.Wireframe.Rebuild(CanvasUpdate.PreRender); var mesh=hud.Wireframe.canvasRenderer.GetMesh();
@@ -81,6 +99,9 @@ namespace AnseongSteel.Hud.Editor
             Check(state[SuitPart.LeftArm]==.45f && state[SuitPart.Head]==0,"negative and non-finite damage ignored");
             state.AddDamage(SuitPart.RightLeg,10); Check(state[SuitPart.RightLeg]==1,"damage saturates without affecting other body parts");
             Check(SuitDamageState.ColorFor(0).b>.9f && SuitDamageState.ColorFor(.45f).g>.7f && SuitDamageState.ColorFor(.85f).g<.3f,"persistent blue / yellow / red thresholds");
+            hud.SendMessage("LateUpdate");
+            var condition=Array.Find(hud.HelmetCanvas.GetComponentsInChildren<Text>(true),t=>t.name=="Condition value");
+            Check(condition.text.Contains("78%") && condition.text.Contains("50%"),"suit readout reflects accumulated damage instead of invented health");
             state.Reset(); Check(state[SuitPart.RightLeg]==0 && state[SuitPart.LeftArm]==0,"explicit damage reset");
 
             var originalInputSettings=InputSystem.settings;

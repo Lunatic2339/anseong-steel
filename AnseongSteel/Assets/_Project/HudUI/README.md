@@ -62,3 +62,18 @@ The original debug panels default to enabled. Only this attached HUD suppresses
 them and the diagnostic text/contact pads/direction arrows during the prototype;
 cleanup restores prior settings and camera masks. The module is automatically
 attached only in the explicitly named `Hud_V02_Test` scene.
+
+## sunwoo reference-sheet application
+
+Open **Anseong Steel > HUD > Open sunwoo HUD Test**, then Play. The scene is
+Assets/_Project/04_Scenes/sunwoo_HUDTest.unity, based on the preserved
+Assets/_Project/HudUI/Scenes/Hud_V02_Test.unity (original V02 ArmMotionTest).
+The white design-sheet background is not imported. Open corner brackets, paired
+link rings, segmented condition bars, an articulated robot outline and a small
+response trace use transparent line meshes. Condition bars show head/torso, arms, and legs from the same
+shared incoming-damage model; they do not claim live power/shield/temperature
+sources. READY requires XR tracking; without HMD the label is INPUT STANDBY.
+PUNCH OBSERVED appears briefly after real recognizer completion. Damage starts
+healthy as test state, with Damage Demo in settings; live damage still requires
+AddDamage/SetDamage integration. ESC opens the separate settings state.
+HudValidation.RunSunwoo validates and renders this exact new scene.
