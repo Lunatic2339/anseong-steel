@@ -19,6 +19,8 @@ namespace AnseongSteel.RobotPlay
         public float comboSeconds = 2.4f, minimumComboGap = .15f, boostMultiplier = 2f;
         public int jabDamage = 8, hookDamage = 20, bossHealth = 160, robotHealth = 100;
         public bool standaloneHookDamage;
+        public bool requiresAttackButton, strictComboRules, postContactBoost, cooperativeMovement;
+        public float boostWindowSeconds=.45f;
         public float controllerMotionScale = 2.6f;
         public TrajectoryTuning recognition = new TrajectoryTuning();
     }
@@ -34,7 +36,7 @@ namespace AnseongSteel.RobotPlay
             public float homeSince = -1, expires, lastSample = -1;
             public Strike strike;
             public PunchTrajectoryRecognizer trajectory;
-            public bool contactConsumed;
+            public bool contactConsumed, attackHeld, attackAttempt;
         }
         public readonly Arm[] arms = { new Arm(), new Arm() };
         public readonly CombatTuning tuning;
@@ -44,7 +46,8 @@ namespace AnseongSteel.RobotPlay
         public int NextSide { get; private set; } = -1;
         public int HitCount { get; private set; }
         public float ComboDeadline { get; private set; }
-        int firstSide;
+        int firstSide, boostSide=-1;
+        float boostDeadline;
         float lastComboHit;
         public event Action<FeedbackKind, PilotSide, float> Feedback;
         public RobotCombat(CombatTuning config) { tuning = config; Reset(); }
@@ -61,17 +64,24 @@ namespace AnseongSteel.RobotPlay
         public void Tick(float now)
         {
             if (ComboStep > 0 && now > ComboDeadline) ClearCombo();
-            foreach (var arm in arms) if (arm.strike != Strike.None && now > arm.expires) { EndStroke(arm); arm.contactConsumed = true; }
+            if(boostSide>=0 && now>boostDeadline)boostSide=-1;
+            foreach (var arm in arms) if (arm.strike != Strike.None && now > arm.expires) { if(tuning.strictComboRules&&arm.attackAttempt&&!arm.contactConsumed)ClearCombo();EndStroke(arm); arm.contactConsumed = true; }
         }
         public void Invalidate(int side)
         {
             if (side<0 || side>1) return;
             arms[side]=NewArm(side); ClearCombo();
         }
-        public void Sample(int side, Vector3 offset, bool boostPressed, float now)
+        public void Sample(int side, Vector3 offset, bool boostPressed, float now, bool attackHeld=true)
         {
             if (side<0 || side>1 || !Finite(offset) || !float.IsFinite(now) || BossHealth<=0 || RobotHealth<=0) return;
-            Tick(now); var arm=arms[side];
+            Tick(now); var arm=arms[side];arm.attackHeld=attackHeld;
+            if(tuning.postContactBoost && boostPressed && boostSide==side && now<=boostDeadline)
+            {
+                boostSide=-1;int bonus=Mathf.Max(0,Mathf.RoundToInt(tuning.hookDamage*(tuning.boostMultiplier-1)));
+                BossHealth=Mathf.Max(0,BossHealth-bonus);Feedback?.Invoke(FeedbackKind.Boost,(PilotSide)side,bonus);
+                if(BossHealth==0)Feedback?.Invoke(FeedbackKind.Defeated,(PilotSide)side,1);
+            }
             if (arm.initialized && now<=arm.lastSample) return;
             float dt=arm.initialized ? now-arm.lastSample : 0;
             arm.lastSample=now; arm.position=offset;
@@ -86,7 +96,12 @@ namespace AnseongSteel.RobotPlay
             if(arm.trajectory.Phase==MotionPhase.TrackingLost)
             { arm.trajectory.DiscardInterruptedStroke(); EndStroke(arm); arm.contactConsumed=true; arm.guarding=false; return; }
             if(previousPhase!=MotionPhase.Moving && arm.trajectory.Phase==MotionPhase.Moving)
-                arm.contactConsumed=false;
+            { arm.contactConsumed=false;arm.attackAttempt=false; }
+            if(arm.trajectory.Phase==MotionPhase.Moving)arm.attackAttempt|=attackHeld && arm.trajectory.Candidate.forward>=tuning.recognition.minimumForward
+                && arm.trajectory.Candidate.reason!="Vertical/guard motion: not jab or hook";
+            if(tuning.strictComboRules && previousPhase==MotionPhase.Moving && arm.trajectory.Phase==MotionPhase.Recovering
+                && arm.attackAttempt && !arm.contactConsumed)
+            { ClearCombo();EndStroke(arm);arm.contactConsumed=true; }
             arm.previous=offset;
             arm.armed=arm.trajectory.Phase==MotionPhase.Ready;
             arm.guarding=offset.y>=tuning.guardHeight && arm.trajectory.Phase!=MotionPhase.Moving;
@@ -105,7 +120,7 @@ namespace AnseongSteel.RobotPlay
                 else arm.strike=Strike.None;
             }
             // A held button before a hook cannot preload a boost. The input adapter sends edges.
-            if (boostPressed && arm.strike==Strike.Hook && arm.finishing && ComboStep==2 && NextSide==side && !arm.boosted)
+            if (!tuning.postContactBoost && boostPressed && arm.strike==Strike.Hook && arm.finishing && ComboStep==2 && NextSide==side && !arm.boosted)
             {
                 arm.boosted=true; Feedback?.Invoke(FeedbackKind.Boost,(PilotSide)side,1);
             }
@@ -114,7 +129,7 @@ namespace AnseongSteel.RobotPlay
         {
             if (side<0 || side>1 || BossHealth<=0 || RobotHealth<=0) return false;
             Tick(now); var arm=arms[side];
-            if(arm.contactConsumed)return false;
+            if(arm.contactConsumed || (tuning.requiresAttackButton&&!arm.attackHeld))return false;
             var motion=arm.trajectory;
             if(motion.Phase!=MotionPhase.Moving && arm.strike==Strike.None)return false;
             if(motion.Phase==MotionPhase.Moving)motion.ConfirmContact(now,Quaternion.identity);
@@ -131,14 +146,17 @@ namespace AnseongSteel.RobotPlay
             {
                 damage=tuning.jabDamage;
                 if (ComboStep==1 && NextSide==side && now-lastComboHit>=tuning.minimumComboGap) { ComboStep=2; NextSide=firstSide; }
+                else if(tuning.strictComboRules && ComboStep>0)ClearCombo();
                 else { firstSide=side; ComboStep=1; NextSide=1-side; }
                 lastComboHit=now;
-                ComboDeadline=now+tuning.comboSeconds;
+                if(ComboStep>0)ComboDeadline=now+tuning.comboSeconds;
             }
             else if (finish)
             {
                 damage=Mathf.RoundToInt(tuning.hookDamage*(boosted?tuning.boostMultiplier:1));
-                ClearCombo(); Feedback?.Invoke(FeedbackKind.Combo,(PilotSide)side,damage);
+                ClearCombo();
+                if(tuning.postContactBoost){boostSide=side;boostDeadline=now+tuning.boostWindowSeconds;}
+                Feedback?.Invoke(FeedbackKind.Combo,(PilotSide)side,damage);
             }
             else { if (tuning.standaloneHookDamage) damage=tuning.hookDamage; ClearCombo(); }
             if (damage<=0) return false;
@@ -147,16 +165,17 @@ namespace AnseongSteel.RobotPlay
             if (BossHealth==0) Feedback?.Invoke(FeedbackKind.Defeated,(PilotSide)side,1);
             return true;
         }
-        public bool ReceiveAttack(int side, bool both, int damage)
+        public bool ReceiveAttack(int side, bool both, int damage, bool guardable=true)
         {
             if (RobotHealth<=0 || BossHealth<=0) return false;
-            bool blocked=both ? arms[0].guarding&&arms[1].guarding : arms[side].guarding;
-            if (!blocked) RobotHealth=Mathf.Max(0,RobotHealth-damage);
-            Feedback?.Invoke(blocked?FeedbackKind.Guard:FeedbackKind.Damage,(PilotSide)side,damage);
+            int before=RobotHealth;
+            bool blocked=guardable && (both ? arms[0].guarding&&arms[1].guarding : arms[side].guarding);
+            if (!blocked) { RobotHealth=Mathf.Max(0,RobotHealth-damage);if(tuning.strictComboRules)ClearCombo(); }
+            Feedback?.Invoke(blocked?FeedbackKind.Guard:FeedbackKind.Damage,(PilotSide)side,blocked?damage:before-RobotHealth);
             return blocked;
         }
         public static bool Finite(Vector3 p) => float.IsFinite(p.x)&&float.IsFinite(p.y)&&float.IsFinite(p.z);
-        void ClearCombo() { ComboStep=0; NextSide=-1; ComboDeadline=0; }
+        void ClearCombo() { boostSide=-1;ComboStep=0; NextSide=-1; ComboDeadline=0; }
         static void EndStroke(Arm arm) { arm.strike=Strike.None; arm.boosted=false; arm.finishing=false; arm.hookPrepared=false; }
     }
 }

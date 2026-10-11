@@ -20,6 +20,8 @@ namespace AnseongSteel.RobotPlay
         public InputAction rightRotation=new InputAction("Right rotation",InputActionType.Value,"<XRController>{RightHand}/deviceRotation",expectedControlType:"Quaternion");
         public InputAction leftTracked=new InputAction("Left tracked",InputActionType.Button,"<XRController>{LeftHand}/isTracked");
         public InputAction rightTracked=new InputAction("Right tracked",InputActionType.Button,"<XRController>{RightHand}/isTracked");
+        public InputAction leftAttack=new InputAction("Left attack hold",InputActionType.Button,"<XRController>{LeftHand}/gripPressed");
+        public InputAction rightAttack=new InputAction("Right attack hold",InputActionType.Button,"<XRController>{RightHand}/gripPressed");
         public InputAction leftBoost=new InputAction("Left boost",InputActionType.Button,"<XRController>{LeftHand}/trigger");
         public InputAction rightBoost=new InputAction("Right boost",InputActionType.Button,"<XRController>{RightHand}/trigger");
         public InputAction leftStick=new InputAction("Left stick",InputActionType.Value,"<XRController>{LeftHand}/thumbstick",expectedControlType:"Vector2");
@@ -40,7 +42,7 @@ namespace AnseongSteel.RobotPlay
         float nextSend;
         uint sequence;
         int lastSide=-1;
-        InputAction[] Actions => new[]{leftPosition,rightPosition,leftRotation,rightRotation,leftTracked,rightTracked,leftBoost,rightBoost,leftStick,rightStick,headPosition,headRotation,recenter};
+        InputAction[] Actions => new[]{leftPosition,rightPosition,leftRotation,rightRotation,leftTracked,rightTracked,leftAttack,rightAttack,leftBoost,rightBoost,leftStick,rightStick,headPosition,headRotation,recenter};
         void OnEnable(){foreach(var action in Actions)action.Enable();}
         void OnDisable(){foreach(var action in Actions)action.Disable();Recenter();}
         void Start(){if(startup!=Startup.Offline)session.StartNetwork(startup==Startup.Host);}
@@ -54,9 +56,9 @@ namespace AnseongSteel.RobotPlay
             if (source == PrototypeInput.XRLocalBoth)
             {
                 // Debug input owns both arms only while offline. LAN roles remain unchanged.
-                if (session.NetworkActive || Time.time < nextSend) return;
+                if (session.NetworkActive) return;
                 if (recenter.WasPressedThisFrame()) Recenter();
-                ReadXR(0); ReadXR(1); nextSend = Time.time + .02f;
+                ReadXR(0); ReadXR(1); if(Time.time>=nextSend)nextSend = Time.time + .02f;
             }
             else if(source==PrototypeInput.XRSinglePilot)ReadXR(side);else ReadDesktop();
         }
@@ -82,9 +84,10 @@ namespace AnseongSteel.RobotPlay
             if(!calibrated[side]){baseline[side]=p;rotationBaseline[side]=handRotation;calibrated[side]=true;return;}
             session.SetLocalHandRotation(side,handRotation*Quaternion.Inverse(rotationBaseline[side]));
             pendingBoost[side]|=button.WasPressedThisFrame();
-            if(source != PrototypeInput.XRLocalBoth && Time.time<nextSend)return;
+            if(Time.time<nextSend)return;
             if(source != PrototypeInput.XRLocalBoth)nextSend=Time.time+.02f;
-            session.Submit(side,Vector3.ClampMagnitude(trackingToRobot*(p-baseline[side])*motionScale,2.45f),pendingBoost[side],(side==0?rightStick:leftStick).ReadValue<Vector2>(),++sequence);
+            session.Submit(side,Vector3.ClampMagnitude(trackingToRobot*(p-baseline[side])*motionScale,2.45f),pendingBoost[side],(session.tuning.cooperativeMovement?(side==0?leftStick:rightStick):(side==0?rightStick:leftStick)).ReadValue<Vector2>(),++sequence,
+                (side==0?leftAttack:rightAttack).IsPressed());
             pendingBoost[side]=false;
         }
         void ReadDesktop()
@@ -104,7 +107,7 @@ namespace AnseongSteel.RobotPlay
                 if(session.NetworkActive&&i!=session.LocalSide)continue;
                 Vector3 p=DesktopPose(i,Time.time-animationStart[i],hook[i]);
                 if(Time.time-animationStart[i]>.8f && (i==0?k.zKey.isPressed:k.cKey.isPressed))p=new Vector3(0,.65f,0);
-                session.Submit(i,p,pendingBoost[i],i==0?move:Vector2.zero,++sequence);pendingBoost[i]=false;
+                session.Submit(i,p,pendingBoost[i],(session.tuning.cooperativeMovement||i==0)?move:Vector2.zero,++sequence,(i==0?k.fKey:k.gKey).isPressed);pendingBoost[i]=false;
             }
         }
         public void BeginStroke(int side,bool isHook)

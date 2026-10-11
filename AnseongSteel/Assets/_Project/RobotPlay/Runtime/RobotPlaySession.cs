@@ -31,6 +31,8 @@ namespace AnseongSteel.RobotPlay
         public TextMesh statusText;
         public Renderer targetMarker;
         public bool trainingWindow=true;
+        public bool externalBossTimeline;
+        public void SetBossWindow(bool open,int side,bool dual){phase=open?1:0;attackSide=side;both=dual;}
         public float telegraphSeconds=2f,recoverySeconds=3.8f,guardBonusSeconds=1.5f;
         public float movementSpeed=.6f;
         public string hostAddress="127.0.0.1";
@@ -43,6 +45,8 @@ namespace AnseongSteel.RobotPlay
         RobotSnapshot offline;
         readonly Vector3[] input=new Vector3[2];
         readonly bool[] boost=new bool[2];
+        readonly bool[] attacks={true,true};
+        readonly Vector2[] movements=new Vector2[2];
         readonly float[] received={-100,-100};
         readonly uint[] sequences=new uint[2];
         readonly Vector3[] accepted=new Vector3[2];
@@ -100,30 +104,30 @@ namespace AnseongSteel.RobotPlay
             else manager.StartClient();
         }
         public void StopNetwork() { if(NetworkActive)NetworkManager.Singleton.Shutdown(); }
-        public void Submit(int side,Vector3 offset,bool boostEdge,Vector2 movement,uint sequence)
+        public void Submit(int side,Vector3 offset,bool boostEdge,Vector2 movement,uint sequence,bool attackHeld=true)
         {
             if(NetworkActive)
             {
                 if(!IsSpawned || side!=LocalSide)return;
-                SubmitRpc(side,offset,boostEdge,movement,sequence);
+                SubmitRpc(side,offset,boostEdge,movement,sequence,attackHeld);
             }
-            else Accept(side,offset,boostEdge,movement,sequence);
+            else Accept(side,offset,boostEdge,movement,sequence,attackHeld);
         }
         [Rpc(SendTo.Server,InvokePermission=RpcInvokePermission.Everyone)]
-        void SubmitRpc(int side,Vector3 offset,bool boostEdge,Vector2 movement,uint sequence,RpcParams rpc=default)
+        void SubmitRpc(int side,Vector3 offset,bool boostEdge,Vector2 movement,uint sequence,bool attackHeld,RpcParams rpc=default)
         {
             ulong sender=rpc.Receive.SenderClientId;
             if(!Authorized(side,sender,NetworkManager.ServerClientId,rightClient))return;
-            Accept(side,offset,boostEdge,movement,sequence);
+            Accept(side,offset,boostEdge,movement,sequence,attackHeld);
         }
         public static bool Authorized(int side,ulong sender,ulong host,ulong right) => side==0?sender==host:side==1&&right!=ulong.MaxValue&&sender==right;
-        void Accept(int side,Vector3 offset,bool edge,Vector2 movement,uint sequence)
+        void Accept(int side,Vector3 offset,bool edge,Vector2 movement,uint sequence,bool attackHeld)
         {
             if(side<0||side>1||!RobotCombat.Finite(offset)||offset.magnitude>2.5f||!float.IsFinite(movement.x)||!float.IsFinite(movement.y)||sequence<=sequences[side])return;
             float elapsed=Time.time-received[side];
             if(elapsed<.008f)return;
             if(elapsed<.25f && Vector3.Distance(accepted[side],offset)>Mathf.Max(.15f,elapsed*12f))return;
-            sequences[side]=sequence;accepted[side]=offset;input[side]=offset;boost[side]|=edge;received[side]=Time.time;
+            sequences[side]=sequence;accepted[side]=offset;input[side]=offset;attacks[side]=attackHeld;movements[side]=Vector2.ClampMagnitude(movement,1);boost[side]|=edge;received[side]=Time.time;
             if(side==0)move=Vector2.ClampMagnitude(movement,1); // Explicit provisional movement ownership.
         }
         void LateUpdate()
@@ -135,13 +139,14 @@ namespace AnseongSteel.RobotPlay
                 for(int side=0;side<2;side++)
                 {
                     if(now-received[side]>.25f)
-                    { if(Combat.arms[side].initialized)Combat.Invalidate(side);input[side]=Vector3.zero;boost[side]=false;if(side==0)move=Vector2.zero; }
-                    else if(received[side]>Combat.arms[side].lastSample)Combat.Sample(side,input[side],boost[side],received[side]);
+                    { if(Combat.arms[side].initialized)Combat.Invalidate(side);input[side]=Vector3.zero;movements[side]=Vector2.zero;attacks[side]=false;boost[side]=false;if(side==0)move=Vector2.zero; }
+                    else if(received[side]>Combat.arms[side].lastSample)Combat.Sample(side,input[side],boost[side],received[side],attacks[side]);
                     boost[side]=false;Pose(side,input[side]);
                 }
                 if(Combat.RobotHealth>0&&Combat.BossHealth>0)
                 {
-                    Vector3 p=robotRoot.position+new Vector3(move.x,0,move.y)*movementSpeed*Time.deltaTime;
+                    if(tuning.cooperativeMovement)move=CooperativeMove(movements[0],movements[1]);
+                    Vector3 p=robotRoot.position+robotRoot.TransformDirection(new Vector3(move.x,0,move.y))*movementSpeed*Time.deltaTime;
                     p.x=Mathf.Clamp(p.x,-.7f,.7f);p.z=Mathf.Clamp(p.z,-1f,.15f);robotRoot.position=p;
                     UpdateBoss(now);
                 }
@@ -155,8 +160,14 @@ namespace AnseongSteel.RobotPlay
             {var s=State;robotRoot.position=s.body;Pose(0,s.left);Pose(1,s.right);contact.ConstrainPose();}
             UpdateDisplay();
         }
+        public static Vector2 CooperativeMove(Vector2 left,Vector2 right)
+        {
+            if(left.magnitude<.5f||right.magnitude<.5f||Vector2.Dot(left.normalized,right.normalized)<.9f)return Vector2.zero;
+            return Vector2.ClampMagnitude((left+right)*.5f,1);
+        }
         void UpdateBoss(float now)
         {
+            if(externalBossTimeline)return;
             if(trainingWindow){phase=1;return;}
             if(now<phaseEnd)return;
             if(phase==0)
@@ -185,7 +196,7 @@ namespace AnseongSteel.RobotPlay
         {
             if(Combat==null)return;
             Combat.Reset();phase=0;attackCount=0;attackSide=0;both=false;phaseEnd=Time.time+telegraphSeconds;
-            for(int i=0;i<2;i++){received[i]=-100;input[i]=Vector3.zero;boost[i]=false;sequences[i]=0;elbowHints[i].Reset();localRotations[i]=Quaternion.identity;}
+            for(int i=0;i<2;i++){received[i]=-100;input[i]=Vector3.zero;boost[i]=false;attacks[i]=false;movements[i]=Vector2.zero;sequences[i]=0;elbowHints[i].Reset();localRotations[i]=Quaternion.identity;}
             move=Vector2.zero;if(robotRoot)robotRoot.position=Vector3.zero;if(contact)contact.ResetContactState();
         }
         // Two rigid segments. The existing contact solver restricts these requested rotations.
