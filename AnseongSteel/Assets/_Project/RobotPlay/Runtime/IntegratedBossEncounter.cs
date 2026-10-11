@@ -20,7 +20,9 @@ namespace AnseongSteel.RobotPlay
         public int DamageCount { get; private set; }
         public string Cue => Phase==Beat.Warning||Phase==Beat.Punch?Kind==AttackKind.Unguardable?"UNBLOCKABLE / MATCH STICKS L OR R":Kind==AttackKind.Heavy?"HEAVY / BOTH GUARDS":"NORMAL / RIGHT GUARD":Phase==Beat.Recovery?"RECOVERY / COUNTER":"READY";
         public bool Active { get; private set; }
-        float deadline;
+        float deadline,punchBegan=-1;
+        public float PunchSeconds => punchBegan<0?0:Time.time-punchBegan;
+        public int AttackSerial { get; private set; }
         int attacks;
         void Start(){driver.attack.ImpactChecked+=Impact;}
         void OnDestroy(){if(driver)driver.attack.ImpactChecked-=Impact;}
@@ -35,12 +37,12 @@ namespace AnseongSteel.RobotPlay
         }
         void Update()
         {
-            if(!Active||!session.Authority||session.Combat.BossHealth<=0||session.Combat.RobotHealth<=0)return;
+            if(!Active||!session.Authority||(session.NetworkActive&&!GetComponent<IntegratedOnlineState>().CanRun)||session.Combat.BossHealth<=0||session.Combat.RobotHealth<=0)return;
             if(Phase==Beat.Punch){if(!driver.IsAttacking){Phase=Beat.Recovery;deadline=Time.time+recoverySeconds;session.SetBossWindow(true,1,false);}return;}
             if(Phase==Beat.Recovery&&driver.IsAttacking)return;
             if(Time.time<deadline)return;
             if(Phase==Beat.Warning)
-            {if(driver.TryPunch())Phase=Beat.Punch;else{Phase=Beat.Idle;deadline=Time.time+.2f;}return;}
+            {if(driver.TryPunch()){Phase=Beat.Punch;punchBegan=Time.time;AttackSerial++;}else{Phase=Beat.Idle;deadline=Time.time+.2f;}return;}
             Kind=(AttackKind)(attacks++%3);Phase=Beat.Warning;deadline=Time.time+telegraphSeconds;
             session.SetBossWindow(false,1,Kind==AttackKind.Heavy);
         }

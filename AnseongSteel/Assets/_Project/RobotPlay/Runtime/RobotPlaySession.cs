@@ -6,6 +6,7 @@ using AnseongSteel.PlayerMotion;
 
 namespace AnseongSteel.RobotPlay
 {
+    [Serializable]
     public struct RobotSnapshot : INetworkSerializable, IEquatable<RobotSnapshot>
     {
         public int bossHealth,robotHealth,combo,next,hits,phase,attackSide;
@@ -39,6 +40,7 @@ namespace AnseongSteel.RobotPlay
         public ushort port=7777;
         public RobotCombat Combat { get; private set; }
         public RobotSnapshot State => IsSpawned ? replicated.Value : offline;
+        public int RejectedInputs { get; private set; }
         public string LastFeedback { get; private set; }="Ready";
         public event Action<FeedbackKind,PilotSide,float> Feedback;
         readonly NetworkVariable<RobotSnapshot> replicated=new NetworkVariable<RobotSnapshot>();
@@ -54,13 +56,22 @@ namespace AnseongSteel.RobotPlay
         Vector2 move;
         int phase,attackSide,attackCount;
         bool both;
-        ulong rightClient=ulong.MaxValue;
+        ulong rightClient=ulong.MaxValue, reservedClient=ulong.MaxValue;
+        float reservedAt, connectionStarted;
+        NetworkManager callbacks;
+        bool requestedHost;
+        public enum LanState { Offline, Starting, Connected, Stopping, Disconnected, Failed }
+        public LanState ConnectionState { get; private set; } = LanState.Offline;
+        public string ConnectionMessage { get; private set; } = "Offline";
+        public uint ConnectionEpoch { get; private set; }
+        public bool RemoteConnected => rightClient != ulong.MaxValue;
+        public bool OfflineAllowed => ConnectionState == LanState.Offline;
         readonly ControllerArmFollower[] followers = new ControllerArmFollower[2];
         readonly ControllerElbowHint[] elbowHints = { new ControllerElbowHint(), new ControllerElbowHint() };
         readonly Quaternion[] localRotations = { Quaternion.identity, Quaternion.identity };
-        public bool NetworkActive => NetworkManager.Singleton && NetworkManager.Singleton.IsListening;
-        public bool Authority => !NetworkActive || (IsSpawned&&IsServer);
-        public int LocalSide => NetworkActive && !NetworkManager.Singleton.IsHost ? 1 : 0;
+        public bool NetworkActive => !OfflineAllowed || (NetworkManager.Singleton && NetworkManager.Singleton.IsListening);
+        public bool Authority => !NetworkActive || (ConnectionState == LanState.Connected && IsSpawned && IsServer);
+        public int LocalSide => NetworkActive && !requestedHost ? 1 : 0;
         public static Vector3 Neutral(int side) => new Vector3(side==0?-.65f:.65f,1.35f,.45f);
         void Awake()
         {
@@ -71,44 +82,164 @@ namespace AnseongSteel.RobotPlay
         }
         public override void OnNetworkSpawn()
         {
-            if(IsServer)
+            requestedHost = IsServer;
+            ConnectionState = LanState.Connected;
+            ConnectionMessage = IsServer ? "Host ready (left pilot)" : "Connected (right pilot)";
+            ConnectionEpoch++;
+            if (IsServer)
             {
                 ResetSimulation();
-                NetworkManager.OnClientConnectedCallback+=Connected;
-                NetworkManager.OnClientDisconnectCallback+=Disconnected;
-                foreach(var id in NetworkManager.ConnectedClientsIds)Connected(id);
+                foreach (var id in NetworkManager.ConnectedClientsIds) Connected(id);
             }
         }
         public override void OnNetworkDespawn()
         {
-            if(NetworkManager)
-            {
-                NetworkManager.OnClientConnectedCallback-=Connected;
-                NetworkManager.OnClientDisconnectCallback-=Disconnected;
-            }
-            rightClient=ulong.MaxValue;ResetSimulation();
+            rightClient = reservedClient = ulong.MaxValue;
+            ClearInput(0); ClearInput(1);
+            if (ConnectionState != LanState.Failed)
+                ConnectionState = LanState.Disconnected;
         }
-        void Connected(ulong id) { if(id!=NetworkManager.ServerClientId && rightClient==ulong.MaxValue) { rightClient=id;sequences[1]=0; } }
-        void Disconnected(ulong id) { if(id==rightClient) { rightClient=ulong.MaxValue;received[1]=-100;Combat.Invalidate(1); } }
+        void ClearInput(int side)
+        {
+            received[side] = -100; sequences[side] = 0;
+            accepted[side] = input[side] = Vector3.zero; boost[side] = false;
+            attacks[side]=false;movements[side]=Vector2.zero;
+            Combat?.Invalidate(side);
+            if (side == 0) move = Vector2.zero;
+        }
+        void Connected(ulong id)
+        {
+            if (!callbacks || !callbacks.IsServer || id == NetworkManager.ServerClientId) return;
+            if (rightClient == ulong.MaxValue)
+            {
+                ClearInput(1); rightClient = id; reservedClient = ulong.MaxValue;
+            }
+            else if (rightClient != id) callbacks.DisconnectClient(id);
+        }
+        void Disconnected(ulong id)
+        {
+            if (callbacks && callbacks.IsServer)
+            {
+                if (id == reservedClient) reservedClient = ulong.MaxValue;
+                if (id == rightClient) { rightClient = ulong.MaxValue; ClearInput(1); }
+            }
+            else
+            {
+                ConnectionMessage = callbacks && !string.IsNullOrEmpty(callbacks.DisconnectReason)
+                    ? callbacks.DisconnectReason : "Disconnected from host";
+                if (ConnectionState != LanState.Failed) ConnectionState = LanState.Disconnected;
+            }
+        }
+        void Stopped(bool wasHost)
+        {
+            rightClient = reservedClient = ulong.MaxValue;
+            ClearInput(0); ClearInput(1);
+            if (ConnectionState != LanState.Failed)
+            {
+                ConnectionState = LanState.Disconnected;
+                if (ConnectionMessage == "Stopping") ConnectionMessage = "Disconnected";
+            }
+        }
+        void TransportFailed()
+        { ConnectionState = LanState.Failed; ConnectionMessage = "Transport failed; wait for shutdown, then retry"; }
+        void BindCallbacks(NetworkManager manager)
+        {
+            UnbindCallbacks(); callbacks = manager;
+            callbacks.OnClientConnectedCallback += Connected;
+            callbacks.OnClientDisconnectCallback += Disconnected;
+            callbacks.OnClientStopped += Stopped;
+            callbacks.OnServerStopped += Stopped;
+            callbacks.OnTransportFailure += TransportFailed;
+        }
+        void UnbindCallbacks()
+        {
+            if (!callbacks) return;
+            callbacks.OnClientConnectedCallback -= Connected;
+            callbacks.OnClientDisconnectCallback -= Disconnected;
+            callbacks.OnClientStopped -= Stopped;
+            callbacks.OnServerStopped -= Stopped;
+            callbacks.OnTransportFailure -= TransportFailed;
+            callbacks.ConnectionApprovalCallback = null;
+            callbacks = null;
+        }
+        void Approve(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+        {
+            bool localHost = request.ClientNetworkId == NetworkManager.ServerClientId;
+            if (reservedClient != ulong.MaxValue && Time.realtimeSinceStartup - reservedAt > callbacks.NetworkConfig.ClientConnectionBufferTimeout + 1)
+                reservedClient = ulong.MaxValue;
+            bool allowed = localHost || (rightClient == ulong.MaxValue && reservedClient == ulong.MaxValue);
+            response.Approved = allowed; response.CreatePlayerObject = false; response.Pending = false;
+            response.Reason = allowed ? "" : "Two pilot prototype is full";
+            if (allowed && !localHost) { reservedClient = request.ClientNetworkId; reservedAt = Time.realtimeSinceStartup; }
+        }
+        public bool CanStartNetwork => ConnectionState != LanState.Starting && ConnectionState != LanState.Connected
+            && ConnectionState != LanState.Stopping && NetworkManager.Singleton
+            && !NetworkManager.Singleton.IsListening && !NetworkManager.Singleton.ShutdownInProgress;
         public void StartNetwork(bool host)
         {
-            var manager=NetworkManager.Singleton;if(!manager || manager.IsListening)return;
-            var transport=manager.GetComponent<UnityTransport>();transport.SetConnectionData(hostAddress,port,host?"0.0.0.0":null);
-            manager.NetworkConfig.ConnectionApproval=true;
-            if(host)
+            var manager = NetworkManager.Singleton;
+            if (!manager) { ConnectionState = LanState.Failed; ConnectionMessage = "NetworkManager missing"; return; }
+            if (!CanStartNetwork) return;
+            if (!IntegratedLanRules.TryEndpoint(hostAddress, port, out string address, out string error))
+            { ConnectionState = LanState.Failed; ConnectionMessage = error; return; }
+            var transport = manager.GetComponent<UnityTransport>();
+            if (!transport) { ConnectionState = LanState.Failed; ConnectionMessage = "UnityTransport missing"; return; }
+            BindCallbacks(manager); requestedHost = host;
+            rightClient = reservedClient = ulong.MaxValue;
+            ClearInput(0); ClearInput(1); ConnectionEpoch++;
+            ConnectionState = LanState.Starting; ConnectionMessage = host ? "Starting host" : "Connecting";
+            connectionStarted = Time.realtimeSinceStartup;
+            manager.NetworkConfig.ConnectionApproval = true;
+            manager.ConnectionApprovalCallback = host ? Approve : null;
+            try
             {
-                manager.ConnectionApprovalCallback=(request,response)=>
-                {response.Approved=manager.ConnectedClientsIds.Count<2;response.CreatePlayerObject=false;response.Pending=false;response.Reason="Two pilot prototype is full";};
-                manager.StartHost();
+                transport.SetConnectionData(address, port, host ? "0.0.0.0" : null);
+                bool started = host ? manager.StartHost() : manager.StartClient();
+                if (!started) { ConnectionState = LanState.Failed; ConnectionMessage = "Network start failed"; if (manager.IsListening) manager.Shutdown(); }
             }
-            else manager.StartClient();
+            catch (Exception ex)
+            {
+                ConnectionState = LanState.Failed; ConnectionMessage = "Network start failed: " + ex.Message;
+                if (manager.IsListening && !manager.ShutdownInProgress) manager.Shutdown();
+            }
         }
-        public void StopNetwork() { if(NetworkActive)NetworkManager.Singleton.Shutdown(); }
+        public void StopNetwork()
+        {
+            var manager = NetworkManager.Singleton;
+            if (ConnectionState == LanState.Stopping) return;
+            ClearInput(0); ClearInput(1);
+            if (manager && (manager.IsListening || manager.ShutdownInProgress))
+            {
+                ConnectionState = LanState.Stopping; ConnectionMessage = "Stopping";
+                if (!manager.ShutdownInProgress) manager.Shutdown();
+            }
+            else { ConnectionState = LanState.Disconnected; ConnectionMessage = "Disconnected"; }
+        }
+        public bool UseOfflineTest()
+        {
+            var manager = NetworkManager.Singleton;
+            if (manager && (manager.IsListening || manager.ShutdownInProgress)) return false;
+            UnbindCallbacks(); ConnectionState = LanState.Offline; ConnectionMessage = "Offline";
+            ConnectionEpoch++; ResetSimulation(); return true;
+        }
+        void Update()
+        {
+            if (ConnectionState == LanState.Starting && Time.realtimeSinceStartup - connectionStarted > 15)
+            {
+                StopNetwork(); ConnectionState = LanState.Failed; ConnectionMessage = "Connection timed out; check host IPv4 and LAN";
+            }
+        }
+        public override void OnDestroy()
+        {
+            if (target) target.onHit.RemoveListener(OnContact);
+            if (Combat != null) Combat.Feedback -= PublishFeedback;
+            UnbindCallbacks(); base.OnDestroy();
+        }
         public void Submit(int side,Vector3 offset,bool boostEdge,Vector2 movement,uint sequence,bool attackHeld=true)
         {
             if(NetworkActive)
             {
-                if(!IsSpawned || side!=LocalSide)return;
+                if(ConnectionState!=LanState.Connected || !IsSpawned || side!=LocalSide)return;
                 SubmitRpc(side,offset,boostEdge,movement,sequence,attackHeld);
             }
             else Accept(side,offset,boostEdge,movement,sequence,attackHeld);
@@ -116,14 +247,15 @@ namespace AnseongSteel.RobotPlay
         [Rpc(SendTo.Server,InvokePermission=RpcInvokePermission.Everyone)]
         void SubmitRpc(int side,Vector3 offset,bool boostEdge,Vector2 movement,uint sequence,bool attackHeld,RpcParams rpc=default)
         {
+            if(!IsServer || ConnectionState!=LanState.Connected)return;
             ulong sender=rpc.Receive.SenderClientId;
-            if(!Authorized(side,sender,NetworkManager.ServerClientId,rightClient))return;
+            if(!Authorized(side,sender,NetworkManager.ServerClientId,rightClient)){RejectedInputs++;return;}
             Accept(side,offset,boostEdge,movement,sequence,attackHeld);
         }
         public static bool Authorized(int side,ulong sender,ulong host,ulong right) => side==0?sender==host:side==1&&right!=ulong.MaxValue&&sender==right;
         void Accept(int side,Vector3 offset,bool edge,Vector2 movement,uint sequence,bool attackHeld)
         {
-            if(side<0||side>1||!RobotCombat.Finite(offset)||offset.magnitude>2.5f||!float.IsFinite(movement.x)||!float.IsFinite(movement.y)||sequence<=sequences[side])return;
+            if(side<0||side>1||!RobotCombat.Finite(offset)||offset.magnitude>2.5f||!float.IsFinite(movement.x)||!float.IsFinite(movement.y)||!IntegratedLanRules.IsNewSequence(sequence,sequences[side]))return;
             float elapsed=Time.time-received[side];
             if(elapsed<.008f)return;
             if(elapsed<.25f && Vector3.Distance(accepted[side],offset)>Mathf.Max(.15f,elapsed*12f))return;
@@ -143,7 +275,7 @@ namespace AnseongSteel.RobotPlay
                     else if(received[side]>Combat.arms[side].lastSample)Combat.Sample(side,input[side],boost[side],received[side],attacks[side]);
                     boost[side]=false;Pose(side,input[side]);
                 }
-                if(Combat.RobotHealth>0&&Combat.BossHealth>0)
+                if(Combat.RobotHealth>0&&Combat.BossHealth>0&&(!NetworkActive||!GetComponent<IntegratedOnlineState>()||GetComponent<IntegratedOnlineState>().IsBattle))
                 {
                     if(tuning.cooperativeMovement)move=CooperativeMove(movements[0],movements[1]);
                     Vector3 p=robotRoot.position+robotRoot.TransformDirection(new Vector3(move.x,0,move.y))*movementSpeed*Time.deltaTime;
@@ -160,6 +292,7 @@ namespace AnseongSteel.RobotPlay
             {var s=State;robotRoot.position=s.body;Pose(0,s.left);Pose(1,s.right);contact.ConstrainPose();}
             UpdateDisplay();
         }
+        public bool FreshInput(int side) => side>=0&&side<2&&Time.time-received[side]<=.25f;
         public static Vector2 CooperativeMove(Vector2 left,Vector2 right)
         {
             if(left.magnitude<.5f||right.magnitude<.5f||Vector2.Dot(left.normalized,right.normalized)<.9f)return Vector2.zero;
@@ -187,6 +320,7 @@ namespace AnseongSteel.RobotPlay
         }
         void TryPunchContact(int side)
         {
+            var online=GetComponent<IntegratedOnlineState>();if(NetworkActive&&online&&!online.IsBattle)return;
             var arm=Combat.arms[side];
             if(!contact.arms[side].ContactPart.Contains("Fist") || arm.trajectory.Phase!=MotionPhase.Moving
                 || arm.trajectory.Candidate.kind==ObservedPunch.Unknown)return;
@@ -194,7 +328,7 @@ namespace AnseongSteel.RobotPlay
         }
         public void ResetSimulation()
         {
-            if(Combat==null)return;
+            if(Combat==null || !Authority)return;
             Combat.Reset();phase=0;attackCount=0;attackSide=0;both=false;phaseEnd=Time.time+telegraphSeconds;
             for(int i=0;i<2;i++){received[i]=-100;input[i]=Vector3.zero;boost[i]=false;attacks[i]=false;movements[i]=Vector2.zero;sequences[i]=0;elbowHints[i].Reset();localRotations[i]=Quaternion.identity;}
             move=Vector2.zero;if(robotRoot)robotRoot.position=Vector3.zero;if(contact)contact.ResetContactState();
@@ -221,10 +355,11 @@ namespace AnseongSteel.RobotPlay
         }
         void PublishFeedback(FeedbackKind kind,PilotSide side,float strength)
         {
+            var online=GetComponent<IntegratedOnlineState>();if(online&&Authority)online.RecordFeedback(kind,side,strength);
             if(IsSpawned&&IsServer)FeedbackRpc((int)kind,(int)side,strength);
             else ReceiveFeedback(kind,side,strength);
         }
-        [Rpc(SendTo.Everyone)] void FeedbackRpc(int kind,int side,float strength) => ReceiveFeedback((FeedbackKind)kind,(PilotSide)side,strength);
+        [Rpc(SendTo.Everyone,InvokePermission=RpcInvokePermission.Server)] void FeedbackRpc(int kind,int side,float strength) => ReceiveFeedback((FeedbackKind)kind,(PilotSide)side,strength);
         void ReceiveFeedback(FeedbackKind kind,PilotSide side,float strength)
         {LastFeedback=$"{side} {kind} {strength:0}";Feedback?.Invoke(kind,side,strength);}
         void UpdateDisplay()

@@ -41,24 +41,27 @@ namespace AnseongSteel.RobotPlay
         bool headCalibrated;
         float nextSend;
         uint sequence;
-        int lastSide=-1;
+        int lastSide=-1;uint connectionEpoch;
+        Vector3 cameraOrigin;
+        public Vector3 SeatOffset => session.NetworkActive&&session.LocalSide==1?Vector3.right*.96f:Vector3.zero;
+        public Vector3 CameraOrigin => cameraOrigin;
         InputAction[] Actions => new[]{leftPosition,rightPosition,leftRotation,rightRotation,leftTracked,rightTracked,leftAttack,rightAttack,leftBoost,rightBoost,leftStick,rightStick,headPosition,headRotation,recenter};
         void OnEnable(){foreach(var action in Actions)action.Enable();}
         void OnDisable(){foreach(var action in Actions)action.Disable();Recenter();}
-        void Start(){if(startup!=Startup.Offline)session.StartNetwork(startup==Startup.Host);}
+        void Start(){cameraOrigin=cockpitCamera.transform.localPosition;if(startup!=Startup.Offline)session.StartNetwork(startup==Startup.Host);}
         public void Recenter(){calibrated[0]=calibrated[1]=headCalibrated=false;pendingBoost[0]=pendingBoost[1]=false;}
         void Update()
         {
             if(!session)return;
             int side=session.NetworkActive?session.LocalSide:(int)offlineSide;
-            if(side!=lastSide){lastSide=side;Recenter();}
+            if(side!=lastSide||connectionEpoch!=session.ConnectionEpoch){lastSide=side;connectionEpoch=session.ConnectionEpoch;sequence=0;Recenter();cockpitCamera.transform.localPosition=cameraOrigin+SeatOffset;}
             if(seat)seat.localPosition=new Vector3(side==0?-.48f:.48f,0,-1.8f);
             if (source == PrototypeInput.XRLocalBoth)
             {
                 // Debug input owns both arms only while offline. LAN roles remain unchanged.
-                if (session.NetworkActive) return;
                 if (recenter.WasPressedThisFrame()) Recenter();
-                ReadXR(0); ReadXR(1); if(Time.time>=nextSend)nextSend = Time.time + .02f;
+                if(session.NetworkActive)ReadXR(side);else {ReadXR(0);ReadXR(1);}
+                if(Time.time>=nextSend)nextSend = Time.time + .02f;
             }
             else if(source==PrototypeInput.XRSinglePilot)ReadXR(side);else ReadDesktop();
         }
@@ -73,7 +76,7 @@ namespace AnseongSteel.RobotPlay
                 Vector3 hp=headPosition.ReadValue<Vector3>();
                 Quaternion rotation=headRotation.ReadValue<Quaternion>();
                 if(!headCalibrated){headBaseline=hp;trackingToRobot=Quaternion.Inverse(Quaternion.Euler(0,rotation.eulerAngles.y,0));headCalibrated=true;}
-                cockpitCamera.transform.localPosition=new Vector3(0,1.65f,0)+trackingToRobot*(hp-headBaseline);
+                cockpitCamera.transform.localPosition=cameraOrigin+SeatOffset+trackingToRobot*(hp-headBaseline);
                 cockpitCamera.transform.localRotation=trackingToRobot*rotation;
             }
             if(!tracked.IsPressed()||position.activeControl==null)
@@ -99,7 +102,7 @@ namespace AnseongSteel.RobotPlay
             if(k.digit3Key.wasPressedThisFrame)BeginStroke(0,true);
             if(k.digit4Key.wasPressedThisFrame)BeginStroke(1,true);
             pendingBoost[0]|=k.qKey.wasPressedThisFrame;pendingBoost[1]|=k.eKey.wasPressedThisFrame;
-            if(k.rKey.wasPressedThisFrame&&session.Authority)session.ResetSimulation();
+            if(k.rKey.wasPressedThisFrame&&session.Authority&&!GetComponent<IntegratedPlayFlow>())session.ResetSimulation();
             if(Time.time<nextSend)return;nextSend=Time.time+.02f;
             Vector2 move=new Vector2((k.dKey.isPressed?1:0)-(k.aKey.isPressed?1:0),(k.wKey.isPressed?1:0)-(k.sKey.isPressed?1:0));
             for(int i=0;i<2;i++)
@@ -130,7 +133,7 @@ namespace AnseongSteel.RobotPlay
         }
         void OnGUI()
         {
-            if(source!=PrototypeInput.DesktopBoth)return;
+            if(GetComponent<IntegratedOnlineState>()||source!=PrototypeInput.DesktopBoth)return;
             GUILayout.BeginArea(new Rect(12,12,390,310),GUI.skin.box);
             GUILayout.Label("ROBOT PLAY | PROTOTYPE / provisional controls");
             GUILayout.Label("1 / 2: L / R jab    3 / 4: L / R hook\nQ / E: boost DURING final hook\nZ / C hold: L / R guard    WASD: move\nR: reset   Recover hands between strokes (~1 sec)");

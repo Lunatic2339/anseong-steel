@@ -15125,6 +15125,7 @@ GameObject:
   - component: {fileID: 560419640}
   - component: {fileID: 560419639}
   - component: {fileID: 560419638}
+  - component: {fileID: 560419641}
   m_Layer: 0
   m_Name: Robot Combat Authority
   m_TagString: Untagged
@@ -15613,6 +15614,19 @@ MonoBehaviour:
   normalDamage: 12
   heavyDamage: 20
   unguardableDamage: 16
+--- !u!114 &560419641
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 560419631}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7315a79d661f0714bad0d0c43b5da2f4, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::AnseongSteel.RobotPlay.IntegratedOnlineState
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &566223472
 GameObject:
   m_ObjectHideFlags: 0

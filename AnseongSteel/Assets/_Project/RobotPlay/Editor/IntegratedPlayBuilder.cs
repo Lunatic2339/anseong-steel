@@ -46,6 +46,7 @@ namespace AnseongSteel.RobotPlay.Editor
             }
             var bridge=session.GetComponent<IntegratedCombatHud>();
             var flow=session.GetComponent<IntegratedPlayFlow>();if(!flow)flow=session.gameObject.AddComponent<IntegratedPlayFlow>();
+            var online=session.GetComponent<IntegratedOnlineState>();if(!online)online=session.gameObject.AddComponent<IntegratedOnlineState>();
             flow.session=session;flow.pilot=session.GetComponent<RobotPilotInput>();flow.bridge=bridge;flow.boss=encounter;
             var feedback=session.GetComponent<IntegratedFeedback>();if(!feedback)feedback=session.gameObject.AddComponent<IntegratedFeedback>();feedback.session=session;
             const string sounds="Assets/VRMPAssets/Audio/SFXClips/";

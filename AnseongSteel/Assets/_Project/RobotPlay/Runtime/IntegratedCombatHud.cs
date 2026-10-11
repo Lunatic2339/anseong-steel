@@ -19,7 +19,7 @@ namespace AnseongSteel.RobotPlay
         public int Dodges { get; private set; }
         public int IncomingDamage { get; private set; }
         public event System.Action<FeedbackKind,PilotSide> Confirmed;
-        Text response,link,explanation,flag;
+        Text response,link,explanation,flag;Button restartButton;Text restartLabel;
         int previousHealth,previousPhase=-1;
         float flashUntil;
         string last="READY";
@@ -37,7 +37,7 @@ namespace AnseongSteel.RobotPlay
             {
                 if(t.name=="Response")response=t;if(t.name=="Pilot")link=t;
                 if(t.name=="Demo explanation")explanation=t;if(t.name=="Prototype flag")flag=t;
-                if(t.text=="DAMAGE DEMO / RESET") { t.text="RESTART RUN";var button=t.GetComponent<Button>();button.onClick.RemoveAllListeners();button.onClick.AddListener(()=>GetComponent<IntegratedPlayFlow>().Retry()); }
+                if(t.text=="DAMAGE DEMO / RESET") { t.text="RESTART RUN";var button=t.GetComponent<Button>();restartButton=button;restartLabel=t;button.onClick.RemoveAllListeners();button.onClick.AddListener(()=>{if(session.NetworkActive)GetComponent<IntegratedOnlineState>().RequestRestart();else GetComponent<IntegratedPlayFlow>().Retry();}); }
             }
             if(response){response.rectTransform.sizeDelta=new Vector2(310,120);response.fontSize=16;}
             if(flag)flag.text="LIVE / TEST";
@@ -54,7 +54,7 @@ namespace AnseongSteel.RobotPlay
         {
             if(kind==FeedbackKind.Hit)ConfirmedHits++;
             if(kind==FeedbackKind.Guard)Guards++;
-            if(kind==FeedbackKind.Damage && Hud)
+            if(kind==FeedbackKind.Damage && Hud && !session.NetworkActive)
             {
                 IncomingDamage+=(int)strength;
                 // Explicit prototype attack-region mapping; not anatomical impact detection.
@@ -68,17 +68,19 @@ namespace AnseongSteel.RobotPlay
         void LateUpdate()
         {
             if(!Hud)return;
+            if(restartButton){restartButton.interactable=!session.NetworkActive||session.Authority;restartLabel.text=session.NetworkActive&&!session.Authority?"HOST RESTART ONLY":"RESTART RUN";}
             var s=session.State;
             if(s.robotHealth>previousHealth) { Hud.Damage.Reset();ConfirmedHits=Guards=Dodges=IncomingDamage=0; }
             if(previousPhase==0&&s.phase==1&&!session.trainingWindow && s.robotHealth==previousHealth && s.body.z<=-.55f)
             { Dodges++;last="EVADED / BODY MOVEMENT";flashUntil=Time.unscaledTime+1.5f; }
             previousHealth=s.robotHealth;previousPhase=s.phase;
             var encounter=session.GetComponent<IntegratedBossEncounter>();
-            string window=encounter&&encounter.Active?encounter.Cue:session.trainingWindow?"TRAINING":s.phase==0?(s.both?"INCOMING: BOTH GUARD":"INCOMING: "+(s.attackSide==0?"LEFT":"RIGHT")):"ATTACK WINDOW";
+            var online=session.GetComponent<IntegratedOnlineState>();
+            string window=session.NetworkActive&&online?online.Cue:encounter&&encounter.Active?encounter.Cue:session.trainingWindow?"TRAINING":s.phase==0?(s.both?"INCOMING: BOTH GUARD":"INCOMING: "+(s.attackSide==0?"LEFT":"RIGHT")):"ATTACK WINDOW";
             CombatText=$"BOSS {s.bossHealth} / ROBOT {s.robotHealth}\nHITS {s.hits}  COMBO {s.combo}/2\n{window}";
             if(response)response.text=CombatText+"\n"+(Time.unscaledTime<flashUntil?last:"");
             bool tracked=pilot.leftTracked.IsPressed()&&pilot.rightTracked.IsPressed();
-            if(link)link.text=session.NetworkActive?"LAN / "+(session.LocalSide==0?"LEFT":"RIGHT"):pilot.source==PrototypeInput.DesktopBoth?"LOCAL / KEYBOARD":tracked?"LOCAL / TWO HANDS":"LOCAL / NO XR";
+            if(link)link.text=session.NetworkActive?"LAN / "+(session.LocalSide==0?"LEFT":"RIGHT")+" / "+session.ConnectionState:pilot.source==PrototypeInput.DesktopBoth?"LOCAL / KEYBOARD":tracked?"LOCAL / TWO HANDS":"LOCAL / NO XR";
             // Keep robot optics independent of HMD head motion and the cockpit's physical display.
             feed.exteriorCamera.transform.SetPositionAndRotation(session.robotRoot.position+centerOffset,centerRotation);
             feed.leftCamera.transform.SetPositionAndRotation(session.robotRoot.position+leftOffset,leftRotation);
