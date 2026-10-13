@@ -20,9 +20,9 @@ public static class MechaVRBossSetup
     {
         if (EditorApplication.isPlaying) return "Stop Play before configuring boss contact";
         var scene = SceneManager.GetActiveScene();
-        var drivers = UnityEngine.Object.FindObjectsByType<MechaVRHandTarget>(FindObjectsInactive.Include)
+        var drivers = UnityEngine.Object.FindObjectsByType<MechaVRHandTarget>(FindObjectsInactive.Include, FindObjectsSortMode.None)
             .Where(d => d.gameObject.scene == scene).ToArray();
-        var bossObjects = UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsInactive.Include)
+        var bossObjects = UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None)
             .Where(t => t.gameObject.scene == scene && t.name == "boss").ToArray();
         if (drivers.Length != 2 || bossObjects.Length != 1) throw new InvalidOperationException("Expected two arm drivers and exactly one object named boss in this scene.");
         Transform bossObject = bossObjects[0];
@@ -139,7 +139,7 @@ public static class MechaVRBossSetup
 
     public static void AppendReport(StringBuilder sb)
     {
-        foreach (var solver in UnityEngine.Object.FindObjectsByType<MechaVRBossContact>(FindObjectsInactive.Include))
+        foreach (var solver in UnityEngine.Object.FindObjectsByType<MechaVRBossContact>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
             sb.AppendLine("BOSS CONTACT enabled=" + solver.isActiveAndEnabled + " boss=" + (solver.boss ? solver.boss.name : "NONE")
                 + " body-blocked=" + solver.BodyBlocked + " recovery-failed=" + solver.RecoveryFailed + " queries=" + solver.QueriesLastFrame);

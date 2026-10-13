@@ -206,7 +206,7 @@ public static class MechaVRBossContactTests
 
     private static void RealRigTest()
     {
-        var solver = UnityEngine.Object.FindObjectsByType<MechaVRBossContact>(FindObjectsInactive.Exclude)
+        var solver = UnityEngine.Object.FindObjectsByType<MechaVRBossContact>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)
             .FirstOrDefault(s => s.name == "MechaRoot");
         Require(solver && solver.arms.Length == 2, "Real scene contact solver is not configured");
         var builder = solver.GetComponentInChildren<RigBuilder>();
