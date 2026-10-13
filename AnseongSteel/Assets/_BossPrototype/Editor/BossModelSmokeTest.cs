@@ -54,14 +54,15 @@ namespace AnseongSteel.Bosses.Editor
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
                 throw new InvalidOperationException("Stop Play mode before running the test.");
-            BossModelTestBuilder.Build();
+            // Verify the existing configured scene without rebuilding user content.
             EditorSceneManager.OpenScene(BossModelTestBuilder.ScenePath);
             var sceneDemo = UnityEngine.Object.FindFirstObjectByType<BossModelDemo>();
             if (sceneDemo == null || sceneDemo.driver.animator.runtimeAnimatorController == null)
                 throw new InvalidOperationException("Scene is missing demo/controller references.");
+            sceneDemo.autoDemo = true;
             var clips = sceneDemo.driver.animator.runtimeAnimatorController.animationClips;
-            if (clips.Length != 5 || clips.Any(c => c.length <= 0f))
-                throw new InvalidOperationException("Expected five non-empty clips: " + string.Join(", ", clips.Select(c => c.name + "=" + c.length)));
+            if (new[]{"Idle","Walk","Punch","TurnLeft","TurnRight"}.Any(name=>!clips.Any(c=>c.name==name && c.length>0f)))
+                throw new InvalidOperationException("Missing required motion clips: " + string.Join(", ", clips.Select(c => c.name + "=" + c.length)));
             var punch = clips.Single(c => c.name == "Punch");
             if (sceneDemo.driver.hitPoint.parent.name != "mixamorig:RightHand" || punch.length < 5f)
                 throw new InvalidOperationException("Expected the right-hand hit point and the complete punch take.");
@@ -133,7 +134,8 @@ namespace AnseongSteel.Bosses.Editor
                 bool facingTarget = Vector3.Angle(demo.driver.transform.forward, towardTarget) < 0.5f;
                 bool modelFacingTarget = Vector3.Angle(demo.driver.animator.transform.forward, towardTarget) < .5f;
                 float targetDistance = towardTarget.magnitude;
-                bool reachedTarget = Mathf.Abs(targetDistance - demo.approachDistance) < .01f;
+                // Run demo retains the fist distance; the manual walk button now uses sword distance.
+                bool reachedTarget = Mathf.Abs(targetDistance - 1.05f) < .01f;
                 bool ok = walked && animated && impacts == 1 && targetHits == 1 && fullRecovery && facingTarget && modelFacingTarget && reachedTarget;
                 demoReport = $"walked={walked}, animated={animated}, impacts={impacts}, targetHits={targetHits}, fullRecovery={fullRecovery}, facingTarget={facingTarget}, modelFacingTarget={modelFacingTarget}, targetDistance={targetDistance:F3}";
                 if (!ok) Finish(false, demoReport);
@@ -248,3 +250,5 @@ namespace AnseongSteel.Bosses.Editor
         }
     }
 }
+
+

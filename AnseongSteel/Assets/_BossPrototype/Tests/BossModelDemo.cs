@@ -9,6 +9,7 @@ namespace AnseongSteel.Bosses
         public Transform target;
         public Renderer targetRenderer;
         public bool autoDemo = true;
+        public bool showControls = true;
         public float approachDistance = 1.05f;
         private Vector3 startPosition;
         private Quaternion startRotation;
@@ -49,11 +50,16 @@ namespace AnseongSteel.Bosses
             demo = StartCoroutine(Demonstrate());
         }
 
+        public void StopDemo()
+        {
+            if(demo!=null)StopCoroutine(demo);demo=null;driver.ResetMotion(.18f);
+        }
         public void ResetDemo()
         {
             if (demo != null) StopCoroutine(demo);
             demo = null;
             driver.ResetMotion();
+            driver.GetComponent<BossCombatController>()?.ResetEncounter();
             driver.transform.SetPositionAndRotation(startPosition, startRotation);
             hitCount = 0;
             flashUntil = 0f;
@@ -66,15 +72,21 @@ namespace AnseongSteel.Bosses
             yield return new WaitForSeconds(1f);
             FaceTarget();
             yield return new WaitUntil(() => !driver.rotation.IsRotating);
-            WalkToTarget();
+            WalkToTarget(1.05f);
             yield return new WaitUntil(() => !driver.movement.IsMoving);
             yield return new WaitForSeconds(0.4f);
             status = "Punch";
-            driver.TryPunch();
+            TryDemoPunch();
             yield return new WaitUntil(() => !driver.IsAttacking);
             yield return new WaitForSeconds(0.8f);
             status = "Demo complete - use buttons to repeat";
             demo = null;
+        }
+
+        public bool TryDemoPunch()
+        {
+            var combat=driver.GetComponent<BossCombatController>();
+            return combat?combat.TryAttack(BossAttackKind.HeavyPunch):driver.TryPunch();
         }
 
         public void FaceTarget()
@@ -85,10 +97,15 @@ namespace AnseongSteel.Bosses
 
         public void WalkToTarget()
         {
+            WalkToTarget(approachDistance);
+        }
+
+        public void WalkToTarget(float distance)
+        {
             var direction = target.position - driver.transform.position;
             direction.y = 0f;
             if (direction.sqrMagnitude < 0.0001f) return;
-            driver.movement.MoveTo(target.position - direction.normalized * approachDistance);
+            driver.movement.MoveTo(target.position - direction.normalized * Mathf.Max(.1f,distance));
             status = "Walking to target";
         }
 
@@ -97,20 +114,22 @@ namespace AnseongSteel.Bosses
             float scale = Mathf.Clamp(Screen.height / 800f, 0.75f, 1.5f);
             var oldMatrix = GUI.matrix;
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
-            GUILayout.BeginArea(new Rect(18, 18, 290, 410), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(18, 18, 290, showControls ? 446 : 150), GUI.skin.box);
             GUILayout.Label("MECHA BOSS / v026");
             GUILayout.Label("Idle / Walk / Punch / Turn L & R");
             GUILayout.Space(6);
             GUILayout.Label(status);
             GUILayout.Label($"Target hits: {hitCount}");
             GUILayout.Space(8);
+            if (GUILayout.Button(showControls ? "Hide controls" : "Show controls", GUILayout.Height(26))) showControls = !showControls;
+            if (!showControls) { if (GUILayout.Button("Run demo", GUILayout.Height(28))) StartDemo(); GUILayout.EndArea(); GUI.matrix = oldMatrix; return; }
             if (GUILayout.Button("Run demo", GUILayout.Height(30))) StartDemo();
             if (GUILayout.Button("Reset", GUILayout.Height(30))) ResetDemo();
             GUI.enabled = demo == null && !driver.IsAttacking && !driver.IsTurning;
             if (GUILayout.Button("Face target", GUILayout.Height(28))) FaceTarget();
             if (GUILayout.Button("Walk to target", GUILayout.Height(28))) WalkToTarget();
             if (GUILayout.Button("Stop / Idle", GUILayout.Height(28))) driver.ResetMotion();
-            if (GUILayout.Button("Punch", GUILayout.Height(28))) { status = "Punch"; driver.TryPunch(); }
+            if (GUILayout.Button("Punch", GUILayout.Height(28))) { status = "Punch"; TryDemoPunch(); }
             if (GUILayout.Button("Turn left 90", GUILayout.Height(28))) driver.rotation.TurnLeft(90f);
             if (GUILayout.Button("Turn right 90", GUILayout.Height(28))) driver.rotation.TurnRight(90f);
             GUI.enabled = true;
@@ -125,3 +144,6 @@ namespace AnseongSteel.Bosses
         }
     }
 }
+
+
+
