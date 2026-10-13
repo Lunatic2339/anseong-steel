@@ -86,7 +86,7 @@ namespace AnseongSteel.RobotPlay.Editor
                         InputSystem.SetDeviceUsage(left,CommonUsages.LeftHand);InputSystem.SetDeviceUsage(right,CommonUsages.RightHand);
                         input.source=PrototypeInput.XRLocalBoth;session.GetComponent<IntegratedPlayFlow>().enabled=false;session.GetComponent<IntegratedBossEncounter>().Stop();session.externalBossTimeline=false;session.trainingWindow=true;session.ResetSimulation();
                         session.target.onHit.AddListener(()=>{int side=session.target.LastArm=="L"?0:1;var a=session.Combat.arms[side];checks.Add("CONTACT stage="+stage+" time="+(Time.time-at)+" part="+session.contact.arms[side].ContactPart+" phase="+a.trajectory.Phase+" candidate="+JsonUtility.ToJson(a.trajectory.Candidate)+" completed="+JsonUtility.ToJson(a.trajectory.LastCompleted));});Next();if(SessionState.GetBool("Robot.Integration.Focused",false)){SessionState.SetBool("Robot.Integration.Focused",false);flow=session.GetComponent<IntegratedPlayFlow>();boss=session.GetComponent<IntegratedBossEncounter>();session.externalBossTimeline=true;flow.enabled=true;flow.Retry();boss.telegraphSeconds=.1f;stage=15;at=Time.time;}break;
-                    case 1:if(elapsed>.45f)Next();break;
+                    case 1:hold=false;if(elapsed>.45f)Next();break;
                     case 2:
                         l=RobotPilotInput.DesktopPose(0,elapsed,false);
                         if(elapsed>1.05f){Check(session.State.hits==1,"left XR controller jab damages exactly once");Next();}break;
@@ -95,17 +95,17 @@ namespace AnseongSteel.RobotPlay.Editor
                         if(elapsed>1.05f){Check(session.State.hits==2&&session.State.combo==2,"right XR controller advances cooperative combo");Next();}break;
                     case 4:
                         l=RobotPilotInput.DesktopPose(0,elapsed,true);boost=false;
-                        if(elapsed>1.05f){Check(session.State.hits==3&&session.State.bossHealth==124,"recognized left-controller hook reaches contact and damages");Check(session.GetComponent<IntegratedCombatHud>().CombatText.Contains("BOSS 124"),"HUD reads same authoritative damage snapshot");Capture("integrated-combat.png");Next();}break;
+                        if(elapsed>1.05f){Check(session.State.hits==3&&session.State.bossHealth==124,"recognized left-controller hook reaches contact and damages");Check(session.GetComponent<IntegratedCombatHud>().CombatText.Contains("BOSS 124"),"HUD reads same authoritative damage snapshot");Check(session.GetComponent<IntegratedPunchCue>().AcceptedReactions==0,"final hook without successful boost has no launch reaction");Capture("integrated-combat.png");Next();}break;
                     case 5:
                         l=r=new Vector3(0,.65f,0);
                         if(elapsed>.4f){Check(session.State.leftGuard&&session.State.rightGuard,"two independent tracked hands can guard together");Next();}break;
                     case 6:
                         tracked=false;r=new Vector3(0,.65f,0);
                         if(elapsed>.4f){Check(!session.State.leftGuard&&session.State.rightGuard,"one hand tracking loss clears only its guard");session.ResetSimulation();Next();}break;
-                    case 7:if(elapsed>.5f)Next();break;
+                    case 7:hold=false;if(elapsed>.5f)Next();break;
                     case 8:
-                        r=RobotPilotInput.DesktopPose(1,elapsed,true);
-                        if(elapsed>1.05f){Check(session.State.hits==1&&session.State.bossHealth==140,"standalone right-controller hook damages exactly once");Next();}break;
+                        r=RobotPilotInput.DesktopPose(1,elapsed,true);boost=elapsed>.4f&&elapsed<.6f;
+                        if(elapsed>1.05f){Check(session.State.hits==1&&session.State.bossHealth==140,"standalone right-controller hook damages exactly once");Check(session.GetComponent<IntegratedPunchCue>().AcceptedReactions==0,"standalone hook trigger cannot launch boss or push arm");Next();}break;
                     case 9:
                         hold=false;l=RobotPilotInput.DesktopPose(0,elapsed,false);
                         if(elapsed>1.05f){Check(session.State.hits==1&&session.State.bossHealth==140,"real XR contact without grip cannot damage");
@@ -130,6 +130,7 @@ namespace AnseongSteel.RobotPlay.Editor
                         ls=rs=Vector2.right;
                         if(elapsed>1.05f){Check(session.robotRoot.position.x>.5f,"two matching real XR sticks move body sideways");stage=27;at=Time.time;}break;
                     case 15:
+                        hold=false;
                         if(elapsed>3)throw new Exception("retry calibration timeout");
                         if(flow.State==IntegratedPlayFlow.RunState.Battle){boss.Stop();session.trainingWindow=true;session.SetBossWindow(true,1,false);Next();}break;
                     case 16:
@@ -148,11 +149,26 @@ namespace AnseongSteel.RobotPlay.Editor
                     case 20:
                         r=RobotPilotInput.DesktopPose(1,elapsed,false);
                         if(elapsed>.21f&&!peakLogged){peakLogged=true;var a=session.Combat.arms[1];Debug.Log("RIGHT_JAB_PEAK phase="+a.trajectory.Phase+" consumed="+a.contactConsumed+" candidate="+JsonUtility.ToJson(a.trajectory.Candidate)+" hand="+session.contact.arms[1].hand.position+" blocked="+session.contact.arms[1].IsBlocked+" part="+session.contact.arms[1].ContactPart);}
-                        if(elapsed>1.05f){Check(session.State.combo==2,"second cooperative right jab advances combo | "+JsonUtility.ToJson(session.Combat.arms[1].trajectory.LastCompleted));Next();}break;
+                        if(elapsed>1.05f){Check(session.State.combo==2,"second cooperative right jab advances combo | "+JsonUtility.ToJson(session.Combat.arms[1].trajectory.LastCompleted));peakLogged=false;Next();}break;
                     case 21:
                         l=RobotPilotInput.DesktopPose(0,elapsed,true);boost=session.State.hits==5&&elapsed>.55f&&elapsed<.85f;
+                        var cue=session.GetComponent<IntegratedPunchCue>();
+                        if(elapsed>.68f&&cue.AcceptedReactions==1&&!peakLogged)
+                        {
+                            peakLogged=true;var arm=session.contact.arms[0];var bossTransform=boss.driver.animator.transform;
+                            var bossPosition=bossTransform.localPosition;var bossRotation=bossTransform.localRotation;
+                            var upper=arm.upperArm.localRotation;var lower=arm.forearm.localRotation;var wrist=arm.hand.localRotation;
+                            var camera= input.cockpitCamera.transform;var eye=camera.position;var eyeRotation=camera.rotation;var before=session.State;
+                            cue.showBoostReaction=false;int renders=cue.RenderApplications;Capture("integrated-boost-disabled.png");
+                            Check(cue.RenderApplications==renders,"optional boost presentation can be disabled without changing success damage");
+                            cue.showBoostReaction=true;Capture("integrated-boost.png");
+                            Check(cue.RenderApplications>renders&&cue.MaxBossOffset>.1f&&cue.MaxArmPush>.001f,"successful confirmed boost renders existing boss launch and extra arm push");
+                            Check(cue.MaxWristDeviation<.5f,"extra visual push keeps wrist longitudinally aligned with forearm");
+                            Check(Vector3.Distance(bossPosition,bossTransform.localPosition)<.00001f&&Quaternion.Angle(bossRotation,bossTransform.localRotation)<.01f&&Quaternion.Angle(upper,arm.upperArm.localRotation)<.01f&&Quaternion.Angle(lower,arm.forearm.localRotation)<.01f&&Quaternion.Angle(wrist,arm.hand.localRotation)<.01f,"each render restores boss and all arm joints before physics resumes");
+                            Check(before.Equals(session.State)&&Vector3.Distance(eye,camera.position)<.00001f&&Quaternion.Angle(eyeRotation,camera.rotation)<.01f,"boost render leaves authoritative snapshot and HMD pose unchanged");
+                        }
                         if(elapsed>1.05f){Check(flow.CurrentLesson==IntegratedPlayFlow.Lesson.Complete&&session.State.hits==5,"actual alternating hit combo completes learning objective");
-                            Check(session.State.bossHealth==76,"trigger after confirmed combo hook adds actual bonus damage");
+                            Check(session.State.bossHealth==76,"trigger after confirmed combo hook adds actual bonus damage");Check(peakLogged&&cue.AcceptedReactions==1,"repeated trigger samples cannot duplicate successful boost reaction");
                             flow.targetDurationSeconds=.01f;Check(flow.State==IntegratedPlayFlow.RunState.Battle&&session.State.bossHealth>0,"elapsed target time never causes automatic victory");session.tuning.jabDamage=160;Next();}break;
                     case 22:
                         r=RobotPilotInput.DesktopPose(1,elapsed,false);
@@ -162,7 +178,7 @@ namespace AnseongSteel.RobotPlay.Editor
                     case 23:
                         if(elapsed>3)throw new Exception("victory retry timeout");
                         if(flow.State==IntegratedPlayFlow.RunState.Battle){Check(session.State.robotHealth==100&&session.State.bossHealth==160&&session.State.hits==0&&session.State.combo==0&&session.State.body==Vector3.zero,"restart resets authoritative combat and body state");
-                            Check(Enumerable.Range(0,6).All(i=>session.GetComponent<IntegratedCombatHud>().Hud.Damage[(AnseongSteel.Hud.SuitPart)i]==0),"restart clears accumulated incoming part damage");
+                            Check(Enumerable.Range(0,6).All(i=>session.GetComponent<IntegratedCombatHud>().Hud.Damage[(AnseongSteel.Hud.SuitPart)i]==0),"restart clears accumulated incoming part damage");Check(session.GetComponent<IntegratedPunchCue>().AcceptedReactions==0&&!session.GetComponent<IntegratedPunchCue>().ReactionActive,"restart clears successful boost visual state");
                             session.Combat.ReceiveAttack(1,false,100);Next();}break;
                     case 24:
                         if(elapsed>.25f){Check(flow.State==IntegratedPlayFlow.RunState.Lost&&session.State.robotHealth==0,"controlled fatal combat damage transitions to defeat");
@@ -178,7 +194,7 @@ namespace AnseongSteel.RobotPlay.Editor
                     case 25:
                         if(elapsed>.3f){Check(!flow.Terminal&&session.State.robotHealth==100&&session.State.bossHealth==160&&!session.GetComponent<IntegratedCombatHud>().Hud.MenuOpen,"settings restart returns to clean playable state");Complete();return;}break;
                 }
-                Feed(left,true,l,tracked,boost,hold,ls);Feed(right,false,r,true,false,hold,rs);
+                Feed(left,true,l,tracked,boost,hold,ls);Feed(right,false,r,true,stage==8&&boost,hold,rs);
             }
             catch(Exception ex){checks.Add("FAIL: "+ex);Complete();}
         }

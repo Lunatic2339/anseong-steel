@@ -103,7 +103,7 @@ namespace AnseongSteel.RobotPlay
         {
             received[side] = -100; sequences[side] = 0;
             accepted[side] = input[side] = Vector3.zero; boost[side] = false;
-            attacks[side]=false;movements[side]=Vector2.zero;
+            attacks[side]=false;movements[side]=Vector2.zero;elbowHints[side].Reset();localRotations[side]=Quaternion.identity;
             Combat?.Invalidate(side);
             if (side == 0) move = Vector2.zero;
         }
@@ -292,6 +292,14 @@ namespace AnseongSteel.RobotPlay
             {var s=State;robotRoot.position=s.body;Pose(0,s.left);Pose(1,s.right);contact.ConstrainPose();}
             UpdateDisplay();
         }
+        public void LoseTracking(int side)
+        {
+            if(side<0||side>1)return;
+            if(NetworkActive){if(IsSpawned&&side==LocalSide)TrackingLostRpc(side);}else ClearInput(side);
+        }
+        [Rpc(SendTo.Server,InvokePermission=RpcInvokePermission.Everyone)]
+        void TrackingLostRpc(int side,RpcParams rpc=default)
+        {if(IsServer&&Authorized(side,rpc.Receive.SenderClientId,NetworkManager.ServerClientId,rightClient))ClearInput(side);else RejectedInputs++;}
         public bool FreshInput(int side) => side>=0&&side<2&&Time.time-received[side]<=.25f;
         public static Vector2 CooperativeMove(Vector2 left,Vector2 right)
         {
@@ -329,6 +337,7 @@ namespace AnseongSteel.RobotPlay
         public void ResetSimulation()
         {
             if(Combat==null || !Authority)return;
+            var cue=GetComponent<IntegratedPunchCue>();if(cue)cue.ResetPresentation();
             Combat.Reset();phase=0;attackCount=0;attackSide=0;both=false;phaseEnd=Time.time+telegraphSeconds;
             for(int i=0;i<2;i++){received[i]=-100;input[i]=Vector3.zero;boost[i]=false;attacks[i]=false;movements[i]=Vector2.zero;sequences[i]=0;elbowHints[i].Reset();localRotations[i]=Quaternion.identity;}
             move=Vector2.zero;if(robotRoot)robotRoot.position=Vector3.zero;if(contact)contact.ResetContactState();
@@ -351,6 +360,8 @@ namespace AnseongSteel.RobotPlay
             }
             var delta=offset/Mathf.Max(.1f,tuning.controllerMotionScale);
             followers[side].elbowLift=elbowHints[side].Update(delta,Time.deltaTime);
+            followers[side].strictPunchPose=true;
+            followers[side].punchPose=Combat.arms[side].attackHeld&&(Combat.arms[side].attackAttempt||Combat.arms[side].contactConsumed)&&Combat.arms[side].trajectory.Phase!=MotionPhase.Ready;
             followers[side].Follow(delta,NetworkActive?Quaternion.identity:localRotations[side]);
         }
         void PublishFeedback(FeedbackKind kind,PilotSide side,float strength)

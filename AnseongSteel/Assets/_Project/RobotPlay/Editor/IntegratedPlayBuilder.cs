@@ -48,6 +48,11 @@ namespace AnseongSteel.RobotPlay.Editor
             var flow=session.GetComponent<IntegratedPlayFlow>();if(!flow)flow=session.gameObject.AddComponent<IntegratedPlayFlow>();
             var online=session.GetComponent<IntegratedOnlineState>();if(!online)online=session.gameObject.AddComponent<IntegratedOnlineState>();
             flow.session=session;flow.pilot=session.GetComponent<RobotPilotInput>();flow.bridge=bridge;flow.boss=encounter;
+            var cue=session.GetComponent<IntegratedPunchCue>();if(!cue)cue=session.gameObject.AddComponent<IntegratedPunchCue>();
+            var selector=session.GetComponent<IntegratedCockpitSelector>();if(!selector)selector=session.gameObject.AddComponent<IntegratedCockpitSelector>();
+            selector.feed=bridge.feed;selector.pilot=flow.pilot;selector.context=bridge.cockpitContext;
+            if(!selector.originalShell)selector.originalShell=PrefabUtility.GetOutermostPrefabInstanceRoot(bridge.feed.screen.gameObject);
+            selector.variants=System.Array.ConvertAll(PunchAssetProbe.Paths,path=>AssetDatabase.LoadAssetAtPath<GameObject>(path));
             var feedback=session.GetComponent<IntegratedFeedback>();if(!feedback)feedback=session.gameObject.AddComponent<IntegratedFeedback>();feedback.session=session;
             const string sounds="Assets/VRMPAssets/Audio/SFXClips/";
             feedback.hit=AssetDatabase.LoadAssetAtPath<AudioClip>(sounds+"Button_22_Click.wav");

@@ -13,6 +13,9 @@ namespace AnseongSteel.PlayerMotion
         [Min(.15f)] public float defaultForwardReach = .45f;
         [Range(0, 1)] public float elbowLift;
         public float Extension => IsReady ? Vector3.Distance(upper.position, hand.position) / (upperLength + forearmLength) : 0;
+        public bool punchPose,strictPunchPose;
+        [Min(.01f)] public float rotationSmoothing=.08f,returnSmoothing=.18f;
+        Quaternion smoothRotation=Quaternion.identity;
         public float ReachError { get; private set; }
         public float TargetError { get; private set; }
         public Vector3 RequestedTarget { get; private set; }
@@ -40,7 +43,7 @@ namespace AnseongSteel.PlayerMotion
             Vector3 forearmDirection = hand.parent.InverseTransformDirection(hand.position - forearm.position);
             LockedWristRotation = Quaternion.FromToRotation(hand.localRotation * handForwardLocal, forearmDirection) * hand.localRotation;
             alignGuard = true;
-            wristConstraint.Reset();
+            wristConstraint.Reset();smoothRotation=Quaternion.identity;
             IsReady = upperLength > .01f && forearmLength > .01f;
             float length = (upperLength + forearmLength) / robotFrame.lossyScale.x;
             transverseScale = length / .65f; // Approximate human shoulder-to-wrist length.
@@ -55,6 +58,10 @@ namespace AnseongSteel.PlayerMotion
         {
             if (!IsReady) Initialize();
             if (!IsReady || !PunchTrajectoryRecognizer.Finite(controllerDelta) || !PunchTrajectoryRecognizer.Finite(controllerRotationDelta)) return;
+            // Wrist stays rigid; controller roll guides the estimated elbow only outside a strike.
+            if(strictPunchPose){var targetRotation=punchPose?Quaternion.identity:controllerRotationDelta;
+            smoothRotation=Quaternion.RotateTowards(smoothRotation,Quaternion.Slerp(smoothRotation,targetRotation,1-Mathf.Exp(-Mathf.Max(0,Time.deltaTime)/(punchPose?rotationSmoothing:returnSmoothing))),450*Mathf.Max(0,Time.deltaTime));
+            controllerRotationDelta=smoothRotation;}
             RequestedTarget = robotFrame.TransformPoint(MapWorkspace(robotFrame.InverseTransformPoint(upper.position), neutralTarget, controllerDelta, (upperLength + forearmLength) / robotFrame.lossyScale.x, motionScale, transverseScale));
             Vector3 fromShoulder = RequestedTarget - upper.position;
             Vector3 axis = fromShoulder.sqrMagnitude > .00001f ? fromShoulder.normalized : robotFrame.forward;

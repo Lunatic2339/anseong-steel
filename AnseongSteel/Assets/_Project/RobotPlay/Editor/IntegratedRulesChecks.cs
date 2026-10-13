@@ -22,8 +22,10 @@ namespace AnseongSteel.RobotPlay.Editor
             Jab(c,0,ref t);Check(c.Hit(0,t,true)&&c.BossHealth==152,"attack hold plus valid trajectory and contact damages");
             Check(!c.Hit(0,t+.01f,true)&&c.HitCount==1,"held attack cannot duplicate contact damage");
             t=0;c=Combo(ref t,0,true);Check(c.BossHealth==124,"L R L combo keeps ordinary hook damage when precontact boost is ignored");
-            t+=.02f;c.Sample(0,RobotPilotInput.DesktopPose(0,.48f,true),true,t,false);Check(c.BossHealth==104&&c.HitCount==3,"postcontact boost adds bonus once without a fourth hit");
-            t+=.02f;c.Sample(0,Vector3.zero,true,t,false);Check(c.BossHealth==104,"repeat boost edge cannot duplicate bonus");
+            t+=.02f;c.Sample(0,RobotPilotInput.DesktopPose(0,.48f,true),true,t,true);Check(c.BossHealth==104&&c.HitCount==3,"postcontact boost adds bonus once without a fourth hit");
+            t+=.02f;c.Sample(0,Vector3.zero,true,t,true);Check(c.BossHealth==104,"repeat boost edge cannot duplicate bonus");
+            t=0;c=Combo(ref t,0);t+=.02f;c.Sample(0,Vector3.zero,true,t,false);Check(c.BossHealth==124,"releasing grip cancels post-hit boost without losing ordinary hook damage");
+            t+=.02f;c.Sample(0,Vector3.zero,true,t,true);Check(c.BossHealth==124,"regripping cannot resurrect cancelled boost opportunity");
             t=0;c=Combo(ref t,1);Check(c.BossHealth==124,"R L R combo supports the opposite start side");
             t+=.7f;c.Sample(1,Vector3.zero,true,t,false);Check(c.BossHealth==124,"missed boost opportunity preserves ordinary final hook damage");
             t=0;c=Fresh();Jab(c,0,ref t);c.Hit(0,t,true);Jab(c,0,ref t);c.Hit(0,t,true);

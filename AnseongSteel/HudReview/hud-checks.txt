@@ -1,0 +1,51 @@
+PASS: HUD attached to existing V02 feed and punch input
+PASS: reference-sheet line modules present without background plates
+PASS: battle ornaments do not consume pointer input
+PASS: status anchored to HMD, not display mesh
+PASS: stereo-compatible world canvas, not screen overlay
+PASS: wireframe line mesh contains body-part geometry
+PASS: HMD excludes robot-world guide layer
+PASS: feed includes guide and excludes helmet: Robot optical mount - independent of pilot HMD
+PASS: feed includes guide and excludes helmet: Robot left panorama sector
+PASS: feed includes guide and excludes helmet: Robot right panorama sector
+PASS: guide geometry remains in robot world
+PASS: transparent guide shader compiled and supported
+PASS: damage accumulates on selected body part
+PASS: negative and non-finite damage ignored
+PASS: damage saturates without affecting other body parts
+PASS: persistent blue / yellow / red thresholds
+PASS: suit readout reflects accumulated damage instead of invented health
+PASS: explicit damage reset
+PASS: ESC key opens settings through actual input path
+PASS: second ESC key closes settings through actual input path
+PASS: settings hides tutorial guide
+PASS: settings hides tutorial guide
+PASS: settings hides tutorial guide
+PASS: settings hides tutorial guide
+PASS: settings hides tutorial guide
+PASS: settings hides tutorial guide
+PASS: repeated open / close reuses one canvas
+PASS: settings reset restores defaults
+PASS: resume button pointer event closes menu
+PASS: slider event updates guide opacity
+PASS: no opaque battle panel: Track
+PASS: no opaque battle panel: Handle
+PASS: no opaque battle panel: Track
+PASS: no opaque battle panel: Handle
+PASS: no opaque battle panel: Track
+PASS: no opaque battle panel: Handle
+PASS: sample guide target inside robot feed
+PASS: head rotation leaves feed target UV unchanged
+PASS: head turn preserves helmet widget location
+PASS: right pilot references identical shared feed target UV
+PASS: pilot switch preserves path vertex 0
+PASS: pilot switch preserves path vertex 1
+PASS: pilot switch preserves path vertex 2
+PASS: re-enable keeps one punch completion subscription
+PASS: outgoing punch and UI enable do not reset accumulated damage
+PASS: settings does not pause shared combat simulation
+PASS: cleanup immediately hides helmet UI before deferred destruction
+PASS: cleanup restores original diagnostics
+PASS: deferred cleanup removes helmet UI on next frame
+HMD: NOT TESTED
+DAMAGE: TEST DATA ONLY

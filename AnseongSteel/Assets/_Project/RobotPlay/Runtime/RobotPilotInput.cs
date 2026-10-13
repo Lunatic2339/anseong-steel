@@ -20,6 +20,9 @@ namespace AnseongSteel.RobotPlay
         public InputAction rightRotation=new InputAction("Right rotation",InputActionType.Value,"<XRController>{RightHand}/deviceRotation",expectedControlType:"Quaternion");
         public InputAction leftTracked=new InputAction("Left tracked",InputActionType.Button,"<XRController>{LeftHand}/isTracked");
         public InputAction rightTracked=new InputAction("Right tracked",InputActionType.Button,"<XRController>{RightHand}/isTracked");
+        public InputAction leftTrackingState=new InputAction("Left tracking flags",InputActionType.Value,"<XRController>{LeftHand}/trackingState",expectedControlType:"Integer");
+        public InputAction rightTrackingState=new InputAction("Right tracking flags",InputActionType.Value,"<XRController>{RightHand}/trackingState",expectedControlType:"Integer");
+        public static bool ValidRotation(Quaternion q)=>AnseongSteel.PlayerMotion.PunchTrajectoryRecognizer.Finite(q)&&q.x*q.x+q.y*q.y+q.z*q.z+q.w*q.w>.25f&&q.x*q.x+q.y*q.y+q.z*q.z+q.w*q.w<4;
         public InputAction leftAttack=new InputAction("Left attack hold",InputActionType.Button,"<XRController>{LeftHand}/gripPressed");
         public InputAction rightAttack=new InputAction("Right attack hold",InputActionType.Button,"<XRController>{RightHand}/gripPressed");
         public InputAction leftBoost=new InputAction("Left boost",InputActionType.Button,"<XRController>{LeftHand}/trigger");
@@ -33,7 +36,7 @@ namespace AnseongSteel.RobotPlay
         public Startup startup;
         readonly Vector3[] baseline=new Vector3[2];
         readonly Quaternion[] rotationBaseline={Quaternion.identity,Quaternion.identity};
-        readonly bool[] calibrated=new bool[2],pendingBoost=new bool[2];
+        readonly bool[] calibrated=new bool[2],pendingBoost=new bool[2],releaseAfterLoss=new bool[2];
         readonly float[] animationStart={-100,-100};
         readonly bool[] hook=new bool[2];
         Vector3 headBaseline;
@@ -43,13 +46,15 @@ namespace AnseongSteel.RobotPlay
         uint sequence;
         int lastSide=-1;uint connectionEpoch;
         Vector3 cameraOrigin;
-        public Vector3 SeatOffset => session.NetworkActive&&session.LocalSide==1?Vector3.right*.96f:Vector3.zero;
+        Vector3 rightSeatOffset=Vector3.right*.96f;public bool PreviewRight { get; private set; }
+        public Vector3 SeatOffset => (session.NetworkActive?session.LocalSide==1:PreviewRight)?rightSeatOffset:Vector3.zero;
+        public void SetCockpitOrigin(Vector3 left,Vector3 rightOffset,bool previewRight){cameraOrigin=left;rightSeatOffset=rightOffset;PreviewRight=previewRight;cockpitCamera.transform.localPosition=cameraOrigin+SeatOffset;}
         public Vector3 CameraOrigin => cameraOrigin;
-        InputAction[] Actions => new[]{leftPosition,rightPosition,leftRotation,rightRotation,leftTracked,rightTracked,leftAttack,rightAttack,leftBoost,rightBoost,leftStick,rightStick,headPosition,headRotation,recenter};
+        InputAction[] Actions => new[]{leftPosition,rightPosition,leftRotation,rightRotation,leftTracked,rightTracked,leftTrackingState,rightTrackingState,leftAttack,rightAttack,leftBoost,rightBoost,leftStick,rightStick,headPosition,headRotation,recenter};
         void OnEnable(){foreach(var action in Actions)action.Enable();}
         void OnDisable(){foreach(var action in Actions)action.Disable();Recenter();}
         void Start(){cameraOrigin=cockpitCamera.transform.localPosition;if(startup!=Startup.Offline)session.StartNetwork(startup==Startup.Host);}
-        public void Recenter(){calibrated[0]=calibrated[1]=headCalibrated=false;pendingBoost[0]=pendingBoost[1]=false;}
+        public void Recenter(){calibrated[0]=calibrated[1]=headCalibrated=false;pendingBoost[0]=pendingBoost[1]=releaseAfterLoss[0]=releaseAfterLoss[1]=false;}
         void Update()
         {
             if(!session)return;
@@ -75,23 +80,36 @@ namespace AnseongSteel.RobotPlay
             {
                 Vector3 hp=headPosition.ReadValue<Vector3>();
                 Quaternion rotation=headRotation.ReadValue<Quaternion>();
+                if(AnseongSteel.PlayerMotion.PunchTrajectoryRecognizer.Finite(hp)&&ValidRotation(rotation)){
                 if(!headCalibrated){headBaseline=hp;trackingToRobot=Quaternion.Inverse(Quaternion.Euler(0,rotation.eulerAngles.y,0));headCalibrated=true;}
                 cockpitCamera.transform.localPosition=cameraOrigin+SeatOffset+trackingToRobot*(hp-headBaseline);
-                cockpitCamera.transform.localRotation=trackingToRobot*rotation;
+                cockpitCamera.transform.localRotation=trackingToRobot*rotation;}
             }
-            if(!tracked.IsPressed()||position.activeControl==null)
-            {calibrated[side]=false;pendingBoost[side]=false;return;}
-            Vector3 p=position.ReadValue<Vector3>();
+            var flags=side==0?leftTrackingState:rightTrackingState;
             var rotationAction=side==0?leftRotation:rightRotation;
-            var handRotation=rotationAction.activeControl!=null?trackingToRobot*rotationAction.ReadValue<Quaternion>():Quaternion.identity;
+            // Both measured pose channels are required; identity is not a rotation measurement.
+            if(!tracked.IsPressed()||flags.activeControl==null||position.activeControl==null||rotationAction.activeControl==null
+                ||(flags.ReadValue<int>()&3)!=3)
+            {LoseHandTracking(side);return;}
+            Vector3 p=position.ReadValue<Vector3>();
+            if(!AnseongSteel.PlayerMotion.PunchTrajectoryRecognizer.Finite(p)){LoseHandTracking(side);return;}
+            var handRotation=trackingToRobot*rotationAction.ReadValue<Quaternion>();
+            if(!ValidRotation(handRotation)){LoseHandTracking(side);return;}
+            handRotation=handRotation.normalized;
             if(!calibrated[side]){baseline[side]=p;rotationBaseline[side]=handRotation;calibrated[side]=true;return;}
             session.SetLocalHandRotation(side,handRotation*Quaternion.Inverse(rotationBaseline[side]));
-            pendingBoost[side]|=button.WasPressedThisFrame();
+            var attack=side==0?leftAttack:rightAttack;if(!attack.IsPressed())releaseAfterLoss[side]=false;
+            pendingBoost[side]|=!releaseAfterLoss[side]&&button.WasPressedThisFrame();
             if(Time.time<nextSend)return;
             if(source != PrototypeInput.XRLocalBoth)nextSend=Time.time+.02f;
             session.Submit(side,Vector3.ClampMagnitude(trackingToRobot*(p-baseline[side])*motionScale,2.45f),pendingBoost[side],(session.tuning.cooperativeMovement?(side==0?leftStick:rightStick):(side==0?rightStick:leftStick)).ReadValue<Vector2>(),++sequence,
-                (side==0?leftAttack:rightAttack).IsPressed());
+                attack.IsPressed()&&!releaseAfterLoss[side]);
             pendingBoost[side]=false;
+        }
+        void LoseHandTracking(int side)
+        {
+            // Includes loss before first calibration. Reacquisition requires a grip release.
+            if(calibrated[side]||!releaseAfterLoss[side])session.LoseTracking(side);calibrated[side]=false;pendingBoost[side]=false;releaseAfterLoss[side]=true;
         }
         void ReadDesktop()
         {

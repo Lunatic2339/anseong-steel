@@ -38,6 +38,7 @@ namespace AnseongSteel.RobotPlay
         public void Retry()
         {
             if(!session.Authority)return;
+            var feedback=GetComponent<IntegratedFeedback>();if(feedback)feedback.ResetFeedback();
             boss.Stop();session.ResetSimulation();pilot.Recenter();bridge.ResetHudCombat();bridge.Hud.SetMenuOpen(false);
             var online=GetComponent<IntegratedOnlineState>();if(online)online.AuthorityReset();
             State=RunState.Calibrating;CurrentLesson=Lesson.Jab;began=readySince=-1;advance=false;priorDodges=0;

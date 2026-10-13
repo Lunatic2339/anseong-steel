@@ -19,6 +19,7 @@ namespace AnseongSteel.RobotPlay
         public float comboSeconds = 2.4f, minimumComboGap = .15f, boostMultiplier = 2f;
         public int jabDamage = 8, hookDamage = 20, bossHealth = 160, robotHealth = 100;
         public bool standaloneHookDamage;
+        public bool wrongKindEndsCombo=true; // Provisional policy, distinct from wrong pilot order.
         public bool requiresAttackButton, strictComboRules, postContactBoost, cooperativeMovement;
         public float boostWindowSeconds=.45f;
         public float controllerMotionScale = 2.6f;
@@ -61,6 +62,8 @@ namespace AnseongSteel.RobotPlay
             var arm = new Arm { trajectory = new PunchTrajectoryRecognizer(side == 0, tuning.recognition) };
             arm.trajectory.Calibrate(Vector3.zero); return arm;
         }
+        public int BoostOpportunity(float now)=>boostSide>=0&&now<=boostDeadline?boostSide:-1;
+        public float BoostRemaining(float now)=>BoostOpportunity(now)>=0?Mathf.Max(0,boostDeadline-now):0;
         public void Tick(float now)
         {
             if (ComboStep > 0 && now > ComboDeadline) ClearCombo();
@@ -76,7 +79,8 @@ namespace AnseongSteel.RobotPlay
         {
             if (side<0 || side>1 || !Finite(offset) || !float.IsFinite(now) || BossHealth<=0 || RobotHealth<=0) return;
             Tick(now); var arm=arms[side];arm.attackHeld=attackHeld;
-            if(tuning.postContactBoost && boostPressed && boostSide==side && now<=boostDeadline)
+            if(tuning.postContactBoost && boostSide==side && !attackHeld)boostSide=-1;
+            if(tuning.postContactBoost && attackHeld && boostPressed && boostSide==side && now<=boostDeadline)
             {
                 boostSide=-1;int bonus=Mathf.Max(0,Mathf.RoundToInt(tuning.hookDamage*(tuning.boostMultiplier-1)));
                 BossHealth=Mathf.Max(0,BossHealth-bonus);Feedback?.Invoke(FeedbackKind.Boost,(PilotSide)side,bonus);
@@ -158,7 +162,7 @@ namespace AnseongSteel.RobotPlay
                 if(tuning.postContactBoost){boostSide=side;boostDeadline=now+tuning.boostWindowSeconds;}
                 Feedback?.Invoke(FeedbackKind.Combo,(PilotSide)side,damage);
             }
-            else { if (tuning.standaloneHookDamage) damage=tuning.hookDamage; ClearCombo(); }
+            else { if (tuning.standaloneHookDamage) damage=tuning.hookDamage; if((ComboStep>0&&NextSide!=side)||tuning.wrongKindEndsCombo)ClearCombo(); }
             if (damage<=0) return false;
             BossHealth=Mathf.Max(0,BossHealth-damage); HitCount++;
             Feedback?.Invoke(FeedbackKind.Hit,(PilotSide)side,damage);

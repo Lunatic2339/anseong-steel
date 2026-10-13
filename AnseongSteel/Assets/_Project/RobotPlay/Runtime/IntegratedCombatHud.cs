@@ -78,6 +78,7 @@ namespace AnseongSteel.RobotPlay
             var online=session.GetComponent<IntegratedOnlineState>();
             string window=session.NetworkActive&&online?online.Cue:encounter&&encounter.Active?encounter.Cue:session.trainingWindow?"TRAINING":s.phase==0?(s.both?"INCOMING: BOTH GUARD":"INCOMING: "+(s.attackSide==0?"LEFT":"RIGHT")):"ATTACK WINDOW";
             CombatText=$"BOSS {s.bossHealth} / ROBOT {s.robotHealth}\nHITS {s.hits}  COMBO {s.combo}/2\n{window}";
+            var cue=session.GetComponent<IntegratedPunchCue>();if(cue&&cue.Side>=0)CombatText+="\nFINAL HOOK HIT / HOLD GRIP + TRIGGER";
             if(response)response.text=CombatText+"\n"+(Time.unscaledTime<flashUntil?last:"");
             bool tracked=pilot.leftTracked.IsPressed()&&pilot.rightTracked.IsPressed();
             if(link)link.text=session.NetworkActive?"LAN / "+(session.LocalSide==0?"LEFT":"RIGHT")+" / "+session.ConnectionState:pilot.source==PrototypeInput.DesktopBoth?"LOCAL / KEYBOARD":tracked?"LOCAL / TWO HANDS":"LOCAL / NO XR";

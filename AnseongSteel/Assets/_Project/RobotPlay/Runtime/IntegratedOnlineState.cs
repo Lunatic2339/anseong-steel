@@ -10,19 +10,19 @@ namespace AnseongSteel.RobotPlay
     public struct IntegratedFrame : INetworkSerializable, IEquatable<IntegratedFrame>
     {
         public uint epoch;
-        public int run,lesson,kind,beat,attack;
-        public float elapsed,punch,head,torso,leftArm,rightArm,leftLeg,rightLeg;
+        public int run,lesson,kind,beat,attack,boostSide;
+        public float boostRemaining,elapsed,punch,head,torso,leftArm,rightArm,leftLeg,rightLeg;
         public bool paired,leftReady,rightReady,active;
         public void NetworkSerialize<T>(BufferSerializer<T> s) where T:IReaderWriter
         {
             s.SerializeValue(ref epoch);s.SerializeValue(ref run);s.SerializeValue(ref lesson);
             s.SerializeValue(ref kind);s.SerializeValue(ref beat);s.SerializeValue(ref attack);
-            s.SerializeValue(ref elapsed);s.SerializeValue(ref punch);s.SerializeValue(ref paired);
+            s.SerializeValue(ref boostSide);s.SerializeValue(ref boostRemaining);s.SerializeValue(ref elapsed);s.SerializeValue(ref punch);s.SerializeValue(ref paired);
             s.SerializeValue(ref leftReady);s.SerializeValue(ref rightReady);s.SerializeValue(ref active);
             s.SerializeValue(ref head);s.SerializeValue(ref torso);s.SerializeValue(ref leftArm);
             s.SerializeValue(ref rightArm);s.SerializeValue(ref leftLeg);s.SerializeValue(ref rightLeg);
         }
-        public bool Equals(IntegratedFrame o)=>epoch==o.epoch&&run==o.run&&lesson==o.lesson&&kind==o.kind&&beat==o.beat&&attack==o.attack&&elapsed==o.elapsed&&punch==o.punch&&paired==o.paired&&leftReady==o.leftReady&&rightReady==o.rightReady&&active==o.active&&head==o.head&&torso==o.torso&&leftArm==o.leftArm&&rightArm==o.rightArm&&leftLeg==o.leftLeg&&rightLeg==o.rightLeg;
+        public bool Equals(IntegratedFrame o)=>boostSide==o.boostSide&&boostRemaining==o.boostRemaining&&epoch==o.epoch&&run==o.run&&lesson==o.lesson&&kind==o.kind&&beat==o.beat&&attack==o.attack&&elapsed==o.elapsed&&punch==o.punch&&paired==o.paired&&leftReady==o.leftReady&&rightReady==o.rightReady&&active==o.active&&head==o.head&&torso==o.torso&&leftArm==o.leftArm&&rightArm==o.rightArm&&leftLeg==o.leftLeg&&rightLeg==o.rightLeg;
         public float Part(int i)=>i==0?head:i==1?torso:i==2?leftArm:i==3?rightArm:i==4?leftLeg:rightLeg;
     }
     // Only the host writes progression and persistent suit condition. RPC accepts commands, never damage.
@@ -49,7 +49,7 @@ namespace AnseongSteel.RobotPlay
         public void AuthorityReset()
         {
             if(!session.Authority)return;
-            frame=new IntegratedFrame{epoch=frame.epoch+1};StartRequested=false;lastAttack=-1;
+            frame=new IntegratedFrame{epoch=frame.epoch+1,boostSide=-1};StartRequested=false;lastAttack=-1;
         }
         public void RecordFeedback(FeedbackKind kind,PilotSide side,float amount)
         {
@@ -90,6 +90,7 @@ namespace AnseongSteel.RobotPlay
                 if(!boss.driver.enabled){boss.driver.enabled=true;boss.driver.ResetMotion();}
                 if(priorRemote&&!session.RemoteConnected)flow.Retry();
                 priorRemote=session.RemoteConnected;
+                frame.boostSide=session.Combat.BoostOpportunity(Time.time);frame.boostRemaining=session.Combat.BoostRemaining(Time.time);
                 frame.run=(int)flow.State;frame.lesson=(int)flow.CurrentLesson;frame.elapsed=flow.Elapsed;
                 frame.paired=CanRun;frame.leftReady=Ready(0);frame.rightReady=Ready(1);
                 frame.kind=(int)boss.Kind;frame.beat=(int)boss.Phase;frame.active=boss.Active;

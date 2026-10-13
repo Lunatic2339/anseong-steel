@@ -10,8 +10,8 @@ namespace AnseongSteel.RobotPlay
     {
         [Serializable] sealed class FrameReport
         {
-            public uint epoch;public int run,lesson,kind,beat,attack;public float elapsed,punch,head,torso,leftArm,rightArm,leftLeg,rightLeg;public bool paired,leftReady,rightReady,active;
-            public FrameReport(IntegratedFrame f){epoch=f.epoch;run=f.run;lesson=f.lesson;kind=f.kind;beat=f.beat;attack=f.attack;elapsed=f.elapsed;punch=f.punch;head=f.head;torso=f.torso;leftArm=f.leftArm;rightArm=f.rightArm;leftLeg=f.leftLeg;rightLeg=f.rightLeg;paired=f.paired;leftReady=f.leftReady;rightReady=f.rightReady;active=f.active;}
+            public uint epoch;public int run,lesson,kind,beat,attack,boostSide;public float boostRemaining;public float elapsed,punch,head,torso,leftArm,rightArm,leftLeg,rightLeg;public bool paired,leftReady,rightReady,active;
+            public FrameReport(IntegratedFrame f){boostSide=f.boostSide;boostRemaining=f.boostRemaining;epoch=f.epoch;run=f.run;lesson=f.lesson;kind=f.kind;beat=f.beat;attack=f.attack;elapsed=f.elapsed;punch=f.punch;head=f.head;torso=f.torso;leftArm=f.leftArm;rightArm=f.rightArm;leftLeg=f.leftLeg;rightLeg=f.rightLeg;paired=f.paired;leftReady=f.leftReady;rightReady=f.rightReady;active=f.active;}
         }
         [Serializable] sealed class RobotReport
         {
@@ -22,7 +22,7 @@ namespace AnseongSteel.RobotPlay
         {
             public string role,connection,error;
             public bool spawned,authority,remote,canRun,ready;
-            public uint connectionEpoch;public int starts,restarts,rejectedControls,rejectedInputs,impact,damage,guard,dodge,command;
+            public uint connectionEpoch;public int starts,restarts,rejectedControls,rejectedInputs,impact,damage,guard,dodge,command,boostReactions;
             public FrameReport frame;public RobotReport robot;public Vector3 camera,seatOffset;
         }
         RobotPlaySession session;IntegratedOnlineState online;IntegratedPlayFlow flow;RobotPilotInput pilot;IntegratedBossEncounter boss;
@@ -53,7 +53,7 @@ namespace AnseongSteel.RobotPlay
                     if(parts.Length==2&&int.TryParse(parts[0],out int id)&&id>command)
                     {command=id;var oldAction=action;var oldAt=actionAt;action=parts[1];actionAt=Time.time;Execute();if(parts[1]=="boost"){action=oldAction;actionAt=oldAt;}}
                 }
-                if(session.IsSpawned&&session.ConnectionState==RobotPlaySession.LanState.Connected&&Time.time>=nextSend)
+                if(action!="losetracking"&&session.IsSpawned&&session.ConnectionState==RobotPlaySession.LanState.Connected&&Time.time>=nextSend)
                 {
                     nextSend=Time.time+.02f;float age=Time.time-actionAt;
                     Vector3 pose=action=="jab"?RobotPilotInput.DesktopPose(host?0:1,age,false):action=="hook"?RobotPilotInput.DesktopPose(host?0:1,age,true):action=="guard"?Vector3.up*.65f:Vector3.zero;
@@ -79,16 +79,18 @@ namespace AnseongSteel.RobotPlay
                 var rpc=typeof(RobotPlaySession).GetMethod("SubmitRpc",BindingFlags.NonPublic|BindingFlags.Instance);
                 rpc.Invoke(session,new object[]{host?1:0,Vector3.forward*1.2f,false,Vector2.zero,++sequence,true,default(RpcParams)});
             }
-            if(action=="fakefeedback")
+            if(action=="crossloss")typeof(RobotPlaySession).GetMethod("TrackingLostRpc",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(session,new object[]{host?1:0,default(RpcParams)});
+            if(action=="losetracking")session.LoseTracking(host?0:1);
+            if(action=="fakefeedback"||action=="fakeboost")
             {
-                try{typeof(RobotPlaySession).GetMethod("FeedbackRpc",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(session,new object[]{(int)FeedbackKind.Damage,0,99f});error="Feedback RPC attempted; verify authoritative state";}
+                try{typeof(RobotPlaySession).GetMethod("FeedbackRpc",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(session,new object[]{(int)(action=="fakeboost"?FeedbackKind.Boost:FeedbackKind.Damage),0,99f});error="Feedback RPC attempted; verify authoritative state";}
                 catch(TargetInvocationException){error="Feedback RPC denied as expected";}
             }
             if(action=="quit"){Report();Application.Quit(0);}
         }
         void Report()
         {
-            var data=new Telemetry{role=role,connection=session.ConnectionState.ToString(),error=error,spawned=session.IsSpawned,authority=session.Authority,remote=session.RemoteConnected,canRun=online.CanRun,ready=online.ReadyBoth,connectionEpoch=session.ConnectionEpoch,starts=online.AcceptedStarts,restarts=online.AcceptedRestarts,rejectedControls=online.RejectedControls,rejectedInputs=session.RejectedInputs,impact=boss.ImpactCount,damage=boss.DamageCount,guard=boss.GuardCount,dodge=boss.DodgeCount,command=command,frame=new FrameReport(online.State),robot=new RobotReport(session.State),camera=pilot.cockpitCamera.transform.localPosition,seatOffset=pilot.SeatOffset};
+            var data=new Telemetry{role=role,connection=session.ConnectionState.ToString(),error=error,spawned=session.IsSpawned,authority=session.Authority,remote=session.RemoteConnected,canRun=online.CanRun,ready=online.ReadyBoth,connectionEpoch=session.ConnectionEpoch,starts=online.AcceptedStarts,restarts=online.AcceptedRestarts,rejectedControls=online.RejectedControls,rejectedInputs=session.RejectedInputs,impact=boss.ImpactCount,damage=boss.DamageCount,guard=boss.GuardCount,dodge=boss.DodgeCount,command=command,boostReactions=session.GetComponent<IntegratedPunchCue>().AcceptedReactions,frame=new FrameReport(online.State),robot=new RobotReport(session.State),camera=pilot.cockpitCamera.transform.localPosition,seatOffset=pilot.SeatOffset};
             var path=Path.Combine(root,role+"-state.json");File.WriteAllText(path+".tmp",JsonUtility.ToJson(data,true));File.Copy(path+".tmp",path,true);
         }
     }
