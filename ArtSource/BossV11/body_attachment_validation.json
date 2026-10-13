@@ -1,0 +1,11 @@
+{
+  "half_frame_samples": 561,
+  "shared_pivot_max_gap_m": {
+    "waist": 0,
+    "neck": 3.8170248619521535e-06,
+    "elbow": 1.206313194339134e-05
+  },
+  "solid_anchor_failures": [],
+  "minimum_anchor_surface_margin_local_m": 0.05376601219177246,
+  "scope": "Current v11 neck, waist, elbow anchors, new shoulder hanger attachments; foot-specific links are in split_foot_validation.json. Interior containment at sampled poses; not engineering strength."
+}

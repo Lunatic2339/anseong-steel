@@ -1,2 +1,5 @@
 # Blender automatic backup files
 *.blend[0-9]*
+
+# Robot play prototype local test reports and development player
+AnseongSteel/RobotPlayValidation/

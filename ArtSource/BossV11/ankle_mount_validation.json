@@ -1,0 +1,51 @@
+{
+  "links": [
+    {
+      "fork": "ankle_L_upper_fork_-1",
+      "attached_shin_part": "shin_L",
+      "parent": "CTRL_knee_L",
+      "shared_point_parent_local": [
+        -0.22270095348358154,
+        -2.394325017929077,
+        -15.335987091064453
+      ],
+      "same_parent": true
+    },
+    {
+      "fork": "ankle_L_upper_fork_1",
+      "attached_shin_part": "shin_L",
+      "parent": "CTRL_knee_L",
+      "shared_point_parent_local": [
+        2.448572874069214,
+        -1.8047654628753662,
+        -16.18105125427246
+      ],
+      "same_parent": true
+    },
+    {
+      "fork": "ankle_R_upper_fork_-1",
+      "attached_shin_part": "shin_R",
+      "parent": "CTRL_knee_R",
+      "shared_point_parent_local": [
+        -2.396315336227417,
+        -1.7879714965820312,
+        -16.197402954101562
+      ],
+      "same_parent": true
+    },
+    {
+      "fork": "ankle_R_upper_fork_1",
+      "attached_shin_part": "shin_R",
+      "parent": "CTRL_knee_R",
+      "shared_point_parent_local": [
+        0.22270095348358154,
+        -2.394325017929077,
+        -15.335987091064453
+      ],
+      "same_parent": true
+    }
+  ],
+  "half_frame_samples": 561,
+  "attachment_failures": [],
+  "scope": "Upper ankle fork solid overlap into the modified distal shin; shared axis and moving control matrices are independently preserved."
+}

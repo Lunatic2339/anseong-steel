@@ -1,0 +1,407 @@
+{
+  "half_frame_samples": 561,
+  "attachment_links": [
+    {
+      "a": "r11_foot_carrier_L",
+      "b": "ankle_tendon_L",
+      "parent": "CTRL_ankle_L",
+      "shared_point_local": [
+        -2.4193013814510778e-08,
+        8.314533772590949e-08,
+        -2.9999992847442627
+      ],
+      "margin_local_m": 0.20000076293945312,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_forefoot_core_L",
+      "b": "r11_foot_carrier_L",
+      "parent": "CTRL_ankle_L",
+      "shared_point_local": [
+        5.291713023325428e-07,
+        -1.6000001430511475,
+        -4.34999942779541
+      ],
+      "margin_local_m": 0.5999999046325684,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_heel_core_L",
+      "b": "r11_foot_carrier_L",
+      "parent": "CTRL_ankle_L",
+      "shared_point_local": [
+        8.213648072796786e-08,
+        2.1999995708465576,
+        -4.34999942779541
+      ],
+      "margin_local_m": 0.3000004291534424,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_forefoot_core_L",
+      "b": "r11_forefoot_pad_L",
+      "parent": "CTRL_ankle_L",
+      "shared_point_local": [
+        1.3423054667782708e-08,
+        -5.799999713897705,
+        -7.84999942779541
+      ],
+      "margin_local_m": 0.05999946594238281,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_heel_core_L",
+      "b": "r11_heel_pad_L",
+      "parent": "CTRL_ankle_L",
+      "shared_point_local": [
+        -1.0578623488299854e-07,
+        3.499999761581421,
+        -7.84999942779541
+      ],
+      "margin_local_m": 0.05999946594238281,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_forefoot_armor_L",
+      "b": "r11_forefoot_core_L",
+      "parent": "CTRL_ankle_L",
+      "shared_point_local": [
+        3.976365566253662,
+        -6.635730266571045,
+        -7.311222553253174
+      ],
+      "margin_local_m": 0.0514102429151535,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_forefoot_front_L",
+      "b": "r11_forefoot_core_L",
+      "parent": "CTRL_ankle_L",
+      "shared_point_local": [
+        -0.900944173336029,
+        -10.166790008544922,
+        -7.252527713775635
+      ],
+      "margin_local_m": 0.07150644063949585,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_forefoot_rear_L",
+      "b": "r11_forefoot_core_L",
+      "parent": "CTRL_ankle_L",
+      "shared_point_local": [
+        -0.5692758560180664,
+        -0.851940393447876,
+        -5.171390056610107
+      ],
+      "margin_local_m": 0.07105964422225952,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_heel_armor_L",
+      "b": "r11_heel_core_L",
+      "parent": "CTRL_ankle_L",
+      "shared_point_local": [
+        -1.9742133617401123,
+        1.477537989616394,
+        -4.237947463989258
+      ],
+      "margin_local_m": 0.05074062943458557,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_heel_front_L",
+      "b": "r11_heel_core_L",
+      "parent": "CTRL_ankle_L",
+      "shared_point_local": [
+        -1.7000359296798706,
+        1.2805640697479248,
+        -5.234711647033691
+      ],
+      "margin_local_m": 0.05473778024315834,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_heel_rear_L",
+      "b": "r11_heel_core_L",
+      "parent": "CTRL_ankle_L",
+      "shared_point_local": [
+        -1.675493597984314,
+        4.081901550292969,
+        -7.63045072555542
+      ],
+      "margin_local_m": 0.09979867935180664,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_foot_carrier_R",
+      "b": "ankle_tendon_R",
+      "parent": "CTRL_ankle_R",
+      "shared_point_local": [
+        2.4193013814510778e-08,
+        8.314533772590949e-08,
+        -2.9999992847442627
+      ],
+      "margin_local_m": 0.20000076293945312,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_forefoot_core_R",
+      "b": "r11_foot_carrier_R",
+      "parent": "CTRL_ankle_R",
+      "shared_point_local": [
+        -5.291713023325428e-07,
+        -1.6000001430511475,
+        -4.34999942779541
+      ],
+      "margin_local_m": 0.5999999046325684,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_heel_core_R",
+      "b": "r11_foot_carrier_R",
+      "parent": "CTRL_ankle_R",
+      "shared_point_local": [
+        -8.213648072796786e-08,
+        2.1999995708465576,
+        -4.34999942779541
+      ],
+      "margin_local_m": 0.3000004291534424,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_forefoot_core_R",
+      "b": "r11_forefoot_pad_R",
+      "parent": "CTRL_ankle_R",
+      "shared_point_local": [
+        -1.3423054667782708e-08,
+        -5.799999713897705,
+        -7.84999942779541
+      ],
+      "margin_local_m": 0.05999946594238281,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_heel_core_R",
+      "b": "r11_heel_pad_R",
+      "parent": "CTRL_ankle_R",
+      "shared_point_local": [
+        1.0578623488299854e-07,
+        3.499999761581421,
+        -7.84999942779541
+      ],
+      "margin_local_m": 0.05999946594238281,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_forefoot_armor_R",
+      "b": "r11_forefoot_core_R",
+      "parent": "CTRL_ankle_R",
+      "shared_point_local": [
+        -3.640585422515869,
+        -8.47535514831543,
+        -6.641965389251709
+      ],
+      "margin_local_m": 0.04844890534877777,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_forefoot_front_R",
+      "b": "r11_forefoot_core_R",
+      "parent": "CTRL_ankle_R",
+      "shared_point_local": [
+        -0.9009433388710022,
+        -10.166790008544922,
+        -7.252527713775635
+      ],
+      "margin_local_m": 0.07150644063949585,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_forefoot_rear_R",
+      "b": "r11_forefoot_core_R",
+      "parent": "CTRL_ankle_R",
+      "shared_point_local": [
+        -0.5692766904830933,
+        -0.8519399762153625,
+        -5.171390056610107
+      ],
+      "margin_local_m": 0.07106006145477295,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_heel_armor_R",
+      "b": "r11_heel_core_R",
+      "parent": "CTRL_ankle_R",
+      "shared_point_local": [
+        -1.9742140769958496,
+        1.4775376319885254,
+        -4.237947463989258
+      ],
+      "margin_local_m": 0.05073990300297737,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_heel_front_R",
+      "b": "r11_heel_core_R",
+      "parent": "CTRL_ankle_R",
+      "shared_point_local": [
+        -1.7000372409820557,
+        1.2805638313293457,
+        -5.23471212387085
+      ],
+      "margin_local_m": 0.05473801866173744,
+      "same_rigid_parent": true
+    },
+    {
+      "a": "r11_heel_rear_R",
+      "b": "r11_heel_core_R",
+      "parent": "CTRL_ankle_R",
+      "shared_point_local": [
+        -1.6754941940307617,
+        4.081902027130127,
+        -7.63045072555542
+      ],
+      "margin_local_m": 0.09979820251464844,
+      "same_rigid_parent": true
+    }
+  ],
+  "attachment_failures": [],
+  "ground_contacts": {
+    "L": {
+      "forefoot": {
+        "minimum_world_z": -1.5580505419166002e-07,
+        "maximum_world_z": 1.0322779786520186e-07,
+        "bottom_vertices": 16
+      },
+      "heel": {
+        "minimum_world_z": -6.129332064119808e-08,
+        "maximum_world_z": 7.799640400207863e-08,
+        "bottom_vertices": 12
+      }
+    },
+    "R": {
+      "forefoot": {
+        "minimum_world_z": -1.5580505419166002e-07,
+        "maximum_world_z": 1.0322779786520186e-07,
+        "bottom_vertices": 16
+      },
+      "heel": {
+        "minimum_world_z": -6.129332064119808e-08,
+        "maximum_world_z": 7.799640400207863e-08,
+        "bottom_vertices": 12
+      }
+    }
+  },
+  "carrier_min_world_z_m": {
+    "L": 3.051173686981201,
+    "R": 3.051173686981201
+  },
+  "lower_gap_probe_count": 120,
+  "lower_gap_obstructions": [],
+  "measurements": {
+    "forefoot_L": {
+      "local_min": [
+        -4.31719970703125,
+        -10.68899917602539,
+        -8.09999942779541
+      ],
+      "local_max": [
+        4.31719970703125,
+        -0.5524999499320984,
+        -0.6694177389144897
+      ],
+      "dimensions_m": [
+        8.63772199646337,
+        10.140399827897767,
+        7.433441033088172
+      ]
+    },
+    "heel_L": {
+      "local_min": [
+        -2.318399667739868,
+        1.0499999523162842,
+        -8.09999942779541
+      ],
+      "local_max": [
+        2.318399667739868,
+        4.313099384307861,
+        -2.5556929111480713
+      ],
+      "dimensions_m": [
+        4.638583611041895,
+        3.264355097409066,
+        5.546440007857768
+      ]
+    },
+    "foot_carrier_L": {
+      "local_min": [
+        -1.1799997091293335,
+        -2.1999998092651367,
+        -5.049999713897705
+      ],
+      "local_max": [
+        1.1799999475479126,
+        2.499999761581421,
+        -2.779999256134033
+      ],
+      "dimensions_m": [
+        2.360907802449674,
+        4.701808166338765,
+        2.2708739711615635
+      ]
+    },
+    "forefoot_R": {
+      "local_min": [
+        -4.31719970703125,
+        -10.68899917602539,
+        -8.09999942779541
+      ],
+      "local_max": [
+        4.31719970703125,
+        -0.5524999499320984,
+        -0.6694177389144897
+      ],
+      "dimensions_m": [
+        8.63772199646337,
+        10.140399827897767,
+        7.433441033088172
+      ]
+    },
+    "heel_R": {
+      "local_min": [
+        -2.318399667739868,
+        1.0499999523162842,
+        -8.09999942779541
+      ],
+      "local_max": [
+        2.318399667739868,
+        4.313099384307861,
+        -2.5556929111480713
+      ],
+      "dimensions_m": [
+        4.638583611041895,
+        3.264355097409066,
+        5.546440007857768
+      ]
+    },
+    "foot_carrier_R": {
+      "local_min": [
+        -1.1799999475479126,
+        -2.1999998092651367,
+        -5.049999713897705
+      ],
+      "local_max": [
+        1.1799997091293335,
+        2.499999761581421,
+        -2.779999256134033
+      ],
+      "dimensions_m": [
+        2.360907802449674,
+        4.701808166338765,
+        2.2708739711615635
+      ]
+    }
+  },
+  "scope": "Actual interior attachment and two separate ground-pad checks in neutral pose; rigid-parent attachments checked at half-frame intervals. Empty lower gap probes, not structural strength or complete gait analysis."
+}

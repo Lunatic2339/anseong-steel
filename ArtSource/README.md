@@ -21,3 +21,12 @@ calibration, interaction with cockpit controls and device performance remain unt
 
 The generated `.unitypackage`, ZIP deliveries and Unity Library are intentionally
 excluded from Git. The editable assets and source needed to reproduce them are included.
+
+# Boss model source and review
+
+Current boss source: **[BossV11](BossV11/README_한국어.md)**, a 65m full-body Blender model with the latest split-foot revision.
+
+- Editable source: `BossV11/Boss_v011.blend` (Blender 5.2.2 LTS).
+- [Eight-view full-body review](BossV11/full_body_8_views.png), foot/contact previews and validation records are included.
+- This is a Blender modeling/review source delivery; Unity FBX, prefabs, runtime rig integration and VR optimization are not included.
+- Previous `BossV01` through `BossV08` sources and the `BossV08/UV` work are retained.

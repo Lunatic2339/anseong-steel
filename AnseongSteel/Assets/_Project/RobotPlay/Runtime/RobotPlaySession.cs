@@ -1,0 +1,383 @@
+using System;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
+using UnityEngine;
+using AnseongSteel.PlayerMotion;
+
+namespace AnseongSteel.RobotPlay
+{
+    [Serializable]
+    public struct RobotSnapshot : INetworkSerializable, IEquatable<RobotSnapshot>
+    {
+        public int bossHealth,robotHealth,combo,next,hits,phase,attackSide;
+        public bool both,leftGuard,rightGuard;
+        public Vector3 left,right,body;
+        public void NetworkSerialize<T>(BufferSerializer<T> s) where T:IReaderWriter
+        {
+            s.SerializeValue(ref bossHealth);s.SerializeValue(ref robotHealth);s.SerializeValue(ref combo);
+            s.SerializeValue(ref next);s.SerializeValue(ref hits);s.SerializeValue(ref phase);s.SerializeValue(ref attackSide);
+            s.SerializeValue(ref both);s.SerializeValue(ref leftGuard);s.SerializeValue(ref rightGuard);
+            s.SerializeValue(ref left);s.SerializeValue(ref right);s.SerializeValue(ref body);
+        }
+        public bool Equals(RobotSnapshot other) => bossHealth==other.bossHealth&&robotHealth==other.robotHealth&&combo==other.combo&&next==other.next&&hits==other.hits&&phase==other.phase&&attackSide==other.attackSide&&both==other.both&&leftGuard==other.leftGuard&&rightGuard==other.rightGuard&&left==other.left&&right==other.right&&body==other.body;
+    }
+
+    [DefaultExecutionOrder(500)]
+    public sealed class RobotPlaySession : NetworkBehaviour
+    {
+        public CombatTuning tuning=new CombatTuning();
+        public MechaVRBossContact contact;
+        public MechaVRBossTarget target;
+        public Transform robotRoot;
+        public TextMesh statusText;
+        public Renderer targetMarker;
+        public bool trainingWindow=true;
+        public bool externalBossTimeline;
+        public void SetBossWindow(bool open,int side,bool dual){phase=open?1:0;attackSide=side;both=dual;}
+        public float telegraphSeconds=2f,recoverySeconds=3.8f,guardBonusSeconds=1.5f;
+        public float movementSpeed=.6f;
+        public string hostAddress="127.0.0.1";
+        public ushort port=7777;
+        public RobotCombat Combat { get; private set; }
+        public RobotSnapshot State => IsSpawned ? replicated.Value : offline;
+        public int RejectedInputs { get; private set; }
+        public string LastFeedback { get; private set; }="Ready";
+        public event Action<FeedbackKind,PilotSide,float> Feedback;
+        readonly NetworkVariable<RobotSnapshot> replicated=new NetworkVariable<RobotSnapshot>();
+        RobotSnapshot offline;
+        readonly Vector3[] input=new Vector3[2];
+        readonly bool[] boost=new bool[2];
+        readonly bool[] attacks={true,true};
+        readonly Vector2[] movements=new Vector2[2];
+        readonly float[] received={-100,-100};
+        readonly uint[] sequences=new uint[2];
+        readonly Vector3[] accepted=new Vector3[2];
+        float phaseEnd,nextPublish;
+        Vector2 move;
+        int phase,attackSide,attackCount;
+        bool both;
+        ulong rightClient=ulong.MaxValue, reservedClient=ulong.MaxValue;
+        float reservedAt, connectionStarted;
+        NetworkManager callbacks;
+        bool requestedHost;
+        public enum LanState { Offline, Starting, Connected, Stopping, Disconnected, Failed }
+        public LanState ConnectionState { get; private set; } = LanState.Offline;
+        public string ConnectionMessage { get; private set; } = "Offline";
+        public uint ConnectionEpoch { get; private set; }
+        public bool RemoteConnected => rightClient != ulong.MaxValue;
+        public bool OfflineAllowed => ConnectionState == LanState.Offline;
+        readonly ControllerArmFollower[] followers = new ControllerArmFollower[2];
+        readonly ControllerElbowHint[] elbowHints = { new ControllerElbowHint(), new ControllerElbowHint() };
+        readonly Quaternion[] localRotations = { Quaternion.identity, Quaternion.identity };
+        public bool NetworkActive => !OfflineAllowed || (NetworkManager.Singleton && NetworkManager.Singleton.IsListening);
+        public bool Authority => !NetworkActive || (ConnectionState == LanState.Connected && IsSpawned && IsServer);
+        public int LocalSide => NetworkActive && !requestedHost ? 1 : 0;
+        public static Vector3 Neutral(int side) => new Vector3(side==0?-.65f:.65f,1.35f,.45f);
+        void Awake()
+        {
+            Combat=new RobotCombat(tuning);Combat.Feedback+=PublishFeedback;
+            if(contact)contact.enabled=false;
+            if(target)target.onHit.AddListener(OnContact);
+            phaseEnd=Time.time+telegraphSeconds;
+        }
+        public override void OnNetworkSpawn()
+        {
+            requestedHost = IsServer;
+            ConnectionState = LanState.Connected;
+            ConnectionMessage = IsServer ? "Host ready (left pilot)" : "Connected (right pilot)";
+            ConnectionEpoch++;
+            if (IsServer)
+            {
+                ResetSimulation();
+                foreach (var id in NetworkManager.ConnectedClientsIds) Connected(id);
+            }
+        }
+        public override void OnNetworkDespawn()
+        {
+            rightClient = reservedClient = ulong.MaxValue;
+            ClearInput(0); ClearInput(1);
+            if (ConnectionState != LanState.Failed)
+                ConnectionState = LanState.Disconnected;
+        }
+        void ClearInput(int side)
+        {
+            received[side] = -100; sequences[side] = 0;
+            accepted[side] = input[side] = Vector3.zero; boost[side] = false;
+            attacks[side]=false;movements[side]=Vector2.zero;elbowHints[side].Reset();localRotations[side]=Quaternion.identity;
+            Combat?.Invalidate(side);
+            if (side == 0) move = Vector2.zero;
+        }
+        void Connected(ulong id)
+        {
+            if (!callbacks || !callbacks.IsServer || id == NetworkManager.ServerClientId) return;
+            if (rightClient == ulong.MaxValue)
+            {
+                ClearInput(1); rightClient = id; reservedClient = ulong.MaxValue;
+            }
+            else if (rightClient != id) callbacks.DisconnectClient(id);
+        }
+        void Disconnected(ulong id)
+        {
+            if (callbacks && callbacks.IsServer)
+            {
+                if (id == reservedClient) reservedClient = ulong.MaxValue;
+                if (id == rightClient) { rightClient = ulong.MaxValue; ClearInput(1); }
+            }
+            else
+            {
+                ConnectionMessage = callbacks && !string.IsNullOrEmpty(callbacks.DisconnectReason)
+                    ? callbacks.DisconnectReason : "Disconnected from host";
+                if (ConnectionState != LanState.Failed) ConnectionState = LanState.Disconnected;
+            }
+        }
+        void Stopped(bool wasHost)
+        {
+            rightClient = reservedClient = ulong.MaxValue;
+            ClearInput(0); ClearInput(1);
+            if (ConnectionState != LanState.Failed)
+            {
+                ConnectionState = LanState.Disconnected;
+                if (ConnectionMessage == "Stopping") ConnectionMessage = "Disconnected";
+            }
+        }
+        void TransportFailed()
+        { ConnectionState = LanState.Failed; ConnectionMessage = "Transport failed; wait for shutdown, then retry"; }
+        void BindCallbacks(NetworkManager manager)
+        {
+            UnbindCallbacks(); callbacks = manager;
+            callbacks.OnClientConnectedCallback += Connected;
+            callbacks.OnClientDisconnectCallback += Disconnected;
+            callbacks.OnClientStopped += Stopped;
+            callbacks.OnServerStopped += Stopped;
+            callbacks.OnTransportFailure += TransportFailed;
+        }
+        void UnbindCallbacks()
+        {
+            if (!callbacks) return;
+            callbacks.OnClientConnectedCallback -= Connected;
+            callbacks.OnClientDisconnectCallback -= Disconnected;
+            callbacks.OnClientStopped -= Stopped;
+            callbacks.OnServerStopped -= Stopped;
+            callbacks.OnTransportFailure -= TransportFailed;
+            callbacks.ConnectionApprovalCallback = null;
+            callbacks = null;
+        }
+        void Approve(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+        {
+            bool localHost = request.ClientNetworkId == NetworkManager.ServerClientId;
+            if (reservedClient != ulong.MaxValue && Time.realtimeSinceStartup - reservedAt > callbacks.NetworkConfig.ClientConnectionBufferTimeout + 1)
+                reservedClient = ulong.MaxValue;
+            bool allowed = localHost || (rightClient == ulong.MaxValue && reservedClient == ulong.MaxValue);
+            response.Approved = allowed; response.CreatePlayerObject = false; response.Pending = false;
+            response.Reason = allowed ? "" : "Two pilot prototype is full";
+            if (allowed && !localHost) { reservedClient = request.ClientNetworkId; reservedAt = Time.realtimeSinceStartup; }
+        }
+        public bool CanStartNetwork => ConnectionState != LanState.Starting && ConnectionState != LanState.Connected
+            && ConnectionState != LanState.Stopping && NetworkManager.Singleton
+            && !NetworkManager.Singleton.IsListening && !NetworkManager.Singleton.ShutdownInProgress;
+        public void StartNetwork(bool host)
+        {
+            var manager = NetworkManager.Singleton;
+            if (!manager) { ConnectionState = LanState.Failed; ConnectionMessage = "NetworkManager missing"; return; }
+            if (!CanStartNetwork) return;
+            if (!IntegratedLanRules.TryEndpoint(hostAddress, port, out string address, out string error))
+            { ConnectionState = LanState.Failed; ConnectionMessage = error; return; }
+            var transport = manager.GetComponent<UnityTransport>();
+            if (!transport) { ConnectionState = LanState.Failed; ConnectionMessage = "UnityTransport missing"; return; }
+            BindCallbacks(manager); requestedHost = host;
+            rightClient = reservedClient = ulong.MaxValue;
+            ClearInput(0); ClearInput(1); ConnectionEpoch++;
+            ConnectionState = LanState.Starting; ConnectionMessage = host ? "Starting host" : "Connecting";
+            connectionStarted = Time.realtimeSinceStartup;
+            manager.NetworkConfig.ConnectionApproval = true;
+            manager.ConnectionApprovalCallback = host ? Approve : null;
+            try
+            {
+                transport.SetConnectionData(address, port, host ? "0.0.0.0" : null);
+                bool started = host ? manager.StartHost() : manager.StartClient();
+                if (!started) { ConnectionState = LanState.Failed; ConnectionMessage = "Network start failed"; if (manager.IsListening) manager.Shutdown(); }
+            }
+            catch (Exception ex)
+            {
+                ConnectionState = LanState.Failed; ConnectionMessage = "Network start failed: " + ex.Message;
+                if (manager.IsListening && !manager.ShutdownInProgress) manager.Shutdown();
+            }
+        }
+        public void StopNetwork()
+        {
+            var manager = NetworkManager.Singleton;
+            if (ConnectionState == LanState.Stopping) return;
+            ClearInput(0); ClearInput(1);
+            if (manager && (manager.IsListening || manager.ShutdownInProgress))
+            {
+                ConnectionState = LanState.Stopping; ConnectionMessage = "Stopping";
+                if (!manager.ShutdownInProgress) manager.Shutdown();
+            }
+            else { ConnectionState = LanState.Disconnected; ConnectionMessage = "Disconnected"; }
+        }
+        public bool UseOfflineTest()
+        {
+            var manager = NetworkManager.Singleton;
+            if (manager && (manager.IsListening || manager.ShutdownInProgress)) return false;
+            UnbindCallbacks(); ConnectionState = LanState.Offline; ConnectionMessage = "Offline";
+            ConnectionEpoch++; ResetSimulation(); return true;
+        }
+        void Update()
+        {
+            if (ConnectionState == LanState.Starting && Time.realtimeSinceStartup - connectionStarted > 15)
+            {
+                StopNetwork(); ConnectionState = LanState.Failed; ConnectionMessage = "Connection timed out; check host IPv4 and LAN";
+            }
+        }
+        public override void OnDestroy()
+        {
+            if (target) target.onHit.RemoveListener(OnContact);
+            if (Combat != null) Combat.Feedback -= PublishFeedback;
+            UnbindCallbacks(); base.OnDestroy();
+        }
+        public void Submit(int side,Vector3 offset,bool boostEdge,Vector2 movement,uint sequence,bool attackHeld=true)
+        {
+            if(NetworkActive)
+            {
+                if(ConnectionState!=LanState.Connected || !IsSpawned || side!=LocalSide)return;
+                SubmitRpc(side,offset,boostEdge,movement,sequence,attackHeld);
+            }
+            else Accept(side,offset,boostEdge,movement,sequence,attackHeld);
+        }
+        [Rpc(SendTo.Server,InvokePermission=RpcInvokePermission.Everyone)]
+        void SubmitRpc(int side,Vector3 offset,bool boostEdge,Vector2 movement,uint sequence,bool attackHeld,RpcParams rpc=default)
+        {
+            if(!IsServer || ConnectionState!=LanState.Connected)return;
+            ulong sender=rpc.Receive.SenderClientId;
+            if(!Authorized(side,sender,NetworkManager.ServerClientId,rightClient)){RejectedInputs++;return;}
+            Accept(side,offset,boostEdge,movement,sequence,attackHeld);
+        }
+        public static bool Authorized(int side,ulong sender,ulong host,ulong right) => side==0?sender==host:side==1&&right!=ulong.MaxValue&&sender==right;
+        void Accept(int side,Vector3 offset,bool edge,Vector2 movement,uint sequence,bool attackHeld)
+        {
+            if(side<0||side>1||!RobotCombat.Finite(offset)||offset.magnitude>2.5f||!float.IsFinite(movement.x)||!float.IsFinite(movement.y)||!IntegratedLanRules.IsNewSequence(sequence,sequences[side]))return;
+            float elapsed=Time.time-received[side];
+            if(elapsed<.008f)return;
+            if(elapsed<.25f && Vector3.Distance(accepted[side],offset)>Mathf.Max(.15f,elapsed*12f))return;
+            sequences[side]=sequence;accepted[side]=offset;input[side]=offset;attacks[side]=attackHeld;movements[side]=Vector2.ClampMagnitude(movement,1);boost[side]|=edge;received[side]=Time.time;
+            if(side==0)move=Vector2.ClampMagnitude(movement,1); // Explicit provisional movement ownership.
+        }
+        void LateUpdate()
+        {
+            if(!contact||!robotRoot||!target)return;
+            if(Authority)
+            {
+                float now=Time.time;Combat.Tick(now);
+                for(int side=0;side<2;side++)
+                {
+                    if(now-received[side]>.25f)
+                    { if(Combat.arms[side].initialized)Combat.Invalidate(side);input[side]=Vector3.zero;movements[side]=Vector2.zero;attacks[side]=false;boost[side]=false;if(side==0)move=Vector2.zero; }
+                    else if(received[side]>Combat.arms[side].lastSample)Combat.Sample(side,input[side],boost[side],received[side],attacks[side]);
+                    boost[side]=false;Pose(side,input[side]);
+                }
+                if(Combat.RobotHealth>0&&Combat.BossHealth>0&&(!NetworkActive||!GetComponent<IntegratedOnlineState>()||GetComponent<IntegratedOnlineState>().IsBattle))
+                {
+                    if(tuning.cooperativeMovement)move=CooperativeMove(movements[0],movements[1]);
+                    Vector3 p=robotRoot.position+robotRoot.TransformDirection(new Vector3(move.x,0,move.y))*movementSpeed*Time.deltaTime;
+                    p.x=Mathf.Clamp(p.x,-.7f,.7f);p.z=Mathf.Clamp(p.z,-1f,.15f);robotRoot.position=p;
+                    UpdateBoss(now);
+                }
+                contact.ConstrainPose();
+                // Confirm an initially ambiguous stroke only while fist contact continues.
+                for(int side=0;side<2;side++)if(contact.arms[side].IsBlocked && now-received[side]<=.25f)TryPunchContact(side);
+                offline=new RobotSnapshot {bossHealth=Combat.BossHealth,robotHealth=Combat.RobotHealth,combo=Combat.ComboStep,next=Combat.NextSide,hits=Combat.HitCount,phase=phase,attackSide=attackSide,both=both,leftGuard=Combat.arms[0].guarding,rightGuard=Combat.arms[1].guarding,left=input[0],right=input[1],body=robotRoot.position};
+                if(IsSpawned&&IsServer&&now>=nextPublish){replicated.Value=offline;nextPublish=now+.033f;}
+            }
+            else if(IsSpawned)
+            {var s=State;robotRoot.position=s.body;Pose(0,s.left);Pose(1,s.right);contact.ConstrainPose();}
+            UpdateDisplay();
+        }
+        public void LoseTracking(int side)
+        {
+            if(side<0||side>1)return;
+            if(NetworkActive){if(IsSpawned&&side==LocalSide)TrackingLostRpc(side);}else ClearInput(side);
+        }
+        [Rpc(SendTo.Server,InvokePermission=RpcInvokePermission.Everyone)]
+        void TrackingLostRpc(int side,RpcParams rpc=default)
+        {if(IsServer&&Authorized(side,rpc.Receive.SenderClientId,NetworkManager.ServerClientId,rightClient))ClearInput(side);else RejectedInputs++;}
+        public bool FreshInput(int side) => side>=0&&side<2&&Time.time-received[side]<=.25f;
+        public static Vector2 CooperativeMove(Vector2 left,Vector2 right)
+        {
+            if(left.magnitude<.5f||right.magnitude<.5f||Vector2.Dot(left.normalized,right.normalized)<.9f)return Vector2.zero;
+            return Vector2.ClampMagnitude((left+right)*.5f,1);
+        }
+        void UpdateBoss(float now)
+        {
+            if(externalBossTimeline)return;
+            if(trainingWindow){phase=1;return;}
+            if(now<phaseEnd)return;
+            if(phase==0)
+            {
+                bool inRange=robotRoot.position.z>-.55f;
+                bool defended=!inRange || Combat.ReceiveAttack(attackSide,both,12);
+                phase=1;phaseEnd=now+recoverySeconds+(defended?guardBonusSeconds:0);
+            }
+            else {phase=0;attackCount++;attackSide=attackCount%2;both=attackCount%3==2;phaseEnd=now+telegraphSeconds;}
+        }
+        void OnContact()
+        {
+            if(!Authority)return;
+            int side=target.LastArm=="L"?0:target.LastArm=="R"?1:-1;
+            if(side<0||!contact.arms[side].ContactPart.Contains("Fist"))return;
+            TryPunchContact(side);
+        }
+        void TryPunchContact(int side)
+        {
+            var online=GetComponent<IntegratedOnlineState>();if(NetworkActive&&online&&!online.IsBattle)return;
+            var arm=Combat.arms[side];
+            if(!contact.arms[side].ContactPart.Contains("Fist") || arm.trajectory.Phase!=MotionPhase.Moving
+                || arm.trajectory.Candidate.kind==ObservedPunch.Unknown)return;
+            Combat.Hit(side,Time.time,trainingWindow||phase==1);
+        }
+        public void ResetSimulation()
+        {
+            if(Combat==null || !Authority)return;
+            var cue=GetComponent<IntegratedPunchCue>();if(cue)cue.ResetPresentation();
+            Combat.Reset();phase=0;attackCount=0;attackSide=0;both=false;phaseEnd=Time.time+telegraphSeconds;
+            for(int i=0;i<2;i++){received[i]=-100;input[i]=Vector3.zero;boost[i]=false;attacks[i]=false;movements[i]=Vector2.zero;sequences[i]=0;elbowHints[i].Reset();localRotations[i]=Quaternion.identity;}
+            move=Vector2.zero;if(robotRoot)robotRoot.position=Vector3.zero;if(contact)contact.ResetContactState();
+        }
+        // Two rigid segments. The existing contact solver restricts these requested rotations.
+        public void SetLocalHandRotation(int side,Quaternion delta)
+        {
+            if(!NetworkActive && side>=0 && side<2 && PunchTrajectoryRecognizer.Finite(delta))localRotations[side]=delta;
+        }
+        public void Pose(int side,Vector3 offset)
+        {
+            var arm=contact.arms[side];
+            if(!followers[side])
+            {
+                var follower=arm.upperArm.GetComponent<ControllerArmFollower>();
+                if(!follower)follower=arm.upperArm.gameObject.AddComponent<ControllerArmFollower>();
+                follower.upper=arm.upperArm;follower.forearm=arm.forearm;follower.hand=arm.hand;follower.robotFrame=robotRoot;
+                follower.neutralTarget=Neutral(side);follower.bendDirection=new Vector3(side==0?-1:1,-1,0);
+                follower.Initialize();followers[side]=follower;
+            }
+            var delta=offset/Mathf.Max(.1f,tuning.controllerMotionScale);
+            followers[side].elbowLift=elbowHints[side].Update(delta,Time.deltaTime);
+            followers[side].strictPunchPose=true;
+            followers[side].punchPose=Combat.arms[side].attackHeld&&(Combat.arms[side].attackAttempt||Combat.arms[side].contactConsumed)&&Combat.arms[side].trajectory.Phase!=MotionPhase.Ready;
+            followers[side].Follow(delta,NetworkActive?Quaternion.identity:localRotations[side]);
+        }
+        void PublishFeedback(FeedbackKind kind,PilotSide side,float strength)
+        {
+            var online=GetComponent<IntegratedOnlineState>();if(online&&Authority)online.RecordFeedback(kind,side,strength);
+            if(IsSpawned&&IsServer)FeedbackRpc((int)kind,(int)side,strength);
+            else ReceiveFeedback(kind,side,strength);
+        }
+        [Rpc(SendTo.Everyone,InvokePermission=RpcInvokePermission.Server)] void FeedbackRpc(int kind,int side,float strength) => ReceiveFeedback((FeedbackKind)kind,(PilotSide)side,strength);
+        void ReceiveFeedback(FeedbackKind kind,PilotSide side,float strength)
+        {LastFeedback=$"{side} {kind} {strength:0}";Feedback?.Invoke(kind,side,strength);}
+        void UpdateDisplay()
+        {
+            var s=State;
+            if(statusText)statusText.text=$"ROBOT PLAY / {(NetworkActive?(LocalSide==0?"HOST L":"CLIENT R"):"OFFLINE")}\nBOSS {s.bossHealth} / ROBOT {s.robotHealth}\nCOMBO {s.combo}/2   NEXT {(s.next<0?"-":s.next==0?"LEFT":"RIGHT")}\nGUARD L:{s.leftGuard} R:{s.rightGuard}\n{(s.phase==1?"ATTACK WINDOW":s.both?"INCOMING: BOTH GUARD":s.attackSide==0?"INCOMING: LEFT":"INCOMING: RIGHT")}\n{LastFeedback}";
+            if(targetMarker)targetMarker.material.color=s.bossHealth<=0?Color.gray:s.phase==1?new Color(.1f,.8f,.5f):new Color(1,.3f,.12f);
+        }
+    }
+}
