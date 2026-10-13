@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Animations.Rigging;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.XR;
@@ -18,6 +18,9 @@ public sealed class MechaVRHandTarget : MonoBehaviour
     [Tooltip("Map the controller position directly between matching body/head frames. Used by the player-following rig.")]
     public bool alignPositionToController;
 
+    public bool softenFullExtension = true;
+    public float RawReachRatio { get; private set; }
+    private TwoBoneIKConstraint reachIK;
     private Vector3 controllerReference;
     private Vector3 targetReference;
     private Quaternion gripToHandRotation = Quaternion.identity;
@@ -98,7 +101,21 @@ public sealed class MechaVRHandTarget : MonoBehaviour
             : targetReference + (position - controllerReference) * movementGain;
         Quaternion localRotation = rotation * gripToHandRotation;
 
-        target.SetPositionAndRotation(mechaSpace.TransformPoint(localTarget), mechaSpace.rotation * localRotation);
+        Vector3 worldTarget = mechaSpace.TransformPoint(localTarget);
+        if (!reachIK) reachIK = GetComponent<TwoBoneIKConstraint>();
+        RawReachRatio = 0f;
+        if (reachIK && reachIK.data.root && reachIK.data.mid && reachIK.data.tip)
+        {
+            var d = reachIK.data;
+            float length = Vector3.Distance(d.root.position, d.mid.position) + Vector3.Distance(d.mid.position, d.tip.position);
+            Vector3 offset = worldTarget - d.root.position;
+            float distance = offset.magnitude;
+            RawReachRatio = distance / Mathf.Max(length, .00001f);
+            if (softenFullExtension && distance > .00001f)
+                worldTarget = d.root.position + offset * (MechaArmStability.SoftDistance(distance, length) / distance);
+        }
+        // Rotation remains independent of the positional reach correction.
+        target.SetPositionAndRotation(worldTarget, mechaSpace.rotation * localRotation);
     }
 
     private Quaternion GetControllerGripRotation()
@@ -194,3 +211,4 @@ public sealed class MechaVRHandTarget : MonoBehaviour
         Debug.Log("[MechaVR] " + name + ": calibration complete. Move the controller to move the IK target.", this);
     }
 }
+

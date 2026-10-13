@@ -1,0 +1,14 @@
+{
+  "source": "D:\\Blender\\Capstone_Weapones\\Capstone_Sword_v2.blend",
+  "vertices": 5141,
+  "triangles": 10003,
+  "texture_size": [
+    4096,
+    4096
+  ],
+  "metallic": 0.0,
+  "roughness": 0.8999999761581421,
+  "uv_layers": 1,
+  "units": "meters; original scale preserved",
+  "normal_texture": null
+}
