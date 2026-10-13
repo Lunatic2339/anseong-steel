@@ -133,6 +133,9 @@ MonoBehaviour:
   highQualityFiltering:
     m_OverrideState: 1
     m_Value: 0
+  filter:
+    m_OverrideState: 1
+    m_Value: 0
   downscale:
     m_OverrideState: 1
     m_Value: 0
@@ -277,6 +280,9 @@ MonoBehaviour:
   skyOcclusionIntensityMultiplier:
     m_OverrideState: 1
     m_Value: 1
+  worldOffset:
+    m_OverrideState: 1
+    m_Value: {x: 0, y: 0, z: 0}
 --- !u!114 &-725354220008005944
 MonoBehaviour:
   m_ObjectHideFlags: 3

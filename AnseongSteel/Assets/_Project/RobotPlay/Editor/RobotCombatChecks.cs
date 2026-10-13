@@ -14,12 +14,10 @@ namespace AnseongSteel.RobotPlay.Editor
         static void Home(RobotCombat c,int side,ref float time)
         {for(int n=0;n<50;n++){time+=.02f;c.Sample(side,Vector3.zero,false,time);}}
         static void Jab(RobotCombat c,int side,ref float time)
-        {Home(c,side,ref time);time+=.02f;c.Sample(side,new Vector3(0,0,.2f),false,time);}
+        {Home(c,side,ref time);for(int n=1;n<=10;n++){time+=.02f;c.Sample(side,new Vector3(0,0,.06f*n),false,time);}}
         static void Hook(RobotCombat c,int side,ref float time,bool boost)
         {
-            Home(c,side,ref time);float sign=side==0?-1:1;
-            for(int n=1;n<=14;n++){time+=.02f;c.Sample(side,new Vector3(sign*.85f,0,.8f)*(n/14f),false,time);}
-            time+=.02f;c.Sample(side,new Vector3(sign*.65f,0,.82f),boost,time);
+            Home(c,side,ref time);for(int n=1;n<=24;n++){time+=.02f;c.Sample(side,RobotPilotInput.DesktopPose(side,n*.02f,true),boost&&n==24,time);}
         }
         [MenuItem("Anseong Steel/Robot Play/Run combat checks")]
         public static void Run()
@@ -51,8 +49,15 @@ namespace AnseongSteel.RobotPlay.Editor
             {
                 c=Fresh();t=0;Home(c,0,ref t);float begin=t;
                 for(float age=interval;age<.43f;age+=interval){t=begin+age;c.Sample(0,RobotPilotInput.DesktopPose(0,age,true),false,t);}
-                Check(c.arms[0].strike==Strike.Hook,"hook windup stays a hook at sample interval "+interval);
+                Check(c.arms[0].strike==Strike.Hook,"hook windup stays a hook at sample interval "+interval+" | "+c.arms[0].trajectory.Candidate.kind+" "+c.arms[0].trajectory.Candidate.reason+" arc="+c.arms[0].trajectory.Candidate.arcRatio);
             }
+            c=new RobotCombat(new CombatTuning{standaloneHookDamage=true});t=0;Hook(c,0,ref t,false);
+            Check(c.BossHealth==160,"recognized trajectory alone never deals damage");
+            Check(c.Hit(0,t,true)&&c.BossHealth==140,"confirmed standalone hook damages in local punch mode");
+            Check(!c.Hit(0,t+.01f,true)&&c.HitCount==1,"confirmed hook contact is consumed once");
+            c=new RobotCombat(new CombatTuning{standaloneHookDamage=true});t=0;Home(c,0,ref t);
+            for(int n=1;n<=12;n++){t+=.02f;c.Sample(0,new Vector3(.06f*n,0,.06f*n),false,t);}
+            Check(!c.Hit(0,t,true)&&c.BossHealth==160,"ambiguous diagonal contact does not damage");
             Directory.CreateDirectory("RobotPlayValidation");File.WriteAllLines("RobotPlayValidation/combat-checks.txt",results);
             Debug.Log("ROBOT_COMBAT_CHECKS_PASS "+results.Count);
         }

@@ -109,6 +109,8 @@ namespace AnseongSteel.PlayerMotion
                     began = previousTime; peakSpeed = velocity.magnitude;
                     initialRotation = rotation; maxForward = offset.z; peakForwardIndex = 1;
                     quietSince = -1; returnStart = -1; Phase = MotionPhase.Moving;
+                    // A new stroke must not inherit the previous completed punch candidate.
+                    Candidate = new PunchObservation { reason = "Need more trajectory" };
                 }
             }
             else if (Phase == MotionPhase.Moving)
