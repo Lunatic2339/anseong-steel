@@ -1,0 +1,173 @@
+Existing pure combat and integrated rules: PASS
+SCENE Assets/Scenes/SampleScene.unity | objects=2903 missingScripts=0
+ROOT XR Interaction Setup (MP Variant) active=True
+ROOT Network Manager VR Mutliplayer active=True
+ROOT XRI Network Game Manager active=True
+ROOT Gameplay active=True
+ROOT UI active=True
+ROOT Environment active=True
+ROOT Permissions Manager active=True
+ACTIVE missing meshes=0 missing material slots=0
+ACTIVE RENDERERS=541 skinned=6 slots=626 verticesInstances=209965 triangleIndices/3=282860
+CAMERA Main Camera active=True stereo=Both mask=119 texture=screen
+CAMERA Camera active=False stereo=Both mask=192 texture=1024x1024 AA=1
+CAMERA Camera active=True stereo=Both mask=192 texture=1024x1024 AA=1
+COMPONENT XROrigin @ XR Interaction Setup (MP Variant) enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Wrist Button UI enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Wrist Button UI enabled=True
+COMPONENT GraphicRaycaster @ Hand Scroll View enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Hand Scroll View enabled=True
+COMPONENT GraphicRaycaster @ Canvas (Body-locked UI) enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas (Body-locked UI) enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ ScoreboardCanvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ ScoreboardCanvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Canvas enabled=True
+COMPONENT GraphicRaycaster @ World Space Canvas enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ World Space Canvas enabled=True
+COMPONENT GraphicRaycaster @ Spatial Panel Scroll enabled=True
+COMPONENT TrackedDeviceGraphicRaycaster @ Spatial Panel Scroll enabled=True
+COMPONENT EventSystem @ EventSystem enabled=True
+COMPONENT XRUIInputModule @ EventSystem enabled=True
+DEPENDENCIES count=680 sourceMiB=126.5
+FBX Assets/VRMPAssets/Meshes/Launcher.fbx MiB=1.0
+FBX Assets/VRMPAssets/Meshes/TargetRing.fbx MiB=0.6
+FBX Assets/Samples/XR Hands/1.8.1/HandVisualizer/Models/RightHandAndroidXR.fbx MiB=0.6
+FBX Assets/Samples/XR Hands/1.8.1/HandVisualizer/Models/LeftHandAndroidXR.fbx MiB=0.6
+FBX Assets/VRMPAssets/MiniGames/MiniGameMeshes/StickStand.fbx MiB=0.6
+FBX Assets/VRMPAssets/Meshes/EnvironmentMeshes/MP_Level.fbx MiB=0.5
+FBX Assets/VRMPAssets/MiniGames/MiniGameMeshes/PiggyBankShattered.fbx MiB=0.5
+FBX Assets/Samples/XR Hands/1.8.1/HandVisualizer/Models/RightHand.fbx MiB=0.3
+SCENE Assets/_BossPrototype/Scenes/BossModelTest.unity | objects=389 missingScripts=0
+ROOT Boss_Mecha_v026 active=True
+ROOT Ground active=True
+ROOT Target_Dummy active=True
+ROOT DemoControls active=True
+ROOT Main Camera active=True
+ROOT Key Light active=True
+ROOT Fill Light active=True
+ACTIVE missing meshes=0 missing material slots=0
+ACTIVE RENDERERS=319 skinned=291 slots=327 verticesInstances=111259 triangleIndices/3=78453
+CAMERA Main Camera active=True stereo=Both mask=-1 texture=screen
+COMPONENT BossCombatController @ Boss_Mecha_v026 enabled=True
+DEPENDENCIES count=616 sourceMiB=274.3
+FBX Assets/_BossPrototype/Animation/Idle.fbx MiB=21.6
+FBX Assets/_BossPrototype/Animation/Punch.fbx MiB=21.5
+FBX Assets/_BossPrototype/Animation/Walk.fbx MiB=21.4
+FBX Assets/_BossPrototype/Models/BossUpdatedCompatible.fbx MiB=20.1
+FBX Assets/_BossPrototype/Models/Sword/BossGreatsword.fbx MiB=0.6
+SCENE Assets/_Project/04_Scenes/sunwoo_IntegratedPlay.unity | objects=974 missingScripts=0
+ROOT Tracked Robot Arms active=True
+ROOT Boss - red - same model and scale active=True
+ROOT Boss pose reference active=True
+ROOT Boss pose reference active=True
+ROOT Existing Cockpit V02 - live display active=True
+ROOT Real Controller Motion Test active=True
+ROOT Local Pilot Tracking Origin active=True
+ROOT Left station - Pilot V04 active=True
+ROOT Right station - Pilot V04 active=True
+ROOT Key light active=True
+ROOT Prototype NGO LAN (uses installed Netcode + UTP) active=True
+ROOT Robot Combat Authority active=True
+ROOT Shared Robot Body active=True
+ROOT Replaceable Enemy Target active=True
+ROOT Arena floor active=True
+ROOT Arena key light active=True
+ACTIVE missing meshes=2 missing material slots=0
+ACTIVE RENDERERS=313 skinned=296 slots=360 verticesInstances=360813 triangleIndices/3=311163
+CAMERA Robot optical mount - independent of pilot HMD active=True stereo=None mask=-1 texture=2048x2048 AA=4
+CAMERA Robot left panorama sector active=True stereo=None mask=-1 texture=2048x2048 AA=4
+CAMERA Robot right panorama sector active=True stereo=None mask=-1 texture=2048x2048 AA=4
+CAMERA Cockpit HMD Camera active=True stereo=Both mask=-1 texture=screen
+COMPONENT ArmMotionInput @ Real Controller Motion Test enabled=False
+COMPONENT RobotPilotInput @ Robot Combat Authority enabled=True
+COMPONENT IntegratedCombatHud @ Robot Combat Authority enabled=True
+COMPONENT IntegratedBossEncounter @ Robot Combat Authority enabled=True
+COMPONENT IntegratedPlayFlow @ Robot Combat Authority enabled=True
+COMPONENT IntegratedFeedback @ Robot Combat Authority enabled=True
+COMPONENT IntegratedOnlineState @ Robot Combat Authority enabled=True
+COMPONENT IntegratedPunchCue @ Robot Combat Authority enabled=True
+COMPONENT IntegratedCockpitSelector @ Robot Combat Authority enabled=True
+COMPONENT BossCombatController @ Existing animated BossMecha enabled=True
+COMBAT TUNING {"minimumSpeed":0.6499999761581421,"minimumTravel":0.11999999731779099,"strokeSeconds":0.699999988079071,"rearmRadius":0.2199999988079071,"rearmSeconds":0.11999999731779099,"guardHeight":0.4000000059604645,"hookWindup":0.44999998807907107,"comboSeconds":2.4000000953674318,"minimumComboGap":0.15000000596046449,"boostMultiplier":2.0,"jabDamage":8,"hookDamage":20,"bossHealth":160,"robotHealth":100,"standaloneHookDamage":true,"wrongKindEndsCombo":true,"requiresAttackButton":true,"strictComboRules":true,"postContactBoost":true,"cooperativeMovement":true,"boostWindowSeconds":0.44999998807907107,"controllerMotionScale":2.5999999046325685,"recognition":{"startSpeed":0.75,"minimumForward":0.18000000715255738,"minimumHookSweep":0.2199999988079071,"minimumHookOutset":0.10000000149011612,"minimumHookArcRatio":1.0199999809265137,"maximumJabSideRatio":0.550000011920929,"maximumVerticalRatio":0.699999988079071,"neutralRadius":0.11999999731779099,"neutralDwell":0.15000000596046449,"stopSpeed":0.20000000298023225,"stopDwell":0.10000000149011612,"maximumStrokeSeconds":1.25,"maximumSampleGap":0.15000000596046449,"maximumTrackingSpeed":15.0}}
+TARGET COLLIDERS BoxCollider@Replaceable Enemy Target
+DEPENDENCIES count=869 sourceMiB=314.5
+FBX Assets/_BossPrototype/Animation/Idle.fbx MiB=21.6
+FBX Assets/_BossPrototype/Animation/Punch.fbx MiB=21.5
+FBX Assets/_BossPrototype/Animation/Walk.fbx MiB=21.4
+FBX Assets/_BossPrototype/Models/BossUpdatedCompatible.fbx MiB=20.1
+FBX Assets/_Project/02_Art/CockpitV01/Models/Anseong_Cockpit_v01.fbx MiB=2.9
+FBX Assets/_Project/02_Art/CockpitV02/Models/Anseong_Cockpit_v02.fbx MiB=2.2
+FBX Assets/CockpitVariants/A_CloseArc/Models/Anseong_Cockpit_A_CloseArc.fbx MiB=2.2
+FBX Assets/CockpitVariants/C_SideDome/Models/Anseong_Cockpit_C_SideDome.fbx MiB=1.9
+RUNTIME initialFlow=Calibrating
+AVATAR Left station - Pilot V04 local=True active=True
+AVATAR Right station - Pilot V04 local=False active=True
+RUNTIME renderers=310 materialSlots=357
+RUNTIME raycasters=GraphicRaycaster
+RUNTIME active cameras=Cockpit HMD Camera,Robot right panorama sector,Robot left panorama sector,Robot optical mount - independent of pilot HMD
+REPRO calibration-only-left: flow=Calibrating bossHealth=136 hits=3
+REPRO avatar input owner: ArmMotionInput enabled=False avatarLeftTarget=(-1.31, 1.46, 0.32) robotLeftInput=(0.00, 0.01, 0.22)
+REPRO stationary-x-0.6 actual-body-contact: damage=0 dodgeCount=1 movementInput=zero
+RUNTIME initialFlow=Calibrating
+AVATAR Left station - Pilot V04 local=True active=True
+AVATAR Right station - Pilot V04 local=False active=True
+RUNTIME renderers=310 materialSlots=357
+RENDER ROOT Tutorial path - robot world feed only renderers=1 slots=1
+RENDER ROOT Cockpit_V02(Clone) renderers=8 slots=34
+RENDER ROOT Replaceable Enemy Target renderers=295 slots=303
+RENDER ROOT Arena floor renderers=1 slots=1
+RENDER ROOT Right station - Pilot V04 renderers=2 slots=7
+RENDER ROOT Boss - red - same model and scale renderers=1 slots=4
+RENDER ROOT Left station - Pilot V04 renderers=2 slots=7
+RUNTIME raycasters=GraphicRaycaster
+RUNTIME active cameras=Cockpit HMD Camera,Robot right panorama sector,Robot left panorama sector,Robot optical mount - independent of pilot HMD
+REPRO calibration-only-left: flow=Calibrating bossHealth=136 hits=3
+REPRO avatar input owner: ArmMotionInput enabled=False avatarLeftTarget=(-1.31, 1.46, 0.32) robotLeftInput=(0.00, 0.01, 0.21)
+REPRO stationary-x-0.6 actual-body-contact: damage=0 dodgeCount=1 movementInput=zero

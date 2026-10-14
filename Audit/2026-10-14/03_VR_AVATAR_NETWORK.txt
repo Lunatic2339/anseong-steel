@@ -1,0 +1,469 @@
+안성제철 VR 입력·아바타·LAN 담당 정밀 진단
+작성일: 2026-10-14 (Asia/Seoul)
+기준: C:\Users\anthony\Desktop\Capstone\anseong-steel / develop / 42e05e4
+
+0. 조사 방법과 한계
+현재 C#·Unity YAML·prefab·meta·Packages·ProjectSettings·검증 소스와 10/13 감사 근거를 읽었다. Unity 실행, 임포트, 빌드, Play Mode, 테스트 재실행, 장치 동작, 소스/씬 수정, checkout/commit/push는 하지 않았다. 이 파일만 작성한다. 조회 시작 당시 git status는 ?? Audit/만 표시했다. 루트 및 상위 C:/, Users, anthony, Desktop, Capstone의 AGENTS.md 존재 여부와 저장소 내부 숨김 포함 목록을 확인했으며 적용할 AGENTS.md는 발견하지 못했다. 다른 작업 채팅의 AGENTS 지침은 현재 checkout의 지침으로 전용하지 않는다.
+10/13의 54 PASS, 통합 모델 누락·준비 중 타격·정지 회피 재현은 과거 실행 증거다. 이번에는 같은 문제의 코드/참조 근거를 재확인했으며 새 실행 성공이나 재현으로 주장하지 않는다. FBX/Blend·DLL·실기기·Unity 확장 prefab의 실행 결과는 이번에 내부 검증하지 않았다. 정적 GUID 존재 검사는 FBX 내부 fileID·스킨·Humanoid 임포트가 올바르다는 보장이 아니다.
+범위 약칭: VR=AnseongSteel/Assets/_Project/01_Scripts/04_VR/, RP=AnseongSteel/Assets/_Project/RobotPlay/, P4=AnseongSteel/Assets/_Project/02_Art/PilotV04/, MP=AnseongSteel/Assets/VRMPAssets/. 아래 파일:줄은 현재 파일 기준이다.
+
+1. 컨셉과 개발방향의 변천 및 현재 코드와의 차이
+공식 read_thread로 아래 세 채팅을 읽었다. 로봇 28턴, 조종사 30턴은 pagination의 hasMore=false까지 조회했고, 연결 확인 9턴도 hasMore=false까지 조회했다. 이는 도구가 반환하는 턴 범위 전체이며 삭제된/비텍스트 최초 첨부·누락 원문까지 복원한 것은 아니다. 명시적인 사용자 발언과 assistant 제안/완료 보고를 구분했다. 예전 worktree 결과·PASS·커밋은 현재 develop의 완료 증거로 쓰지 않았다.
+
+출처 A: 「로봇 플레이 구현 — 안성제철 VR」 01a106f8-26db-7e51-b924-076717d81177 (local)
+출처 B: 「조종사 모델링·리깅 — 안성제철 VR」 01a0b365-b6b2-7b10-ae13-692c02a9ae51 (local)
+출처 C: 「캡스톤 작업 연결 확인」 01a11f7c-ac31-7123-8230-1785b6df9030 (durable)
+아래 날짜/시각은 KST, 반환된 turn startedAt 기준이며 같은 턴의 후속 사용자 입력 시각과는 다를 수 있다.
+
+구분 | 사용자 결정·의도 / 변경 이유 | 현재와의 차이
+확인된 사용자 요구 A 10/04 23:56 | 실제 팔 움직임을 따라야 하며 훅을 했는데 가상 팔은 잽처럼 보이면 안 됨. 공격 인식 방법을 질문함 | 분류기를 통과하는 것만으로 완료 아님. 궤적·팔꿈치·컨트롤러 방향과 화면의 팔이 함께 일치해야 한다. 합성 DesktopPose는 운영 게임의 공격 애니메이션 대체물이 아니다.
+확인된 사용자 요구 A 10/05 00:10 | 기존 프로젝트 폴더/콕핏 화면과 연결. 머리·목·가슴 위치를 비교하고 플레이어는 푸른 계열, 보스와 같은 모델 기반 시험 요청. 구형 폴더는 삭제하지 말고 레거시 보존 | 분리 실험 씬을 삭제하거나 새 프로젝트로 일괄 대체할 근거 없음. 시험 위치 선택을 최종 콕핏 위치로 간주하면 안 됨.
+확인된 사용자 정정 A 10/05 16:47 | 디스플레이여도 로봇 시야의 선명함과 팔 가시성이 필요. 내부에서 고개 돌리는 것과 로봇 고개 회전은 별개 | CockpitLiveView의 분리된 카메라 구조는 부합. HMD를 로봇 본에 직접 붙이는 방식으로 되돌리면 안 됨. 3 RT가 있다는 사실만으로 원하는 화질/편안함 충족을 확정할 수 없음.
+확인된 사용자 요구 A 10/05 19:52·20:00 | 손가락 리깅 v26 사용 요청, 주먹 쥔 상태가 완전 디폴트 | DefaultFistPose와 CockpitPilotAvatar의 grip=1은 의도에 부합. 통합 RobotRigVisual은 아직 v25의 끊어진 prefab GUID를 사용하며 v26 실험 자산이 있어도 실제 전투 적용 완료가 아님. 현재 gripPressed는 공격 허용 입력이고 모델 주먹 기본 자세와 별개.
+확인된 사용자 요구 A 10/05 20:54 | PilotV04를 콕핏 자리/시야에 넣고 로봇 행동과 동기화 요청 | V04 좌우 모델과 머리 카메라 연결은 있음. 팔 Follow는 통합 입력에 빠져 있어 자기 팔과 로봇 팔의 동작 연속성이 깨짐. 옆 동료의 머리/보조손 네트워크 표현은 없음.
+확인된 사용자 체험 피드백 A 10/05 22:36 | 고개는 움직이는데 손이 안 움직임, 이후 동작 확인. 훅 때 팔꿈치가 아래에 남고 뻗는 거리감 부족 | 재획득·identity rotation·팔꿈치 힌트·리치 튜닝은 단순 옵션이 아니라 과거 실제 불만을 해결하기 위한 기능. 통합 시 회귀 검증 필요.
+확인된 사용자 정정 A 10/05 23:46 | 손목을 절대 고정하라는 뜻이 아니라 손목과 팔뚝 결합. 가드에서 손을 안으로 돌리면 손목만 휘지 않고 팔꿈치가 올라가길 원함 | RigidWristConstraint/ControllerElbowHint 재사용 의미가 큼. LAN의 identity rotation 강제는 이 의도와 직접 충돌. 손목 강제 정렬 자체를 삭제하면 안 됨.
+확인된 사용자 피드백 A 10/06 02:14·03:07 | 조금 벌려도 팔이 다 펴져 훅 느낌 없음. 뒤로 당겼다가 훅할 때 거의 안 움직임 | 작은 입력을 무조건 크게 확대/전체 이동량을 무조건 줄이는 양쪽 접근이 모두 거절됨. MapWorkspace의 내부 이동 보존·리치 끝 압축과 CalibrateReach는 체험 검증 대상으로 유지. RP 고정 motionScale만으로 체격별 해결을 확정하지 않는다.
+실험 요청 A 10/05 22:59 턴 | 임시 로봇 직접 시야 전환 기능 요청 | RobotViewComparison은 비교용. 최종 시점 선택이나 HMD와 로봇 시야 완전 동기화 확정은 아님. 최신 총괄의 HMD 편안함 조정 요구가 우선.
+확인된 사용자 B 09/18 22:48·23:35 | 조잡한 저폴리/달걀 두상 대신 날렵하고 복잡한 모델, 자연스러운 리깅 요구 후 개선 긍정 | reduced/detailed 두 자산은 비교 자료. Quest 후보 FBX 존재만으로 Quest 단독 품질/성능 결정할 수 없음.
+확인된 사용자 범위 B 09/18 23:38·23:39 | 이 방은 모델링·리깅 확인, 통신은 별도 방; 아직 애니메이팅은 시기상조 | 조종사 리그 완료와 2인 네트워크 아바타 완료를 구분해야 함. 리뷰 조작 UI를 게임 입력으로 오해하지 않는다.
+미해결 질문 B 09/19 00:07 | 나중에 컨트롤러 상호작용에서 손목을 어떻게 적용할지 질문 | 이후 A의 팔뚝 결합 정정이 더 구체적인 방향이다. B의 assistant 자연 손목 제안은 최종 사용자 규칙이 아니다.
+맥락 C 10/09 16:07 | 부모 전달문은 나란히 선 2인이 각자 한쪽 팔 제어라고 설명 | 이 채팅의 직접 사용자 확정 발언은 아니므로 최신 총괄 확정과 대조하는 맥락으로만 사용. 연결 확인 답변의 별도 worktree/브랜치/PASS는 현재 상태로 가져오지 않음.
+
+총괄의 추가 직접 조회 전달(이 담당이 원문을 다시 조회한 것은 아님): 「구글독스 내용 확인 가능 여부」 09/17~18 사용자 발언은 '탑승한 느낌', 조종하는 나와 로봇의 분리, 로봇 눈 시점 제외, 공용 바닥+반구 화면, 같은 공간 동료, 자기 몸 표시, 왼쪽 플레이어 왼팔/오른쪽 오른팔·반대 손 보조 입력을 요구했다. 따라서 A의 임시 직접 로봇 시점 요청은 최종 분리 콕핏 컨셉 폐기 근거가 아니며, 시야/주먹 거리감 비교 실험이다. 과거 전체 기획은 초기 3분/즉시전투에서 정비시설 출격준비 시작·마지막 합동 필살기 선택으로 발전했다. 맨손→검/방패→한 명이 잡고 다른 명이 베어 팔 절단→무적회복 중 드론/총/미사일→합동 필살기는 후속 지향 경험이며 이번 맨손 단계 제외를 영구 폐기로 해석하지 않는다. 동시펀치 기술 제외·단독훅 부스트 불가도 과거 사용자 직접 선택이라고 전달받았다. 후속 공통 문서 확인으로 적중 후 슬로우+추가 입력이 사용자 선택임을 확정했다. 훅 중 입력은 구형안이다. 이번 개발은 총괄이 지정할 codex/ 전용 브랜치·격리 폴더와 병합 소유권 지시 이후 착수한다.
+
+현재 확정 기준: 12/11 대중 공개 2인 짧고 안정적인 완결 체험, Quest 3 두 대/PC 두 대 예상, 맨손 우선, 오른손 시작 콤보 선호, 마지막 훅 적중 후 짧은 슬로우+추가 입력 부스트, 해당 팔 올려 일반 방어/강공격 양팔 방어/정상 가드 피해 0/강공격 한팔은 피해감소 없는 실패, 타이밍에 실제 이동하는 회피, 두 사람 같은 방향 입력으로 접근·회피·후퇴의 정해진 전투 이동 동작, HMD 편안함 조정. 플랫폼·이동 취소/전환 조건·가드 허용 자세/실패 피해량·부스트 입력 창 길이/연출 정도·왼손 시작 금지·전투외 이동 필수·시연 길이·이번 단계 출격/정비/필살기 필수는 미정. 기존 임시 수치를 기획 확정으로 전용하지 않는다. 외골격 약한 저항/부스트 저항 해제는 방향만 확정, 장치 구현 금지.
+
+2. 자체 코드 파일별 역할·현재 상태·보강점
+파일 | 역할·상태 | 보강점 / 근거
+VR/ArmMotionInput.cs | 실험 XR 머리/담당 손 추적, 정지 보정, 리치 보정, CSV, before-render 표시. 같은 device의 pose/state를 묶는 ReadTrackedPose(:204). Avatar.Follow(:240) 있음 | 통합 씬에서 disabled. 그대로 켜면 카메라/입력 중복 소유. pose 수집/보정의 필요한 부분을 계약으로 이관. 보조손은 ControllerInCockpit(:220)로 읽어 방향표시에 쓰고 실제 Avatar.Follow는 담당 팔만.
+VR/ControllerArmFollower.cs | 2개 강체 팔 구간 IK, elbow hint, RigidWristConstraint, workspace/reach 압축, strict punch 표시(:57-65) | 기존 사용자 훅/리치 피드백을 반영한 구현 유지. 통합 motionScale와 tuning.controllerMotionScale 단위 관계, remote punchPose 일관성 검증.
+VR/RigidWristConstraint.cs | 어깨-손 축의 팔꿈치 선택, 각 연속화(:13), 팔뚝 회전 후 손목 결합(:30) | 새로운 회전 전송도 이 정책을 통과해야 함. 직접 hand.rotation으로 덮어쓰기 지양.
+VR/DefaultFistPose.cs | 손가락 기본 주먹, Mixamo 이름 기반 구성(:16), LateUpdate 적용(:57) | v26/새 모델의 본 이름과 배열 유효성 검사. 공격 버튼과 시각 주먹 상태 분리 유지.
+VR/CockpitPilotAvatar.cs | V04 리그 재사용, 팔 Follow(:85), 로컬 머리/eye 정렬(:120,138), 손목 결합·reach | 통합 pose adapter 없음. 로컬 주도 머리와 원격 pose 적용 API 필요. 인간 metre 입력이며 로봇 offset 2.6배를 바로 전달하면 안 됨.
+VR/CockpitLiveView.cs | center/left/right 단안 RT의 콕핏 디스플레이, 카메라별 몸/팔 visibility 임시 처리(:18-49) | HMD와 전장 카메라 분리 유지. disable 시 renderer 복원 정책/각 RT 비용은 실기기 검증.
+VR/CockpitViewPosition.cs | 머리/목/가슴 로봇 카메라 mount 비교, before-render(:32), 내부 고개가 로봇 회전 명령이 아님(:38) | 통합 disabled; 최종 mount/편안함 선택은 미정. 게임용 자동 켜기 금지.
+VR/RobotViewComparison.cs | 임시 직접 로봇 XR 비교 카메라와 listener 교체, 원상복구(:32-65) | 실험 보존, 정식 시점으로 간주하지 않음.
+VR/HandDirectionDisplay.cs | raw 양손/pilot/robot 방향 화살표(:44-64) | 보조손 입력 증거는 있으나 포즈 동기화 증거 아님. 통합 진단 모드에는 필요 부분만.
+VR/RobotPunchContactTest.cs | 실험용 swept 접촉 패드, 재무장·타격음·햅틱 | RP 보스 접촉/피해와 별도 경로. 전투 중 동시 활성화하면 별도 이벤트/패드가 생김.
+VR/Editor/ArmMotionSceneBuilder.cs | v26/TrackedRobotArms/ArmMotionTest 생성(:17-20), 씬 저장(:150) | 검증보다 생성용. authored 통합 씬 재생성에 사용하지 않음.
+VR/Editor/ArmMotionValidation.cs | 합성 XR·궤적·리치·팔뚝/주먹 방향·view 검사 | 통합/LAN/실기기 완료 증거로 확대 금지. 현재 scene 연결 검증 추가 후보.
+RP/Runtime/RobotPilotInput.cs | DesktopBoth/XRSinglePilot/XRLocalBoth, 위치·회전·tracking/공격/부스트/스틱, 카메라·seat, 50Hz submit | :79 머리 validity 부족, :99 즉시 hand baseline, :100 회전은 오프라인 전용 session, :105 보조손 기획과 스틱 반대, Follow 없음. session pose DTO/visual adapter 도입.
+RP/Runtime/RobotPlaySession.cs | host authority, LAN 접속/역할, input 승인, combat/contact, snapshot, feedback·pose | :10 snapshot 위치만, :238 RPC 회전/머리/보조손 없음, :292 직접 적용, :346-365 LAN 회전 무시. 통신/시뮬레이션/표시 책임 분리 필요.
+RP/Runtime/IntegratedLanRules.cs | uint wraparound 순서와 IPv4 endpoint 검증(:7-18) | 유지. protocol/build/scene 버전 합의·구형 클라이언트 거절은 아직 없음.
+RP/Runtime/IntegratedOnlineState.cs | host 전용 시작/재시작, progression/damage IntegratedFrame(:10), ready와 paired, 이탈 시 Retry(:91), GUI | command epoch/seq 보호는 있음(:74). HMD XR UI 없음(:111). IntegratedFrame.head는 머리 손상량이지 머리 포즈가 아님.
+RP/Runtime/RobotRigVisual.cs | 접촉 solver의 upper/forearm/hand를 업로드 로봇 본으로 복사(:16-26) | 참조 null은 조용히 skip(:21). renderer·mesh 존재를 검사해야 함. 소스 손 포즈보다 제약된 실제 접촉 포즈를 시각화하는 역할 유지.
+RP/Runtime/IntegratedCockpitSelector.cs | 5종 콕핏 로컬 선택/좌우 camera anchor, avatar 이동/머리 숨김(:24-31), GUI | 팔 Follow 없음. pose frame/seat 변경 시 recenter contract 필요. 원격과 각자 다른 variant를 선택하면 동료 위치 표현 차이 위험. name 의존 anchor/재질 검사 필요.
+P4/Runtime/PilotReviewRig.cs | bind 복원, 두 팔 IK, 손가락, 머리·twist·armor(:103-154) | 리뷰 범용 wrist와 CockpitPilotAvatar의 제한 정책 구분. IsReady는 rest 배열 유무(:52); 필수 본의 null까지 보장하지 않음.
+P4/Runtime/PilotLocalView.cs | 자기 camera에서 head layer만 숨김, Restore(:13-28) | 옆 동료 head는 보여야 함. camera 파괴 선행 시 Restore early return(:22)로 layer 복원 누락 가능성 실험 필요.
+P4/Runtime/PilotReviewControls.cs | 키보드 target/pose/grip·마우스 camera 리뷰(:17-49) | 게임 입력/LAN 아님. 통합 활성화하지 않음.
+VR_test/Assets/Scripts/MechaVRHandTarget.cs | XRI controller→Animation Rigging target, 자동/F8 보정, grip 축 정렬(:104-169) | calibrated 이후 ApplyTargetPose(:89)에는 추적 재확인/유한값 검사 없음. stale transform 계속 사용 가능. 메인에 복사해 통합하지 않음.
+VR_test/Assets/Scripts/MechaVRBodyFollower.cs | headset 위치/yaw로 메카 root/body frame 동기화(:17-32) | 자유 실제 이동 실험. 현재 정해진 전투 이동/분리 HMD 요구에 직접 대체 불가. tracking validity 없음.
+VR_test/Assets/Scripts/MechaVRBossContact.cs | rigid swept 접촉·penetration/recovery·속도별 onHit | 메인 counterpart와 별도 사본, 독립 namespace 전역 class. 복사 갱신 시 두 프로젝트 회귀 필요.
+VR_test/Assets/Scripts/MechaVRBossTarget.cs | Collider 캐시·히트 수/마지막 위치·onHit(:16-32) | HP·Combo·LAN 없음. 이것만으로 전투 연결 아님.
+VR_test/Assets/Editor/MechaVRDiagnostics.cs | 링크 진단·보고서·RepairRigLinks·보정, 일부 씬 저장(:190,220) | 읽기용 메뉴와 수정 메뉴 구분, 금번 실행 안 함.
+VR_test/Assets/Editor/MechaVRBossSetup.cs | boss/contact collider 설치·씬 저장(:90) | 생성 도구, 현 상태 검증 아님.
+VR_test/Assets/Editor/MechaVRBossContactTests.cs | contact fixture 생성/폐기·Play Mode 검사(:88) | 단독 solver 증거. 2인 LAN/입력 안전성 미보장.
+
+인접 RP Runtime도 목록화하고 호출 연결을 확인했다: RobotCombat=순수 전투/궤적/guard/boost, IntegratedPlayFlow=ready/tutorial/battle/terminal/retry, IntegratedBossEncounter=impact/attack timeline, MechaVRBossContact/Target=접촉, RobotFeedbackView=booster 시각, IntegratedFeedback=PunchHapticQueue/오디오/컨트롤러 impulse, IntegratedCombatHud=HUD/camera bridge, IntegratedPunchCue=서버 승인 표시 이벤트, RobotNetworkSmoke/IntegratedNetworkSmoke=명령행 검증 fixture. 변경 소유권은 전투/HUD/아트 담당과 겹친다. IntegratedFeedback는 외골격 통신 구현이 아니다.
+
+검증/빌더 파일별 구분:
+RP/Editor/RobotPlayBuilder.cs=prototype scene/model/LAN 생성, :16 v25 경로·:23 NGO/UTP 생성·:88 저장.
+RobotLocalPunchScene.cs=XRLocalBoth 오프라인 scene 변형; RobotPlayerBuild.cs=Windows 검증 빌드.
+RobotCombatChecks.cs=순수 combat 검사; IntegratedRulesChecks.cs=postcontact boost/role/endpoint/cooperative movement 검사.
+RobotPlayValidation.cs=:24 검사 전에 RobotPlayBuilder.Build 수행; RobotLocalBothValidation.cs=합성 양손 XRI 입력 검사.
+IntegratedPlayBuilder.cs=:19-26 기존 씬 수정/저장, :70 기존 ArmMotionInput disabled, :79 신규 입력/camera 연결.
+IntegratedPlayValidation.cs=:47 UpdateOwnedScene 후 합성 검사; IntegratedNetworkBuild.cs=:11 동일 수정 후 Windows 빌드.
+PunchPhaseValidation.cs=:14 UpdateOwnedScene 후 tracking-loss/rotation-control/hand rigid pose 검사; PunchAssetProbe.cs=콕핏/아트 참조 검사.
+P4/Editor/PilotV04Builder.cs=모델/리그 리뷰 자산 생성; PilotReviewRigEditor.cs=review Inspector; PilotV04PlayValidation.cs=리그 play 검증. 기존 P4/Validation JSON/PNG는 이번 실행 결과가 아님.
+Tools/Validation/IntegratedOnlineProcesses.py=IntegratedPlayer/IntegratedPlay.exe 3 프로세스를 127.0.0.1 검증 경로로 구동하고 권한·이탈·재접속·이동 등을 assert. 이번에는 소스만 읽음. 마지막에 HMD/TWO PHYSICAL PCS: NOT TESTED를 기록하는 구조. 소스/빌드 해시를 현재 검증 결과에 자동 고정하지 않음.
+
+3. 씬·프리팹·모델·호출 참조 연결
+메인 흐름: XR controller → RobotPilotInput.ReadXR(:73) → session.Submit(:238) → host SubmitRpc/Authorized/Accept(:247-262) → Combat.Sample(:275) → ControllerArmFollower.Follow(:365) → contact.ConstrainPose(:285) → RobotRigVisual(:16) / RobotSnapshot 발행(:288-289) → client Pose(:292). feedback은 server RPC(:373) → IntegratedFeedback/시각/HUD.
+아바타 실험 흐름: ArmMotionInput.ApplyVisual(:230) → robot Arm.Follow(:239) + Avatar.Follow(:240) → CockpitPilotAvatar.Evaluate → PilotReviewRig. 통합은 이 입력을 꺼 두고 RobotPilotInput으로 교체하므로 마지막 human avatar 팔 경로가 끊긴다. 비활성 ArmMotionInput은 bridge/selector의 참조 보관용 context로 여전히 사용된다.
+sunwoo_IntegratedPlay.unity:148 ArmMotionInput m_Enabled=0; :15211 RobotPilotInput m_Enabled=1/source=2(XRLocalBoth); :15147 session; :15671 online; :15684 selector; :15594 HUD bridge; :931 active CockpitLiveView; :955 mount disabled. RobotPilotInput seat=null, cockpitCamera=7989812.
+같은 씬 :39420/:45938 좌우 CockpitPilotAvatar active. :39408/:45926 PilotReviewRig disabled지만 Avatar가 직접 Evaluate 호출하므로 리그가 완전히 미동작인 것은 아님. :39396/:45914 PilotLocalView 있음. selector가 localCamera를 붙여 현재 로컬 머리와 eye만 추적한다. 상대 머리 목표를 받을 계약 없음.
+V04 좌우 인스턴스 GUID 16fbdb58532645f4e82c6ba1be268128는 P4/Prefabs/AS_Pilot_Reduced_Review.prefab.meta:2로 해석됨. detailed/reduced 프리팹·AS_Pilot_v04.fbx·QuestCandidate.fbx·palette·materials·review scene은 보존/비교용이다. 런타임 통합이 이 프리팹의 display 비용/실기기 성능을 검증한 것은 아님.
+TrackedRobotArms GUID 44c070c0a6a746a4093c730f4beefb4e는 _Project/05_Prefabs/TrackedRobotArms.prefab.meta:2로 해석됨. VR/Editor/ArmMotionSceneBuilder.cs:18은 v26 모델을 참조. 통합에 보존된 실험 로봇과 실제 RP 전투 root는 구별해야 한다.
+실제 RP 플레이어 visual의 prefab source는 sunwoo_IntegratedPlay.unity:22438 GUID 6bac2a1fb3671154babb96bd29e3fad7. 현재 Assets/*.meta 검색에 해당 GUID 없음. RobotPlayBuilder.cs:16 모델 경로의 실제 v025.fbx.meta:2는 de68ce75bca22c1408fad65dbfd0ff3a. 참조 불일치는 정적으로 확인됨. 10/13 unity-audit-02-results.txt:122의 ACTIVE missing meshes=2는 과거 실행과 일치. 수작업 재매핑은 임포트 subasset fileID를 검증한 후 아트 담당이 맡아야 함.
+일반 EditorBuildSettings.asset:9 시작 씬=Assets/Scenes/SampleScene.unity, RobotPlay/통합은 뒤에 있음. 게임용 XR 진입 흐름과 별개인 샘플로 진입할 수 있음. 일반 프로필/Windows 검사 빌드/최종 Android 후보를 혼동하지 않는다.
+VR_test MainVRScene.unity:381/:571 HandTarget 2개, :1199 BodyFollower, :1216 BossContact, :1557 BossTarget 참조를 meta GUID로 확인. XR Origin/controller Transform → HandTarget → TwoBoneIK/RigBuilder, headset → BodyFollower; robot contact → BossTarget.onHit. RobotPlaySession/IntegratedOnlineState/NGO HP가 연결된 프로젝트가 아니다.
+
+4. 두 Unity 프로젝트 차이 및 외부 의존 실제 사용
+항목 | AnseongSteel | VR_test
+Editor | 6000.3.24f1 | 6000.6.0f1
+Input System | 1.20.0 | 1.20.0
+XRI | 3.5.1 | 3.6.1 (Samples 폴더는 3.6.0도 존재)
+OpenXR / XR management | 1.17.1 / 4.6.1 | 1.18.0 / 4.7.0
+URP | 17.3.0 | 17.6.0
+팔 해법 | 자체 ControllerArmFollower/RigidWrist + PilotReviewRig | Animation Rigging 6.6.0/TwoBoneIK
+통신 | NGO 2.13.2, services multiplayer/auth/vivox, 자체 host LAN | manifest에 NGO/services 없음, 단일 사용자 추적 시험
+실제 통합 사용 | NGO NetworkBehaviour/NetworkVariable/Rpc + UnityTransport, InputAction, Unity XR impulse, URP render hooks | TrackedPoseDriver/XRI origin, animation rigging, UnityEngine physics
+메인에는 Animation Rigging manifest 항목이 없으므로 HandTarget만 복사해도 빌드/리그가 성립하지 않는다. 버전·프레임·보정·root 이동 정책이 달라 프로젝트 통째로 합치기보다 체험 의도만 대조한다. Packages/ProjectSettings는 읽기만 했다. Quest loader/Android 설정의 존재만으로 standalone 실행·성능·기기 입력 호환 완료를 판단할 수 없다.
+
+5. VRMPAssets의 실제 연결·ownership·session lifetime
+통합 씬 :51547 manager는 Unity.Netcode.NetworkManager, :51552 PlayerPrefab=0, :51555 TickRate=30, :51570 NetworkTopology=0. RP builder도 일반 NGO/UTP를 생성하고 승인에서 CreatePlayerObject=false(RobotPlaySession:171). _Project C# 검색에 XRMultiplayer/XRINetworkPlayer/SessionManager/VoiceChat 호출 없음. 따라서 샘플 network avatar가 RP의 머리/보조손 동기화를 대신하지 않는다. 실제 재사용 연결은 설치된 NGO/UTP 패키지와 IntegratedPlayBuilder:57-61의 MP 임시 오디오 4개다.
+샘플 독립 경로: MP/Prefabs/Managers/Network Manager VR Multiplayer.prefab → NetworkManagerVRMultiplayer + player prefab; XRI Network Game Manager.prefab → XRINetworkGameManager/AuthenticationManager/SessionManager/VoiceChatManager. PlayerPrefabs/XRI_Network_Player_Avatar.prefab → XRINetworkPlayer + head/양손 ClientNetworkTransform(위치/회전 sync 및 Interpolate=1, prefab:179-193 등) + XRHandPoseReplicator + XRAvatarIK/Visuals. SampleScene/BasicScene의 샘플 경로이며 RP host 전용 권한과 다른 session owner 개념이다.
+XRINetworkPlayer.cs:216 IsOwner만 head/양손 origin을 따라가고 :254 IsLocalPlayer에서 XROrigin을 검색·local setup, :280 despawn에서 LocalPlayer=null, :229 destroy에서 local bind/voice 해제. 이 owner gating은 참고 가능하지만 공동 로봇 한 객체의 좌/우 role 검증을 대체하지 않는다.
+ClientNetworkTransform.cs:17,22는 기본 owner authority 반환. 샘플 avatar transform은 표현용으로 검토 가능하나 보스 HP/피해 authority로 확대 금지.
+XRHandPoseReplicator.cs:41/:51/:69-73 initialized/tracking/finger list는 Owner write. :104 연결/종료 상태 gating, :131 owner가 modality/origin 취득. spawn/despawn마다 raw pose와 role/data validity를 다루는 RP DTO가 있어야 샘플 이용 여부를 결정할 수 있다.
+SessionManager.cs:40 기본 DistributedAuthority, :82 인터넷 부재 시 LocalOnly, :105-126 로컬 transport 교체·voice disable, :277 WithDistributedAuthorityNetwork로 cloud session 생성. :346 properties 이벤트 구독, :361-374 leave에서 해제/LeaveAsync/ObjectDisposed 처리/currentSession=null. cloud login/relay/voice가 2PC LAN의 필수라는 근거 없음.
+정적 lifecycle 취약 조건(샘플, 통합 재현 아님):
+* XRINetworkGameManager.cs:210-215 duplicate instance를 Destroy하나 :324-343 OnDestroy는 무조건 ShutDown/s_Instance=null. duplicate가 파괴되면 정상 singleton도 지워질 수 있는 코드 경로. duplicate는 :218 이후 manager 초기화를 못 하므로 Shutdown의 m_SessionManager null 위험도 있음. 실제 sample 재현은 하지 않음.
+* 동일 :221 OnSessionFailed 구독에 대응 unsubscribe를 해당 파일에서 찾지 못함. :488 이후 async void 접속/취소와 :605 CancelMatchmaking에 취소 token/generation 계약 없음. 완료가 늦게 돌아온 join/create와 scene 파괴/취소 경합은 위험 후보.
+* XRHandPoseReplicator.cs:134 m_XROrigin.TryGetComponent, :95-98 destroy listener 제거에서 origin/modality null guard 없음. XR rig가 없는 RP 씬에 샘플 prefab만 가져오면 예외 가능한 조건. XRINetworkPlayer.cs:233-237 owner 파괴 시 game manager/voice lifetime도 전제함.
+따라서 템플릿을 현재 LAN에 얹는 것 자체가 보강 완료가 아니다. SampleScene→통합 전환에서 singleton, callbacks, network spawn/despawn, transport 종료를 한 소유자가 관리해야 한다. 샘플 DA host migration을 현재 host-left/client-right에 적용할지 역시 별도 설계다.
+
+6. 검증된 결함 / 추정 위험 / 기획 미정
+[현재 정적 확인된 결함·누락]
+D1: 통합 human avatar 팔 Follow 호출 누락. 호출자는 VR/ArmMotionInput.cs:240와 실험 검증뿐, 그 입력은 scene:148 disabled. RP input/selector/bridge에는 Follow가 없다.
+D2: LAN hand rotation 전송/적용 누락. RobotSnapshot:14 positions only, SubmitRpc:248 payload no rotation, SetLocalHandRotation:348 !NetworkActive 조건, Pose:365 NetworkActive?identity. 로컬 host 팔까지 LAN 연결 중 방향이 사라짐.
+D3: head/보조hand pose/validity 네트워크 필드 없음. head input은 local camera만(:79-86); State.head는 damage. 상대 머리/보조손 표현을 완료로 셀 수 없음.
+D4: cooperativeMovement=true일 때 담당손 stick을 읽음 RobotPilotInput:105. 최신 전투외 이동 구상은 각자의 보조손. 두 명 같은 방향 전투 이동과 보조손 전투외 이동은 공통 문서에서 확인됐으므로 입력을 담당손 공격/보조손 이동으로 구분할 근거. 이번 단계 전투외 이동 납품 필수 여부와 정확한 버튼 배치는 별도 범위 결정.
+D5: headPosition/Rotation에 activeControl/finite만 검사(:79-86); HMD isTracked/trackingState 입력과 손과 head validity 결합 없음. 머리 tracking loss가 손 input/ready를 직접 중단하지 않는 구조.
+D6: 입력 액션의 위치·회전·state를 independent activeControl로 읽음(:88-97). 같은 device에서 온 값인지 확인하지 않음. ArmMotionInput:204는 더 엄격한 같은-device reader를 이미 보유.
+D7: 실제 팔 prefab source GUID 미해결, 메타 GUID 불일치. 정적 현재 확인 + 과거 Unity 모델 누락 실행 근거로 구분.
+D8: HMD 안에서 IP/host/join/start/retry/disconnect를 수행할 XR UI 경로 없음. IntegratedOnlineState:111 GUI 및 :83 keyboard Enter. 현 단계 PC 운영 방식 선택 전에는 최종 체험 동선 미완.
+D9: 원격 robot root/팔 입력 snapshot 바로 적용(:292). timestamp/interpolation buffer 없음. 구조상 30Hz pose 변화; 체감 끊김 정도는 실기기 미검증.
+D10: client Pose의 punchPose가 로컬 session.Combat.arms(side)의 attackHeld/trajectory를 읽음(:364), 하지만 client는 authority Sample을 하지 않음(:268)이고 snapshot에 attackHeld/attackAttempt/contactConsumed/trajectoryPhase가 없음. host/client 손목 제한 모드가 일치할 데이터가 부족함. 실제 메시 표현 차이는 실행 확인 필요.
+[과거 실행 재현과 현재 코드가 일치]
+D11: 오프라인 준비 타격 차단 없음 RobotPlaySession:331(NetworkActive일 때만 IsBattle gate). 이번 새 재현 아님, 전투/진행 담당 우선 공유.
+D12: IntegratedBossEncounter:54 절대 x>=sidestepDistance로 회피. 공격 시작/impact 사이 이동량·방향/시간 기록 없음. 이번 새 재현 아님, 전투 담당과 이동 인터페이스를 합의해야 함.
+
+[추정 위험 / 실행 검증 필요]
+R1: server Accept:259-262가 도착 Time.time 기준 + 8ms 이하 drop/12m/s 변화 제한. Reliable RPC가 몰릴 때 boost edge/궤적 손실 위험. client 원본 timestamp/clock mapping/허용 지터 없음. sequence와 값 범위가 있어도 분류 품질을 보장하지 않음. 범위/빈도 거절 상당수는 RejectedInputs에 계수하지 않으므로 계측 보강 필요.
+R2: RobotPilotInput.Recenter:57은 보정 flag만 지우고 session.LoseTracking/Invalidate를 즉시 호출하지 않음. baseline 재설정/좌표축 변경 동안 이전 sample/guard/chain이 .25초 timeout까지 남거나 새로운 offset과 섞일 위험. 자동 보정 :99는 정지 대기 없는 첫 pose 기준. 머리 loss 후 baseline 변경·scene variant 이동도 유령 타격 회귀 조건.
+R3: 손 loss releaseAfterLoss(:109-112)와 host ClearInput/Invalidate는 이미 방어됨. 하지만 추적 복귀 시 실제 grip 해제와 새 stroke/ready/HMD 변경/timeout 연결이 모든 경우 안전한지 기존 합성 검사만으로 확정 못 함.
+R4: Input connectionEpoch 변경 시 baseline/sequence reset(:62)은 있으나 SubmitRpc와 TrackingLostRpc payload에 epoch가 없음. command RPC만 frame epoch 보호됨. 같은 연결의 run restart에서 queued input/feedback이 새 run에 섞일 가능성은 transport ordering·network object lifetime 포함 실험 필요.
+R5: .25초 timeout/손 loss는 body movement를 중지하지만 플레이 상태 전체 pause 여부는 별도. 실제 headset 벗기/앱 focus loss/pause에는 명시 handler가 없다. 문서상 runInBackground=true는 체험 이탈 정책 아님.
+R6: 서로 다른 콕핏 variant/eye offsets와 tracking origin/recenter가 원격 사람 포즈 프레임을 바꿀 수 있음. 원격 원시 tracking world 위치를 보내면 사람 체격·물리 방 offset이 잘못 섞이므로 seat-local metre frame 계약 필요.
+R7: MR/native 손추적 전환 때 independent actions가 다른 device를 집을 수 있음(D6). 맨손 전투는 무기 없는 controller 기반과 native hand tracking을 구분해야 한다. 최신 맨손 우선 지시는 XR Hands 모드 구현 의무가 아니다.
+R8: VR_test calibrated 이후 stale pose 사용과 headset root follower는 현재 단독 실험 위험. 메인과 혼합하면 HMD 이동을 robot 이동으로 중복 적용하거나 정해진 전투 이동 정책을 깨뜨릴 수 있음.
+R9: 샘플 singleton/async lifecycle 취약 조건은 section 5 참조. 현재 RP 발생 결함으로 확대하지 않음.
+
+[기획 미정으로 유보]
+강공격 양팔 guard/정상 피해0/한팔 실패와 마지막 훅 postcontact boost 순서는 사용자 선택으로 확인됐다. 20 heavy damage, 일반 오른팔 고정/12damage, 16 unguardable damage, .5m sidestep, 300초 목표, .45초 boost 창, 자유 WASD/스틱 이동 좌표 clamp는 시험값/구현이지 승인 수치 아님. 오른손 시작 선호를 왼손 공격 금지로 바꾸지 않는다. movement의 전투/비전투 모드 전환 조건, 동작 취소·방향 변경, 회피 창/거리/재사용, 카메라 회전 전달 정도, 운영자 PC 접속 필수 여부, 끊김 시 중단/재시작/복구 정책은 추가 합의 대상.
+
+7. P0/P1/P2 권장 순서
+P0-1 현재 저장된 통합 씬/프리팹의 모델과 local avatar 연결 무변경 검사 마련. scene:22438·:148·:39420, RobotRigVisual:21, IntegratedPlayValidation:47. 아트 담당은 기존 GUID/fileID/mesh 참조를 복구, 본 파트는 참조 진단·팔 input adapter 담당. 변형 빌더 먼저 실행하지 않는다.
+P0-2 로컬 human pose 표시 계약 및 Follow 연결. RobotPilotInput:73-107 → CockpitPilotAvatar:85. Head/assigned hand/aux hand 유효값을 seat-local metre로 제공하고 로봇 combat offset과 분리. 입력·카메라 owner는 한 개만. 주먹 기본/손목 결합/훅 뒤로 당김/리치 기존 의도를 완료 기준에 포함.
+P0-3 역할 검증을 유지한 pose DTO/네트워크 표시 확장. RobotSnapshot:10-22, SubmitRpc:248, Pose:364-365, IntegratedOnlineState:10. 회전/머리/보조손/validity/표시 phase와 frame epoch/sequence/time 계약 합의. 아바타 표시 권한이 피해 권한을 대체하지 않게 한다.
+P0-4 recenter·HMD loss·pause·timeout의 input invalidation과 재획득 계약. RobotPilotInput:57,79,109 / session:295,104,273. 결정 안 된 전투 규칙을 건드리지 않고 위험 입력은 취소/새 ready로 복귀하는 기본 검증 가능. 운영 이탈 정책의 최종 게임 flow는 총괄 확정 필요.
+P0-5 전투/진행 담당과 준비 gate/회피 동작 계약 공동 처리(:331 / BossEncounter:54); 현 위치 동기화만 보강하고 기존 절대 x 회피를 그대로 두면 확정 요구 충족 못함.
+P1-1 host/join/role/ready/start/retry/disconnect의 운영 UI. OnlineState:111. 운영자 PC 사용인지 HMD 자체 조작인지 확정 후 XR ray/poke UI/endpoint 표시, host 권한 재사용. Sample lobby를 기본 게임 동선으로 취급하지 않음.
+P1-2 표시 보간·local low-latency pose와 host 판정 분리(:292); 원본 sample 시간과 server 승인 기록/거절 이유 계측(:256). RTT/지터/손실·부스트 창 영향은 실제 측정 후 튜닝.
+P1-3 실제 2PC/Quest reconnect/실사용자 가드·훅·reach·카메라 comfort·head hiding 검증. 플랫폼 두 후보에 공통 짧은 구간으로 비교.
+P2 샘플 참조 정리/legacy 표기, 중복 코드 정책, protocol version, scene transition lifetime 회귀, lifecycle 샘플 취약 조건 보강(실제로 채택하는 경우). 일괄 삭제/최신 패키지 업그레이드/새 프로젝트 복사는 우선 작업 아님.
+
+8. 재사용할 구현 / 비연결·구형 구현
+재사용 핵심은 사용자 체험 피드백이 반영된 workspace 압축, rigid forearm+wrist, elbow hint, 가드/리치 보정, 같은-device pose reader, baseline/손 loss 해제 후 재무장, host-left/client-right Authorized, 3번째 승인 거절·reservation timeout, 명시 offline 전환, callback 해제, 순서 wraparound, command epoch, 서버 feedback, V04/local head hide다. 코드가 존재한다고 게임 경험 완료를 주장하지 않는다.
+보존할 실험: ArmMotionTest/TrackedRobotArms/RobotViewComparison/패드·CSV, PilotWristReview_v04/detailed vs reduced, VR_test/MainVRScene/body following, SampleScene/VRMP session/avatar. 비연결인 것을 명시하고 검증 fixture로 사용. ArmMotionInput를 통합에서 켜거나 VRMP XRINetworkPlayer를 동시에 붙여 input/camera owner를 둘로 만들지 않는다.
+구형 RP v25 visual reference와 RobotNetworkSmoke의 초기 precontact boost 가정은 현재 통합 정책과 따로 추적. 현존 모델 원본/메타·사용자 씬 작업을 되돌리거나 재생성하지 않는다.
+
+9. 완료 검증 기준과 실기기 필수 항목
+자동/정적 후속(이번 실행 안 함):
+* 원본 통합 씬의 읽기 검사로 active renderer/mesh/material/bones·좌우 avatar/eye/camera/contact refs·GUID/fileID·owner 중복 진단, 검사 전후 Assets/Packages/ProjectSettings 무변경 확인.
+* local L/R/XRLocalBoth 각 경로의 metre→robot scale와 avatar pose 일치. 기본 주먹, 팔뚝 결합, elbow 높이, 뒤로 당김→훅의 충분한 거리, 한계 리치 압축을 유지.
+* host local과 client remote 모두 rotation/head/aux 손/validity를 동일 frame 규약으로 표시. role를 바꿔 보내기·비유한값·불량 quaternion·과도 pose·sequence 역전·run epoch mismatch 거절. 피해는 server만.
+* position/rotation/control/state/HMD loss 각각, 시작 전 loss, grip 유지 복귀, grip release 후 ready, recenter 도중 stroke/guard/combo/boost, role/connection epoch 변경·retry·종료 직후 입력 취소 검증.
+* 지터/손실/묶음 도착/낮은 fps에서 sample 거절 계수·궤적·부스트 edge 중복/유실 확인. snapshot health/progression/avatar 표현 frame에 일관성 유지.
+* join/duplicate start/third client/cross-arm/cross-loss/unauthorized control/retry/host 종료/remote 이탈/재접속 보호를 기존 fixture로 회귀. source commit/build hash/scene/platform/settings/log timestamps 남김.
+* 샘플 채택 시 duplicate manager 파괴, async join 취소·scene unload·앱 종료·spawn/despawn/re-spawn/ownership change·voice 없는 local 모드 검증.
+실기기 필수:
+* 두 Quest 3와 실제 두 PC에서 동일 LAN/방화벽/Wi-Fi 변경/케이블 분리/host 앱 종료/헤드셋 벗기·착용/앱 suspend-resume/reconnect. Loopback PASS는 대체 불가.
+* Link/AirLink PC VR와 Quest standalone 각 후보의 실제 build/install/boot/XR input/head latency/camera clipping·양안·동료 머리·손/RT 글자/멀미·스케일·손가락 시야를 비교. Unity 버전/manifest만으로 보장 못함.
+* 키/팔길이/앉기·서기/좌우 역할/초보자별 잽·훅·가드 오인식·미인식, 주먹-컨트롤러 축, tracking 손실 복귀, 실제 타이밍 회피와 정해진 이동 동작. 공개 시연 연속 운영/다음 사용자 초기화.
+* sustained CPU/GPU frame time, 최악 contact CPU QueriesLastFrame, RT 3개/다수 skin/네트워크 표시 cadence/GC, 메모리·발열·배터리 검증. 목표 Hz/지연 기준은 플랫폼 결정 후 합의.
+* 컨트롤러 haptic 라우팅/불지원·해제·restart 잔류. 외골격 통신·motor 수치·저항/해제는 이번 완료 범위에서 구현하지 않음.
+
+10. 다른 파트와 겹치는 파일·인터페이스
+전투/진행: RobotPilotInput.Submit(side,offset,boostEdge,movement,sequence,attackHeld), RobotPlaySession/RobotCombat/IntegratedPlayFlow/IntegratedOnlineState, BossEncounter impact/회피. input DTO 확장은 combat Sample signature/기존 smoke reflection RPC 호출/validation DTO까지 영향을 준다. timing·combo start·boost/guard 규칙은 전투 담당 승인 대상.
+아트/콕핏: RobotRigVisual, ControllerArmFollower, CockpitPilotAvatar, P4 prefab/FBX/meta, TrackedRobotArms, sunwoo_IntegratedPlay scene, IntegratedCockpitSelector, CockpitLiveView. 아트 담당과 GUID/본/fileID/좌우 anchor/scale/layer 27·29·30·31 소유권 합의. 메타를 새로 생성해 GUID 바꾸면 기존 사용자 진행이 끊긴다.
+HUD/UX: IntegratedCombatHud/OnlineState/Feedback/PunchCue, ready/role/connection/boost timing/next side/추적 손실·재교정 cue. snapshot의 display 정보 추가를 HUD와 맞춤. UI 시작·재시작도 host 전용 RPC를 호출해야 한다.
+통합/빌드: Packages, OpenXR settings, EditorBuildSettings, Windows build helper, default SampleScene, Tools validation. 공유 checkout 동시 수정 전에 담당 파일 소유자를 정한다. 현재 검사자는 어떤 것도 수정하지 않았다.
+장치: 피드백 event(FeedbackKind/PilotSide/strength)까지만 interface 후보. 외골격 어댑터/통신/토크/모터 제어 구현 금지 유지.
+
+11. 기획 확정 없이 안전하게 착수할 첫 작업 하나
+“현재 저장된 통합 씬의 VR·아바타 연결을 변경하지 않고 진단하는 validator”를 추가하는 작업.
+기존 RP/Editor/IntegratedPlayValidation.Run처럼 UpdateOwnedScene을 선행하지 않는 별도 entrypoint로, 좌우 avatar/rig/eye/카메라/contact/robot visual mesh·material·bone 참조, 미해결 source GUID/fileID, 활성 input/camera owner 수, LAN DTO의 pose 필드 누락을 구조적으로 보고한다. authored scene 재생성·meta 재발급·기획 임계값 조정 없이 위 D1/D2/D3/D7을 현 상태대로 실패 항목으로 남기는 것이 완료 기준. 검사 전후 게임 자산 checksum/Git diff가 같아야 한다. 이것 하나를 먼저 하면 이후 아트·아바타·네트워크 수정의 검증 기준이 생기며 준비/회피/부스트 창 길이·연출 수치 확정에도 의존하지 않는다. 금번은 제안만 했고 구현/실행하지 않았다.
+
+12. 근거/파일 목록의 읽는 법
+아래 자동 목록은 실제 경로 인벤토리다. 자체 범위는 파일별 표와 함께 읽는다. MP 주변 스크립트는 연결 조사용 목록이며 모든 미니게임/UI 구현을 전수 런타임 감사했다는 뜻이 아니다. 메타는 원본과 쌍으로 보존하며, 바이너리 원본의 내부·기존 PNG 픽셀은 이번에 모두 검수하지 않았다. 외부 Samples/Library 전체를 감사 범위로 확대하지 않았다.
+
+[범위 파일: AnseongSteel/Assets/_Project/01_Scripts/04_VR / 각 원본의 .meta도 함께 존재 여부 보존 대상]
+AnseongSteel\Assets\_Project\01_Scripts\04_VR\.gitkeep
+AnseongSteel\Assets\_Project\01_Scripts\04_VR\ArmMotionInput.cs
+AnseongSteel\Assets\_Project\01_Scripts\04_VR\CockpitLiveView.cs
+AnseongSteel\Assets\_Project\01_Scripts\04_VR\CockpitPilotAvatar.cs
+AnseongSteel\Assets\_Project\01_Scripts\04_VR\CockpitViewPosition.cs
+AnseongSteel\Assets\_Project\01_Scripts\04_VR\ControllerArmFollower.cs
+AnseongSteel\Assets\_Project\01_Scripts\04_VR\DefaultFistPose.cs
+AnseongSteel\Assets\_Project\01_Scripts\04_VR\Editor\ArmMotionSceneBuilder.cs
+AnseongSteel\Assets\_Project\01_Scripts\04_VR\Editor\ArmMotionValidation.cs
+AnseongSteel\Assets\_Project\01_Scripts\04_VR\HandDirectionDisplay.cs
+AnseongSteel\Assets\_Project\01_Scripts\04_VR\RigidWristConstraint.cs
+AnseongSteel\Assets\_Project\01_Scripts\04_VR\RobotPunchContactTest.cs
+AnseongSteel\Assets\_Project\01_Scripts\04_VR\RobotViewComparison.cs
+
+[범위 파일: AnseongSteel/Assets/_Project/RobotPlay/Runtime / 각 원본의 .meta도 함께 존재 여부 보존 대상]
+AnseongSteel\Assets\_Project\RobotPlay\Runtime\IntegratedBossEncounter.cs
+AnseongSteel\Assets\_Project\RobotPlay\Runtime\IntegratedCockpitSelector.cs
+AnseongSteel\Assets\_Project\RobotPlay\Runtime\IntegratedCombatHud.cs
+AnseongSteel\Assets\_Project\RobotPlay\Runtime\IntegratedFeedback.cs
+AnseongSteel\Assets\_Project\RobotPlay\Runtime\IntegratedLanRules.cs
+AnseongSteel\Assets\_Project\RobotPlay\Runtime\IntegratedNetworkSmoke.cs
+AnseongSteel\Assets\_Project\RobotPlay\Runtime\IntegratedOnlineState.cs
+AnseongSteel\Assets\_Project\RobotPlay\Runtime\IntegratedPlayFlow.cs
+AnseongSteel\Assets\_Project\RobotPlay\Runtime\IntegratedPunchCue.cs
+AnseongSteel\Assets\_Project\RobotPlay\Runtime\MechaVRBossContact.cs
+AnseongSteel\Assets\_Project\RobotPlay\Runtime\MechaVRBossTarget.cs
+AnseongSteel\Assets\_Project\RobotPlay\Runtime\RobotCombat.cs
+AnseongSteel\Assets\_Project\RobotPlay\Runtime\RobotFeedbackView.cs
+AnseongSteel\Assets\_Project\RobotPlay\Runtime\RobotNetworkSmoke.cs
+AnseongSteel\Assets\_Project\RobotPlay\Runtime\RobotPilotInput.cs
+AnseongSteel\Assets\_Project\RobotPlay\Runtime\RobotPlaySession.cs
+AnseongSteel\Assets\_Project\RobotPlay\Runtime\RobotRigVisual.cs
+
+[범위 파일: AnseongSteel/Assets/_Project/RobotPlay/Editor / 각 원본의 .meta도 함께 존재 여부 보존 대상]
+AnseongSteel\Assets\_Project\RobotPlay\Editor\IntegratedNetworkBuild.cs
+AnseongSteel\Assets\_Project\RobotPlay\Editor\IntegratedPlayBuilder.cs
+AnseongSteel\Assets\_Project\RobotPlay\Editor\IntegratedPlayValidation.cs
+AnseongSteel\Assets\_Project\RobotPlay\Editor\IntegratedRulesChecks.cs
+AnseongSteel\Assets\_Project\RobotPlay\Editor\PunchAssetProbe.cs
+AnseongSteel\Assets\_Project\RobotPlay\Editor\PunchPhaseValidation.cs
+AnseongSteel\Assets\_Project\RobotPlay\Editor\RobotCombatChecks.cs
+AnseongSteel\Assets\_Project\RobotPlay\Editor\RobotLocalBothValidation.cs
+AnseongSteel\Assets\_Project\RobotPlay\Editor\RobotLocalPunchScene.cs
+AnseongSteel\Assets\_Project\RobotPlay\Editor\RobotPlayBuilder.cs
+AnseongSteel\Assets\_Project\RobotPlay\Editor\RobotPlayerBuild.cs
+AnseongSteel\Assets\_Project\RobotPlay\Editor\RobotPlayValidation.cs
+
+[범위 파일: AnseongSteel/Assets/_Project/02_Art/PilotV04 / 각 원본의 .meta도 함께 존재 여부 보존 대상]
+AnseongSteel\Assets\_Project\02_Art\PilotV04\AS_Pilot_Palette.png
+AnseongSteel\Assets\_Project\02_Art\PilotV04\AS_Pilot_v04_QuestCandidate.fbx
+AnseongSteel\Assets\_Project\02_Art\PilotV04\AS_Pilot_v04.fbx
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Editor\PilotReviewRigEditor.cs
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Editor\PilotV04Builder.cs
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Editor\PilotV04PlayValidation.cs
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Materials\AS_AmberVisor.mat
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Materials\AS_CeramicWhite.mat
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Materials\AS_FlexGraphite.mat
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Materials\AS_TeamAccent.mat
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Materials\ReviewFloor.mat
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Prefabs\AS_Pilot_Detailed_Review.prefab
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Prefabs\AS_Pilot_Reduced_Review.prefab
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Runtime\PilotLocalView.cs
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Runtime\PilotReviewControls.cs
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Runtime\PilotReviewRig.cs
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Scenes\PilotWristReview_v04.unity
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Validation\01_two_models.png
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Validation\hand_closed_aligned.png
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Validation\hand_grip.png
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Validation\hand_open_roll_-60.png
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Validation\hand_open_roll_0.png
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Validation\hand_open_roll_60.png
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Validation\playmode_guard.png
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Validation\playmode_validation.json
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Validation\pose_grip.png
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Validation\pose_guard.png
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Validation\pose_neutral.png
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Validation\pose_raised.png
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Validation\pose_reach_limit.png
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Validation\pose_wrist.png
+AnseongSteel\Assets\_Project\02_Art\PilotV04\Validation\unity_validation.json
+
+[범위 파일: VR_test/Assets/Scripts / 각 원본의 .meta도 함께 존재 여부 보존 대상]
+VR_test\Assets\Scripts\MechaVRBodyFollower.cs
+VR_test\Assets\Scripts\MechaVRBossContact.cs
+VR_test\Assets\Scripts\MechaVRBossTarget.cs
+VR_test\Assets\Scripts\MechaVRHandTarget.cs
+
+[범위 파일: VR_test/Assets/Editor / 각 원본의 .meta도 함께 존재 여부 보존 대상]
+VR_test\Assets\Editor\MechaVRBossContactTests.cs
+VR_test\Assets\Editor\MechaVRBossSetup.cs
+VR_test\Assets\Editor\MechaVRDiagnostics.cs
+
+[범위 파일: Tools/Validation / 각 원본의 .meta도 함께 존재 여부 보존 대상]
+Tools\Validation\IntegratedOnlineProcesses.py
+
+[VRMP 스크립트 경로 인벤토리: 핵심 ownership/session/직접 연결 중심 검사, 나머지는 주변 목록]
+AnseongSteel\Assets\VRMPAssets\MiniGames\MiniGameScripts\Climber\MiniGame_Climber.cs
+AnseongSteel\Assets\VRMPAssets\MiniGames\MiniGameScripts\MiniGameBase.cs
+AnseongSteel\Assets\VRMPAssets\MiniGames\MiniGameScripts\MiniGameManager.cs
+AnseongSteel\Assets\VRMPAssets\MiniGames\MiniGameScripts\ScoreboardSlot.cs
+AnseongSteel\Assets\VRMPAssets\MiniGames\MiniGameScripts\Slingshot\MiniGame_Slingshot.cs
+AnseongSteel\Assets\VRMPAssets\MiniGames\MiniGameScripts\Slingshot\Slingshot.cs
+AnseongSteel\Assets\VRMPAssets\MiniGames\MiniGameScripts\Slingshot\SlingshotProjectile.cs
+AnseongSteel\Assets\VRMPAssets\MiniGames\MiniGameScripts\Slingshot\SlingshotVisualUpdater.cs
+AnseongSteel\Assets\VRMPAssets\MiniGames\MiniGameScripts\WhackAPig\Breakable.cs
+AnseongSteel\Assets\VRMPAssets\MiniGames\MiniGameScripts\WhackAPig\MiniGame_Whack.cs
+AnseongSteel\Assets\VRMPAssets\MiniGames\MiniGameScripts\WhackAPig\NetworkedWhackAPig.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Gameplay\AntiGravityZone.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Gameplay\Drawing\PenTrail.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Gameplay\Drawing\SimplePen.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Gameplay\MessageBoard\MessageText.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Gameplay\MessageBoard\NetworkMessageBoard.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Gameplay\NetworkObjectDestroyer.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Gameplay\RoomMusic.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Gameplay\SimpleFan.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Gameplay\TargetPractice\Projectile.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Gameplay\TargetPractice\Target.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Gameplay\TargetPractice\TargetManager.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\AnchorVisuals.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\Billboard.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\BooleanToggleVisualsController.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\CharacterResetter.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\ControllerTooltips\BezierCurve.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\ControllerTooltips\Callout.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\ControllerTooltips\TurnToFace.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\DelayedUnityEvent.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\GameObjectToggle.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\KeyLockSystem\IKeychain.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\KeyLockSystem\Key.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\KeyLockSystem\Keychain.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\KeyLockSystem\Lock.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\LazyFollow.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\LightBakeUtility.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\ObjectReset.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\Permissions\PermissionsManager.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\Permissions\PlatformUnderstanding.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\Pooler.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\PoolerProjectiles.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\PositionalClampY.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\ResetVideoOnLoop.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\SnapToPlayerHeight.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\SubTrigger.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\UIComponentToggler.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\Utils.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\VersionText.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\XRKnob.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\XRLever.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\XRLockSocketInteractor.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Helpers\XRPokeFollowAffordanceFill.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkBillboard.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkInteractableSpawner\NetworkInteractableSpawner.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkInteractableSpawner\NetworkInteractableSpawnerEditor.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkInteractions\NetworkBaseInteractable.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkInteractions\NetworkPhysicsInteractable.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkInteractions\NetworkSocketInteractor.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkManagers\AuthenticationManager.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkManagers\NetworkManagerVRMultiplayer.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkManagers\SessionManager.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkManagers\VoiceChatManager.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkManagers\XRINetworkGameManager.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkPlayer\XRAvatarIK.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkPlayer\XRAvatarVisuals.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkPlayer\XRHandPoseReplicator.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkPlayer\XRINetworkPlayer.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkProjectileLauncher.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkUtilityComponents\ClientNetworkTransform.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkUtilityComponents\NetworkTrigger.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkUtilityComponents\NetworkUI\NetworkedButton.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkUtilityComponents\NetworkUI\NetworkedDropdown.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkUtilityComponents\NetworkUI\NetworkedSlider.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkUtilityComponents\NetworkUI\NetworkedToggle.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkXRKnob.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Network\NetworkXRLever.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\NetworkedPlatformSpecificVisuals.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Player\CalloutGazeController.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Player\ConnectionToggler.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Player\JointBasedHand.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Player\OfflinePlayerAvatar.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Player\PlayerAppearanceMenu.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Player\PlayerHudNotification.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\Player\PlayerNameTag.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\UI\GreetingBoardUI.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\UI\IntButtonUI.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\UI\LobbyList\LobbyListSlotUI.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\UI\LobbyList\LobbyUI.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\UI\OfflineMenu.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\UI\PlayerList\PlayerListInitializer.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\UI\PlayerList\PlayerListUI.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\UI\PlayerList\PlayerSlot.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\UI\PlayerOptions.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\UI\PopoutUI.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\UI\TooltipUI.cs
+AnseongSteel\Assets\VRMPAssets\Scripts\UI\WorldCanvas.cs
+AnseongSteel\Assets\VRMPAssets\Tutorial\TutorialScripts\VideoPlayerRenderTexture.cs
+AnseongSteel\Assets\VRMPAssets\Tutorial\TutorialScripts\VideoPlayerTutorial.cs
+AnseongSteel\Assets\VRMPAssets\Tutorial\TutorialScripts\VideoTimeScrubControl.cs
+
+[씬/프리팹/모델·설정·과거 근거 주요 직접 연결 목록]
+AnseongSteel/Assets/_Project/04_Scenes/ArmMotionTest.unity
+AnseongSteel/Assets/_Project/04_Scenes/sunwoo_HUDTest.unity
+AnseongSteel/Assets/_Project/04_Scenes/sunwoo_IntegratedPlay.unity
+AnseongSteel/Assets/_Project/05_Prefabs/TrackedRobotArms.prefab
+AnseongSteel\Assets\_Project\RobotPlay\Scenes\LocalPunchTest.unity
+AnseongSteel\Assets\_Project\RobotPlay\Scenes\RobotPlay.unity
+AnseongSteel/Assets/_Project/02_Art/01_Models/mecha-red-points-mixamo-v025.fbx
+AnseongSteel/Assets/_Project/02_Art/01_Models/mecha-finger-rig-mixamo-v026.fbx
+AnseongSteel/Assets/_Project/01_Scripts/01_Core/PunchTrajectoryRecognizer.cs
+AnseongSteel\Assets\_Project\02_Art\02_Textures\.gitkeep
+AnseongSteel\Assets\_Project\02_Art\02_Textures\ArmMotionFeed.renderTexture
+AnseongSteel\Assets\_Project\02_Art\02_Textures\ArmMotionPanoramaCenter.renderTexture
+AnseongSteel\Assets\_Project\02_Art\02_Textures\ArmMotionPanoramaLeft.renderTexture
+AnseongSteel\Assets\_Project\02_Art\02_Textures\ArmMotionPanoramaRight.renderTexture
+AnseongSteel\Assets\Scenes\BasicScene.unity
+AnseongSteel\Assets\Scenes\SampleScene.unity
+AnseongSteel\Assets\Scenes\SampleScene\LightingData.asset
+AnseongSteel\Assets\Scenes\SampleScene\Lightmap-0_comp_dir.png
+AnseongSteel\Assets\Scenes\SampleScene\Lightmap-0_comp_light.exr
+AnseongSteel\Assets\Scenes\SampleScene\Lightmap-1_comp_dir.png
+AnseongSteel\Assets\Scenes\SampleScene\Lightmap-1_comp_light.exr
+AnseongSteel\Assets\Scenes\SampleScene\Lightmap-2_comp_dir.png
+AnseongSteel\Assets\Scenes\SampleScene\Lightmap-2_comp_light.exr
+AnseongSteel\Assets\Scenes\SampleScene\Lightmap-3_comp_dir.png
+AnseongSteel\Assets\Scenes\SampleScene\Lightmap-3_comp_light.exr
+AnseongSteel\Assets\Scenes\SampleScene\Main_Scene Baking Set.asset
+AnseongSteel\Assets\Scenes\SampleScene\OcclusionCullingData.asset
+AnseongSteel\Assets\Scenes\SampleScene\ReflectionProbe-0.exr
+AnseongSteel\Assets\Scenes\SampleScene\ReflectionProbe-0.png
+AnseongSteel\Assets\Scenes\SampleScene\ReflectionProbe-1.exr
+AnseongSteel\Assets\VRMPAssets\Prefabs\Managers\Network Manager VR Multiplayer.prefab
+AnseongSteel\Assets\VRMPAssets\Prefabs\Managers\XRI Network Game Manager.prefab
+AnseongSteel\Assets\VRMPAssets\Prefabs\PlayerPrefabs\Hand_Left_Networked.prefab
+AnseongSteel\Assets\VRMPAssets\Prefabs\PlayerPrefabs\Hand_Right_Networked.prefab
+AnseongSteel\Assets\VRMPAssets\Prefabs\PlayerPrefabs\Offline_Player_Avatar.prefab
+AnseongSteel\Assets\VRMPAssets\Prefabs\PlayerPrefabs\Player_Name_Tag.prefab
+AnseongSteel\Assets\VRMPAssets\Prefabs\PlayerPrefabs\XRI_Network_Player_Avatar.prefab
+AnseongSteel\Assets\VRMPAssets\Prefabs\PlayerPrefabs\XRMPT_XR_Origin_Setup.prefab
+AnseongSteel\Assets\VRMPAssets\Prefabs\PlayerPrefabs\XRMPT_XR_Origin_Tutorial Variant.prefab
+AnseongSteel\Assets\VRMPAssets\Prefabs\PrefabVariants\NetworkedCube Variant.prefab
+AnseongSteel\Assets\VRMPAssets\Prefabs\PrefabVariants\SphereProjectile Red Variant.prefab
+AnseongSteel\Assets\VRMPAssets\Prefabs\PrefabVariants\SphereProjectile Yellow Variant.prefab
+AnseongSteel\Assets\VRMPAssets\Prefabs\PrefabVariants\XR Origin Hands (XR Rig) MP Template Variant.prefab
+AnseongSteel/Assets/VRMPAssets/VRMP.asmdef
+VR_test/Assets/Scenes/MainVRScene.unity
+VR_test/Assets/mecha_arms_PCVR.fbx
+VR_test/MechaVR_Setup.md
+VR_test/MechaVR_BossContact.md
+AnseongSteel/Packages/manifest.json
+AnseongSteel/Packages/packages-lock.json
+VR_test/Packages/manifest.json
+VR_test/Packages/packages-lock.json
+AnseongSteel/ProjectSettings/ProjectVersion.txt
+VR_test/ProjectSettings/ProjectVersion.txt
+AnseongSteel/ProjectSettings/EditorBuildSettings.asset
+VR_test/ProjectSettings/EditorBuildSettings.asset
+AnseongSteel/ProjectSettings/ProjectSettings.asset
+VR_test/ProjectSettings/ProjectSettings.asset
+AnseongSteel\Assets\XR\Settings\OpenXR Editor Settings.asset
+AnseongSteel\Assets\XR\Settings\OpenXR Package Settings.asset
+AnseongSteel\Assets\XR\Settings\XRSimulationSettings.asset
+VR_test\Assets\XR\Settings\OpenXR Editor Settings.asset
+VR_test\Assets\XR\Settings\OpenXR Package Settings.asset
+Audit/2026-10-13/PROJECT_AUDIT_KO.md
+Audit/2026-10-13/unity-audit-02-results.txt
+Audit/2026-10-13/combat-checks.txt
+Audit/2026-10-13/integrated-rules-checks.txt
+AnseongSteel/Assets/VRMPAssets/Audio/SFXClips/Button_22_Click.wav
+AnseongSteel/Assets/VRMPAssets/Audio/SFXClips/HoverSound.wav
+AnseongSteel/Assets/VRMPAssets/Audio/SFXClips/NegativeSound.wav
+AnseongSteel/Assets/VRMPAssets/Audio/SFXClips/CoinSplash.wav
+
+진단 완료. 개발 후속 지시 대기. 본 파일 이외 작업물은 생성/수정하지 않았음.
+
+13. 최종 공통 기준 정정 반영 (00_DIRECTION_AND_COORDINATION.txt 읽음)
+총괄이 과거 전투 전용 사용자 원문을 추가 확인한 기준을 적용했다. 두 명 같은 방향 회피: 01a0be7a-df9a-7b92-96a9-efa99a567491, 자동 접근/후퇴: 01a0be7f-8982-7f21-9d7e-b5db0d886e63 / 01a0be7f-bd8e-7c90-a6f6-6e096abd2c8e. 마지막 훅 적중후 슬로우와 추가 입력: 01a0be83-29e6-7762-a199-240c8ff4dd39 / 01a0be83-5a00-71e0-badf-d4cc3e57c706. 일반 해당 팔/강공격 양팔/정상 피해0/한팔 실패: 01a0c2aa-9475-75c1-a483-494293cfd31d / 01a0c2ab-0092-7670-9ca2-325b7d399ac4 / 01a0c2b0-a4b2-7db0-ab37-ac19244bc260. 후속 검/방패 장비 역할 고정: 01a107f2-e11e-74f3-92cc-b92e6e60cef1, 손으로 쥐는 검이며 좌우 누가 검인지 미정. 본 담당이 해당 전투 채팅을 새로 직접 읽었다는 뜻이 아니라, 총괄의 원문 확인을 기록한 공통 문서를 읽고 반영한 것이다.
+진단 외 개발 착수 없음. 후속 지시 대기.
+

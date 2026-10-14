@@ -1,0 +1,1684 @@
+안성제철 담당 진단 04 — UI·피드백·빌드·성능·시연 운영
+작성 기준: 2026-10-14 KST / develop 42e05e4
+저장소: C:\Users\anthony\Desktop\Capstone\anseong-steel
+이 문서의 경로는 별도 표시 없으면 저장소 기준. RP = AnseongSteel/Assets/_Project/RobotPlay, HU = AnseongSteel/Assets/_Project/HudUI.
+
+0. 조사 방식과 한계
+이번에는 현재 C#·셰이더·Unity YAML·meta·설정·문서·과거 검사 자료와 지정된 두 채팅을 읽는 정적 진단만 수행했다. Unity 실행, 임포트, Play Mode, 컴파일, 빌드, HMD/FPS/Android 검증은 수행하지 않았다. 시작 및 저장 전 git 상태는 develop 42e05e4, ?? Audit/만 확인됐다. 소스·씬·프리팹·meta·ProjectSettings·Packages·Git 이력은 수정하지 않았다. 산출물은 이 txt 하나다.
+저장소 및 AnseongSteel 하위와 저장소 상위 C:/부터 Capstone까지 AGENTS.md를 확인했으며 적용할 파일이 발견되지 않았다. 하위 에이전트나 추가 채팅은 만들지 않았고 타 채팅에 메시지를 보내지 않았다.
+Audit/2026-10-13/PROJECT_AUDIT_KO.md, combat-checks.txt, integrated-rules-checks.txt, unity-audit-02-results.txt, unity-visual-results.txt를 읽었다. 과거 전투 27+통합 27=54 PASS, 모델 누락·준비 중 타격·정지 회피 재현은 10/13의 기존 증거다. 이번 재실행 결과가 아니다. 310 렌더러/357 슬롯 및 보스 295 렌더러/303 슬롯도 같은 과거 실행 집계다. 현재 텍스트 설정·호출 경로는 별도로 재확인했다.
+FBX/Blender 내부 메시·본·오디오 파형/청감·PNG 픽셀·Unity 임포트 결과·런타임 프리팹 확장·OpenXR 기기 기능 제공 여부는 이번에 검증하지 않았다. GUID 텍스트 연결은 Unity 런타임 정상성의 충분조건이 아니다. 아래 '확인'은 정적으로 확인한 코드/설정 사실과 기존 실행 증거를 명확히 나눈다.
+
+1. 컨셉과 개발방향의 변천 및 현재 코드와의 차이
+출처 A: 「HUD UI 콘셉트 개발」 01a12030-bb49-7054-8f43-faf036496014, durable. read_thread의 10개 턴, hasMore=false까지 읽음. 일부 턴은 전달 입력이 출력에 없고 assistant 진행/완료만 보여 원문 사용자 결정까지 복원할 수 없었다. 그 항목은 전달 요약/assistant 해석으로 표시했다. 이미지 산출물은 이 진단에서 다시 열거나 생성하지 않았다.
+출처 B: 「구글독스 내용 확인 가능 여부」 01a0ada0-fd3b-7292-872a-2664c508fcf3, local. 6페이지 총 56개 턴(마지막 hasMore=false), 2026-09-17~10-04 범위를 읽었다. 개별 긴 메시지는 도구 길이 제한이 있으므로 첨부 문서 전체를 다시 검증했다는 뜻은 아니다. 날짜/시각은 KST로 환산했다.
+
+시점/근거 | 구분 | 방향의 변화 | 현재 코드와 차이
+09/17 14:18, B 사용자 '퍼시픽림과 비슷한느낌…첫번째' | 사용자 선택 | 두 사람이 같은 공간에 나란히 탑승해 한 기체 협동 조종 | 좌우 자리·파일럿 모델은 있으나 통합 입력에서 사람 팔 Follow 공급/상대 자세 복제는 다른 파트 연결 과제. UI 링크 링만으로 동료 존재감을 대체할 수 없다.
+09/17 14:20, B 사용자 전방위/천장 시야 개방 희망 | 사용자 선호 | 중앙과 상부 시야를 가능한 넓게 | 콕핏 버전별 프레임·화면 각도 차이. 현재 기본 V02가 최종 선택이라는 사용자 근거는 부족하다. HMD에서 적 예고·팔·동료 가림을 비교해야 한다.
+09/17 14:22:55, B 사용자 '탑승한 느낌…나와 로봇자체는 분리…로봇시점…배제' | 사용자 직접 결정 | 조종사의 1인칭, 동료와 함께 조종하는 경험 우선 | CockpitLiveView의 외부 영상과 HMD HUD 분리는 방향에 맞음. 로봇 이동/진동과 카메라의 강제 동기화는 체감 편안함을 별도 조정해야 함.
+09/17 14:23~14:27, B 사용자 가슴 깊숙한 카메라 디스플레이 후보→반구 디스플레이+바닥+옆 동료 설명 | 사용자 제안 및 후속 방향 | 창문형에서 로봇 카메라 영상형 콕핏으로 구체화, 천장 화면/막힘은 두 후보 | 세 단안 RT를 화면에 매핑하는 현재 구조는 개념을 표현하지만 거리감/양안 입체감이 확보됐다는 뜻은 아님.
+09/17 14:28, B 사용자 왼쪽 왼팔/반대 손 보조 | 사용자 결정 | 담당 팔과 보조 입력 구분 | 현재 전투 협동 스틱 구현/문구를 최신 정해진 접근·회피·후퇴 동작과 구분. HUD에서 자유 이동을 최종 조작으로 가르치면 안 됨.
+09/18 09:34, B 사용자 '길게는 힘들거같아'; 09:49 '마지막은 필살기 고정' | 사용자 방향 | 짧은 체험과 공동 마무리 | 코드 300초는 표시 목표일 뿐 완료 시간 제어가 없음. 전체 게임의 필살기 지향을 이번 맨손 단계 필수로 승격하지 않음.
+09/18 09:59, B 사용자 행동을 정한 뒤 버튼/점검 교육 선정 | 사용자 결정 | 점검 튜토리얼을 조작 정의 후 설계 | 현재 Jab→Hook→Defence→Combo 순서는 프로토타입의 안내. 출격/정비 필수 여부는 최신 지시상 미정이므로 전체 튜토리얼을 먼저 고정하지 않음.
+09/18 10:04~10:05, B 사용자 동시펀치 제외, 잽–잽–훅+버튼 부스트, 단독훅 부스트 금지 | 사용자 선택 | 교대 협동의 보상으로 강한 마무리 | 좌우 대칭 콤보와 명중 후 0.45초는 현재 구현값. 이 시점의 assistant '명중 전' 권유를 확정으로 볼 수 없음. 이후 전투 전용 대화에서 적중후 추가입력으로 확정됐으며 아래 공통문서 정정을 우선한다.
+09/18 10:13~10:30, B 사용자 한 명 잡고 다른 명 베기, 절단 후 무적 회복/드론, 조준-발사 협동 후보 | 선택과 후보 혼재 | 전체 전투가 여러 협동 방식으로 발전 | 이번 맨손 우선은 후속 페이즈 폐기가 아님. 미래 무기/락온/필살기 HUD를 지금 허위 정상값으로 보여주지 않음.
+09/18 16:18, B 사용자 Quest3·몸 표시; 16:19 단독 실행 '할거같긴해'/PC 전환 질문; 16:20 PC 두 대 가능 | 사용자 선호/질문 | 자기 몸 표시와 플랫폼 대안 검토 | Quest 단독 확정으로 취급하지 않음. 최신 총괄은 PC VR vs standalone 미정이다. Windows 검사 성공 이력이 Android 준비 완료를 대신하지 않음.
+10/09 19:23 턴, A 사용자 '화면을 많이 안가리면…불투명한 판…투명한게' | 사용자 직접 결정 | 작고 투명한 HUD, 중앙 전투 시야 보전 | HU의 line-only 그래픽은 유지할 가치. 통합 HP/콤보/긴 영어 목표 문구의 정보 밀도는 별도 실기 검토 필요.
+10/09 19:23 A 최초 인계 | 전달된 방향(직접 사용자 원문 아님) | 파란 슈트 HUD, 부위 누적 손상, 헬멧 상태와 전장 가이드 좌표 구분, 잽/훅 은은한 안내 | 누적 상태/레이어 분리는 구현됨. 통합 가이드는 항상 왼팔 직선 3점이며 다음 차례/훅 형태를 반영하지 않음. 정확 추종 강제는 요구가 아님.
+10/09 19:43 A assistant 참고 렌더 확인 | assistant 해석 | 실제 콕핏 기준으로 큰 테두리/콘솔 그림 접근 수정 | 중앙을 비운 이유를 보존. 해당 assistant의 V02/A/B/C 선택 질문은 사용자 채택 답변 근거가 아님.
+10/10 02:52 A assistant '자비스…상황 인식…정교한 인터페이스' | 전달 후 해석, 사용자 원문 누락 | 단순 정보판에서 상황에 반응하는 슈트 시스템 품질로 발전 | 현재 Response trace는 정적 도형, Pilot 링은 연결 신호와 직접 변화하지 않음. 전투 상황에 맞는 색/타이밍/소리 반응이 디자인 의도와의 다음 차이다.
+10/10~10/11 A 디자인시트→sunwoo_HUDTest 적용 완료 보고 | 과거 assistant 실행 보고 | 콘셉트를 투명 선/링/손상 막대로 옮김 | 당시 49 PASS는 역사. 현재 HUD 메뉴 XR 입력·현재 통합 씬·HMD 품질 완료로 확대하지 않음.
+
+최신 총괄 우선: 2026-12-11 대중 공개 2인 시연, Quest3 두 대 예상+PC 두 대, 짧고 안정적인 완결 플레이. 맨손 우선/오른손 시작 선호(왼손 시작 금지 미확정). 총괄이 추가 확인한 Audit/2026-10-14/00_DIRECTION_AND_COORDINATION.txt를 읽고 초기 인계의 미정 항목을 정정했다. 부스트는 마지막 훅 적중 후 짧은 슬로우+버튼 안내+추가 입력으로 확정, 창 길이/강도만 조정값이다. 일반 공격 해당 팔/강공격 양팔, 정상 가드 피해0/강공격 한팔 완전 실패는 사용자 선택이다. 회피는 공격 타이밍에 실제 이동. 전투 이동은 두 사람이 같은 방향 입력으로 정해진 접근·회피·후퇴를 발동(자유이동 아님), 전투외는 보조손 스틱 동일방향/로봇정면 기준/한명 해제·불일치시 정지. 이동 취소/전환/회피 수치, 시간, 출격/정비의 이번 필수 범위는 미정이다. 외골격 적중/방어 약한 저항·부스트 저항 해제이며 모터 밀기 금지. 통신/제한 미정이고 장치 동작 구현 금지.
+추가 컨셉 출처는 총괄의 공통 문서(직접 읽은 전투 채팅의 원문으로 가장하지 않음): 「전투 로직 설계 — 안성제철 VR」 01a0b354-e5f5-7ee2-90e1-054ef138bac4, 부스트 turns 01a0be83-29e6-7762-a199-240c8ff4dd39 / 01a0be83-5a00-71e0-badf-d4cc3e57c706, 가드 turns 01a0c2aa-9475-75c1-a483-494293cfd31d / 01a0c2ab-0092-7670-9ca2-325b7d399ac4 / 01a0c2b0-a4b2-7db0-ab37-ac19244bc260, 협동 이동 turn 01a0be7a-df9a-7b92-96a9-efa99a567491 및 접근/후퇴 01a0be7f-8982-7f21-9d7e-b5db0d886e63 / 01a0be7f-bd8e-7c90-a6f6-6e096abd2c8e. 후속 검·방패는 사용자 '손으로 쥐는 검이고 장비고정' turn 01a107f2-e11e-74f3-92cc-b92e6e60cef1로 초기 양쪽 전환안에서 고정 역할로 발전했다. 좌우 담당 미정, 이번 맨손 개발 범위를 넓히지 않는다.
+
+2. 담당 코드 파일별 역할·상태·보강점
+파일 | 역할/현재 상태 | 보강점과 근거
+HU/Runtime/SuitHudController.cs | 런타임 HMD world-space Canvas 생성, 상태/설정, Demo 가이드, 오디오·레이어 보존/복원 | :39-51 테스트 씬명 bootstrap+Attach 중복 방지 재사용. :72-99 GraphicRaycaster/InputSystemUIInputModule이며 XR UI 입력 연결 아님. :116 ESC 전용 메뉴 토글. :121-153 매 프레임 layout·문자열·Find. :169 HUD SIZE는 Wireframe만 스케일. :156-162 메뉴는 상태 숨김, 전투 입력 차단 없음.
+HU/Runtime/SuitDamageState.cs | 6부위 누적 normalized 손상, finite/양수 검사·clamp·Changed·Reset | :20-35 순수 상태 재사용. 실제 맞은 부위 판정/총HP와 별도 의미이며 authoritative 피해 서비스가 책임져야 함. 색 외 수치/형태 안내를 함께 유지.
+HU/Runtime/SuitWireframe.cs | 부위별 상태색의 선형 uGUI 메시, Changed 구독/해제 | :12-21 수명 관리 재사용. :25-52 재생성 시 여러 배열 할당. 정적 좌표 버퍼/공용 재질 검토, 측정 없이 최적화 완료 주장 금지.
+HU/Runtime/SuitHudDetail.cs | 링/상태 막대/고정 response trace/프레임 | :19-25 값 변화 때만 dirty는 유용. mode0/2는 링크/실제 입력 파형이 아니라 장식. :73 배열은 mesh 재생성 때 발생. 정상 상태처럼 해석되지 않게 정보 의미 명시.
+HU/Runtime/BattlefieldGuide.cs | 레이어29 world path, 유효좌표 검사, 샘플 quadratic 잽/훅 25점 | :24-39 재사용. 가이드 궤적 강제 판정 아님. 현재 통합에서는 SetSuggestion 아닌 3점 path가 들어와 훅 곡선이 사라짐.
+HU/Runtime/Resources/HudUiLines.shader | URP 투명 vertex color, ZTest Always, stereo/instancing 매크로 | 가독성/가림 정책과 실제 양안 확인. mask/clip 대응이 범용 uGUI와 같다는 가정 금지.
+HU/Runtime/Resources/HudUiText.shader | URP font atlas 투명 텍스트, ZTest Always, stereo 매크로 | LegacyRuntime.ttf와 현재 영어 안내 연결. 한국어 안내 채택 시 글꼴/atlas 지원 필요. shader 빌드 포함은 Resources 경로가 있으나 Android 컴파일은 미검증.
+HU/Runtime/Resources/HudWorldLine.shader | 전장 LineRenderer URP 투명색 | 깊이 테스트 유지, RT 안 가이드 가림·대비 검증 필요.
+HU/Editor/HudValidation.cs | HUD 데모 copy 생성·합성 keyboard/pointer·상태·cleanup·URP 캡처 | :31-34 Run은 Hud_V02_Test를 저장하여 기존 동일명 씬 덮어쓸 수 있음. :41 RunSunwoo는 존재 시 open만. :119-142 desktop/event 성공이 XR ray 성공 아님. :175 메뉴 중 simulation 계속은 의도된 기존 검사.
+RP/Runtime/IntegratedOnlineState.cs | host run/lesson/손상/부스트 상태 복제, 시작/재시작 권한 검증, LAN UI | :72-79 epoch/sequence/host 권한 유지. :98 0.033초 발행. :111-134 IMGUI. :47 일반 공격 RIGHT 고정 문구. :105 비활성 client 매 프레임 Idle 재생 위험. HUD presentation/운영 controls 분리 후보.
+RP/Runtime/IntegratedCockpitSelector.cs | 5종 lazily instantiate, screen 재질/앵커/좌우 시점 교체 | :11-25 기본 index1 V02, 이름 탐색·null 가정. :16-23 검증 실패 전에 기존 shell/variant를 이미 바꾸므로 실패 원상복구가 없음. :32-33 F2/F3+IMGUI 비교 도구. 다섯종 references는 빌드 의존/선택 후 메모리 누적 위험.
+RP/Runtime/IntegratedCombatHud.cs | 전투→HUD 브리지, 피해 시험 매핑, 상태·연출 문구, 외부 optics 위치·가이드 공급 | :27-45 Attach/Feedback 구독. :63 손상 시험 매핑 보존하되 실제 해부학 판정으로 표기 금지. :75-78 구형 dodge counter는 phase/z 추정으로 새 encounter DodgeCount와 다름. :83 COMBO만, next/남은 시간/실패 이유 없음. :94-98 항상 왼팔 3점 배열.
+RP/Runtime/IntegratedFeedback.cs | priority haptic queue, 최소간격, device capability 확인, 임시 2D audio | :10-14 event 합침/중복 제한 재사용. :23-24 stop/reset. :28 network 타인 Hit를 return하여 타인 타격 소리도 소비 안 함. :42 Combo clip 없음. :20 고정 volume .4/비공간음. 외골격 저항과 컨트롤러 impulse는 별개.
+RP/Runtime/RobotFeedbackView.cs | IRobotFeedback 예시, booster renderer 표시와 Debug.Log | :5 no motor IO. Boost .5초 시각 표시만, 실제 adapter 아님. :18 boosters 길이에 비해 until 배열2 고정, 현재 씬2개에서는 일치하나 inspector 설정 검증 필요.
+RP/Runtime/IntegratedPunchCue.cs | 승인 Boost 렌더 동안만 모델/팔 변형+Animator slowdown, 끝에 복원 | :31-42 승인 이벤트/수명 reset 재사용. :49-52 visual slow만이며 simulation clock 불변. :60-101 매 camera Begin/End 변형; HMD 강제 밀기/장치 모터가 아님. shadow/culling/XR stereo에서 동일 표현은 실기 확인 필요.
+RP/Runtime/IntegratedPlayFlow.cs [공유] | calibrate/wait/battle/win/loss, 학습 단계·목표·Retry | :16 300초는 표시. :22/60 B/right secondary는 종료 여부와 무관 restart 요청. :84 L부터/반대 안내는 최신 오른손 우선 선호와 다름. :85 client에도 B/R 재시작 문구지만 권한에서 거절. :28 숨긴 objective를 재enable 시 별도 복구 여부 검증 필요.
+RP/Editor/IntegratedPlayBuilder.cs | HUD test+local punch 통합/ConfigureGame, selector/audio/레이어 직렬화 | :65 기존 scene Build 보호가 있음. 그러나 UpdateOwnedScene :19-26 기존 파일 수정·Save이며 설정/음향을 다시 지정. '검사'에서 호출하지 않도록 분리.
+RP/Editor/IntegratedNetworkBuild.cs | core checks→UpdateOwnedScene→통합 단일 Windows64 Development exe | :11-14 씬 수정/특정 출력. 정식 release/Android/프로필/manifest 경로 아님.
+RP/Editor/RobotPlayerBuild.cs | RobotPlay 단일 Windows64 Development 빌드 | :11 옛 프로토타입 씬 사용. 통합 시연 exe와 구분하여 보존.
+RP/Editor/RobotPlayBuilder.cs | 빈 새 scene에서 전투/LAN/로봇·팔·renderer·keyboard 테스트 생성 | :16 v025 실제 경로, :21 NewScene :88 Save; 현재 작성된 씬 검사 대신 실행하면 재생성. 아트/입력 파트와 겹침.
+RP/Editor/RobotLocalPunchScene.cs | RobotPlay open→XRLocalBoth/튜닝 변경→LocalPunchTest save | :12-18 별도 검사 copy. 이번 최종 통합 검증과 구분.
+RP/Editor/RobotPlayValidation.cs | 구형 keyboard battle 자동검사+캡처 | :24 Build 호출. :62 precontact/in-flight boost, :66 단독훅 damage 없음 등의 구형 규칙. 현재 통합 기획 acceptance로 그대로 실행하지 않음.
+RP/Editor/RobotLocalBothValidation.cs | 두 합성 XR controller local contact/guard 검사 | :42 local scene Build; 장치상태 struct에 grip 없음, 최신 requiresAttackButton 환경의 통합 검사로 오인하지 않음. :64 Editor Exit가 batch 외에도 있음. 전투 파트와 fixture 경계 협의.
+RP/Editor/IntegratedPlayValidation.cs | 통합 합성 XR, lesson/health/boost/guard/dodge/retry 캡처 | :47 저장 씬 자동변경. :80 collider/손 참조 위주, 시각 renderer 존재를 충분히 검사하지 못함. 준비/정지회피 negative fixture 추가 필요. :195 button invoke는 실제 XR 선택 아님.
+RP/Editor/PunchPhaseValidation.cs | noisy tracking·콕핏 5종/양 시점·haptic queue/반응 envelope 검사 | :14 UpdateOwnedScene; RunMotionCore :15-18은 reflection으로 기존 코어만 호출하여 scene builder를 피함. 기기 체감/최종 시작 동선과 구별.
+RP/Editor/RobotCombatChecks.cs | pure combat rules 검사 | 현재 원본 코드 논리 회귀로 재사용; 플랫폼·UI·씬·실기 증거 아님. 기존 27 PASS 역사 유지.
+RP/Editor/IntegratedRulesChecks.cs | grip/contact/post-hit boost/guard/cooperative move/terminal 검사 | pure 통합 규칙. 양팔 heavy/full-block/한팔 실패와 적중후 boost는 추가 대화 근거로 확정 방향과 일치; 수치 자체는 튜닝값. 기존 27 PASS 역사 유지.
+RP/Editor/PunchAssetProbe.cs | 5 cockpit Paths/renderer/anchor 조사 및 integrated open | :7 Paths가 selector 직렬화 공급. :10-14 Unity Editor asset 검사 도구이며 이번 미실행. null asset 시 안전한 진단 보강 가능.
+Assets/Editor/EditorUtils/BuildIncrementer/BuildIdIncrementer.cs | preprocess/postprocess build ID | :1 AUTO_INCREMENT_BUILD 주석이라 사실상 no-op; 현재 0.0.1만으로 빌드 출처 추적 불가. 임의 활성화 대신 commit/platform/profile manifest 검토.
+Assets/Editor/EditorUtils/MeshSaver.cs | 메뉴를 통해 mesh Optimize/CreateAsset/SaveAssets | :29-35 makeNewInstance false는 원본 mesh에 작업 가능. 사용자 도구로 보존, 성능 진단 중 자동 실행하지 않음.
+Assets/Editor/EditorUtils/TextConverter.cs | Legacy Text 일괄 제거 후 TMP 생성 | :38/45 이벤트/재질/raycast 등 전체 보존 아님. 동적 Text와 이름 의존 통합 HUD를 무차별 변환하지 않음.
+Assets/Editor/Readme/Readme.cs | 템플릿 Readme asset 데이터 | 게임 시작/운영 UI가 아님.
+Assets/Editor/Readme/ReadmeEditor.cs | 시작시 Readme 선택, inspector 제거 도구 | :54-65 loadedLayout 메모리 값 변경; :24-48 확인 후 tutorial/readme 삭제 기능. 시연 검증 자동부팅에 섞지 않음.
+Assets/Editor/InEditorTutorials/TutorialCallbacks.cs | template UGS/NGO/appearance/editor selection callbacks | 프로젝트 제작 튜토리얼, 플레이어 점검/게임 tutorial 아님. 자체 LAN과 별도.
+Tools/Validation/IntegratedOnlineProcesses.py [공유] | 저장된 exe를 hidden host/client/extra 프로세스로 LAN 검사 | :4 기존 exe 경로만, 소스 SHA/프로필/빌드 freshness 검사 없음. :109 HMD/TWO PHYSICAL PCS NOT TESTED. 실행 이력을 현재 build와 혼동하지 않도록 manifest 대조.
+
+3. 씬·프리팹·모델·호출/참조 연결
+기본 시작: AnseongSteel/ProjectSettings/EditorBuildSettings.asset:9 SampleScene enabled → RobotPlay enabled(:15) → sunwoo_IntegratedPlay enabled(:18). BasicScene disabled. 기본 build list의 첫 씬은 게임 전용 시작이 아니다. 통합 Windows 검사 builder의 scenes 배열은 IntegratedPlayBuilder.ScenePath 하나여서 다른 실행 경로다. 추적 Assets 내 별도 BuildProfile 이름/확장자 검색에서 배포용 프로필은 발견하지 못했다. 로컬 에디터의 실제 선택 프로필은 Unity 미실행으로 검증하지 않았다.
+sunwoo_IntegratedPlay의 Robot Combat Authority(:15132) GameObject fileID560419631에 session560419632, pilot560419633, feedback view560419634, Hud560419637, IntegratedFeedback560419638, flow560419639, boss560419640, online560419641, selector560419642, punch cue560419643가 enabled로 직렬화돼 있다. 각각의 script meta GUID를 현재 파일과 대조했다.
+Hud bridge(:15596) → context1625585(ArmMotionInput, 씬 :146 disabled), feed13258860 → exterior2114501278/left1538212570/right869256303(:934-936), HMD camera7989812. context는 통합 입력 소유자가 아니라 기존 좌석·카메라 참조로 사용됨. 이 브리지의 Attach가 HU를 런타임 생성하므로 저장 씬에 HU component가 안 보이는 것만으로 미연결 판정하면 안 된다. HU Bootstrap은 Hud_V02_Test/sunwoo_HUDTest 이름만 자동 attach한다.
+flow → Hud bridge. 실행순서 Hud controller450 → CombatHud650 → Flow750 → Online800 → PunchCue900로 HUD 생성/덮어쓰기/목표/복제/연출이 층을 이룬다. ArmMotionInput 비활성인데 HU가 Input.TrackingValid/PunchCompleted를 계속 사용하는 옛 demo 값은 bridge의 후기 갱신에 덮여 일부 숨겨짐. 새 화면은 RobotPilotInput/session 상태를 명시적으로 받는 방향이 좋다.
+RobotCombat.Feedback → session.PublishFeedback(RobotPlaySession.cs:367-375) → host RecordFeedback + 서버 FeedbackRpc → local Feedback event → IntegratedCombatHud(카운터·시험 손상) / IntegratedFeedback(컨트롤러 impulse·audio) / RobotFeedbackView(boost 표시) / IntegratedPunchCue(render reaction). OnlineState는 손상 snapshot 6부위를 다시 HUD에 공급(:109). UI는 피해 성공을 다시 판정하는 계층이 아니다.
+Selector(:15686)의 variants GUID는 현재 5 cockpit prefab meta와 대응:
+5b4c0bb2f9b03164eb019887d5a2f64e = _Project/02_Art/CockpitV01/Prefabs/Cockpit_V01.prefab
+bf6ba38dc3ac0be4fb8e4bd2b74cb531 = _Project/02_Art/CockpitV02/Prefabs/Cockpit_V02.prefab
+83dddae4eea22b946a2b1246b498e4cf = CockpitVariants/A_CloseArc/Prefabs/Cockpit_A_CloseArc.prefab
+d22f05878c22f4a48b31af09d07d9287 = CockpitVariants/B_RearDome/Prefabs/Cockpit_B_RearDome.prefab
+28ae43fc414b9464386683fbd9b5a08f = CockpitVariants/C_SideDome/Prefabs/Cockpit_C_SideDome.prefab
+각 prefab에 Pilot_Left_Floor/Pilot_Right_Floor 이름을 정적으로 확인했다(V01 :151/:252, V02 :253/:221, A :45/:13, B :46/:163, C :112/:229). display mesh/material/internal model 정상성은 Unity 확장 검사 필요. screen material 이름에 Display_Feed 포함 조건으로 탐색하여 feed 재연결, 기존 floor anchors 기준 사람 위치/시점 변경. 기본 V02에 추가 clone을 생성하고 old shell 렌더러를 끄므로 old shell 자체의 메모리 해제는 아님.
+Feed(:933-945) → ArmMotionPanoramaCenter/Left/Right RT GUID da536be132183f74cba903fc650a896c / 2e58519fd1a78f44faf9be8beea63eed / 609029a748fbf86499cb7257233a26b5. CockpitLiveView.cs:21-28 material property block의 _CenterFeed/_LeftFeed/_RightFeed 공급, 카메라 stereo None+enabled=true. HMD는 HUD31 포함/guide29 제외, feed는 robot27+guide29만. 현재 IntegratedCombatHud :27-34에서 culling 지정. 원래 floor는 builder에서27이나 새 배경이 다른 레이어면 화면에서 빠질 수 있음.
+Boss visual → _BossPrototype/Generated/BossMecha.prefab, BossAnimationDriver / animation assets (builder :38-45). player visual은 v025 FBX 현재 파일이 있으나 저장된 씬의 old guid 6bac...가 :5721/:22438에 남음. 현재 meta 불일치와 과거 Missing Prefab/활성 renderer 없음은 아트 파트 P0. 렌더 RT budget 검토 전에 팔 표시 복구를 빼먹으면 저렴하지만 불완전한 씬을 기준 삼게 됨.
+IntegratedFeedback(:15612)의 4개 audio GUID는 VRMPAssets/Audio/SFXClips/Button_22_Click.wav, HoverSound.wav, NegativeSound.wav, CoinSplash.wav이며 builder :57-61에서 직접 공급. source는 AudioSource spatialBlend0, volume.4. 전투 전용 음향·경고·추진음·승패 음향은 이 경로에 없음. 파일 바이너리 청감/음량 피크 미검증.
+기타 효과: targetMarker 색, boosters renderer, LineRenderer 가이드, Hud line meshes, render-only boost+visual slow. particle/VFX·기체 shake·실물 저항 구현 완료를 뜻하지 않음.
+
+4. 검증된 코드/설정 결함, 추정 위험, 기획 미정
+[정적 확인 / P0 후보] 일반 build list는 SampleScene부터 시작. 자체 통합 접속·시작 경로는 IMGUI/keyboard 중심. HMD world canvas만으로 ray input이 생기지 않는다. HU :77/97은 일반 UI 모듈이며 자체 _Project/CockpitVariants 코드·YAML 이름 검색에서 XRUIInputModule/TrackedDeviceGraphicRaycaster 경로를 찾지 못함. 패키지 prefab 확장 전체를 이번에 Unity에서 열지 않았으므로 '프로젝트 모든 XR UI가 전혀 없다'는 확대 주장은 하지 않음.
+[정적 확인 / P0] IntegratedPlayValidation/PunchPhaseValidation/IntegratedNetworkBuild가 UpdateOwnedScene을 호출하고 저장. HUD Run의 BuildTestScene 역시 테스트 scene을 재저장. 현재 씬 상태의 read-only 검사와 fixture 생성이 혼합돼 있다.
+[기존 실행 재현 + 현 코드 재확인 / 전투 파트 P0] 준비 중 피해, 정지 회피, player 모델 누락. RobotPlaySession.cs:331 online만 Battle gate, Flow.cs:45 trainingWindow=true. IntegratedBossEncounter.cs:54 position.x 절대값 회피. 이 문서에서 새 실행했다고 주장하지 않음. UI가 READY/회피성공 안내를 내더라도 authoritative 상태 결함을 먼저 고쳐야 함.
+[정적 확인 / P1] client Objective는 VICTORY B/R 재시작 문구지만 ControlRpc는 host만 승인, 설정 restartButton은 host only 문구로 바뀜. 두 안내가 다름(Flow :85, Online :74, Hud :75). 거절 이유는 RejectedControls 숫자뿐이며 Command UI에 직접 노출되지 않음.
+[정적 확인 / P1] HUD 다음 담당/중립 복귀/콤보 deadline/실패 이유 부족. snapshot.next는 있지만 bridge는 s.combo만 사용. 가이드는 항상 왼팔 직선이며 actual hook/right turn 안내와 불일치. 일반 threat cue RIGHT 고정은 최신 해당 팔 일반 방어 방향을 모두 설명하지 못함.
+[정적 확인 / P1] Combo feedback queue priority3가 Hit2보다 높음. RobotCombat.cs:163 Combo 후 :168 Hit 같은 흐름에서 마지막 훅 이벤트가 coalesce되고 IntegratedFeedback.cs:42 Combo에는 clip=null. 해당 queue 소비의 조합 성공음이 없는 코드 경로이며 청감 재현은 하지 않았다. 타인 Hit return은 타인 타격음도 지운다. 어느 손/누구에게 어떤 소리를 들려줄지 UX 합의 후 분리.
+[정적 확인 / P1] 설정 메뉴는 상태·목표·가이드 숨김, 전투 continues. HUD 크기 조절은 outline만. 메뉴를 열고 warning을 못 본 채 피해를 받는 정책의 적절성은 미정. 기존 HudValidation :175는 pause하지 않음을 검증하므로 임의 timeScale pause로 온라인 로직을 깨지 말 것.
+[정적 확인 / P1] 300초 표시/완료 lesson이어도 전투는 HP로 종료. '5분 체험 완성' 아님. 종료→다음 사용자 ready reset은 Retry 기능이 있지만 운영자 확인/사용자 교체/연결 복구 표준 동선은 없음.
+[위험 / P1] Selector 선택 실패 전 기존 렌더러를 끄고 Current/active instance를 바꿈. 현재 prefab 정상이라면 발생하지 않을 수도 있지만 참조 누락 때 화면 실패가 잔존한다. null 의존 참조·배열 길이·카메라/폰트/셰이더 validity 선행 검사 필요.
+[위험 / P1] OpenXR Package Settings에 Unity.XR.MetaOpenXR class 이름의 활성 AR/colocation/display/lifecycle/hand features가 직렬화돼 있으나 현재 manifest/lock에 meta-openxr 패키지 항목은 안 보임. 잔여 설정일 수 있음. 불필요하다며 삭제하거나 전체 실패로 확정하지 말고 실제 로더가 사용할 features, GUID 해석, Project Validation을 플랫폼별 확인. Android foveatedRenderingApi=1(:2905)이나 FoveatedRenderingFeature m_enabled0(:1995)로 값만 보고 foveation 동작을 주장할 수 없음.
+[위험 / P1] Quality defaults Android0/Standalone0, Performant excludedTargetPlatforms Standalone이 함께 저장됨. 세 품질 모두 같은 URP asset. PC/Android 실제 적용 quality를 확인하고 프로필별 분리 여부 결정; 이름이 다른 것만으로 RT 예산이 달라지지 않음.
+[기획 미정] host/operator/HMD 중 접속 IP 입력·시작·재시작 담당, 시작 전 안내/초보자 skip, 실패시 피해 수치·가드 자세 범위, 이동 취소/방향변경/일반-전투 전환 조건과 거리·회피 window, 오른손 우선 vs 왼손 금지, 부스트 창 길이·슬로우 강도, 체험 시간/강제종료 정책, 출격·점검/필살기 이번 포함, 콕핏 채택본/천장, 최종 플랫폼, 음성안내 여부. 두명 같은방향 이동, 강공격 양팔 필수·정상가드0·한팔 실패, 적중후 추가 부스트 순서는 확정이라 재질문하지 않는다.
+
+5. Windows·Android·XR 설정 및 성능 비용
+Unity 6000.3.24f1(ProjectVersion). manifest 직접 의존 Input System1.20.0, URP17.3.0, XRI3.5.1, OpenXR1.17.1, XR management4.6.1, XR Hands1.8.1, NGO2.13.2. lock의 Transport2.7.3/CompositionLayers2.5.0 등은 실제 연결 의존 위주로 보며 패키지 전체 소스를 감사하지 않았다. 템플릿 authentication/multiplayer/vivox는 자체 LAN 시작에서 자동사용한다고 볼 수 없음.
+ProjectSettings.asset:177-178 Android ID com.DefaultCompany.VRMultiplayer, :188 minSDK34/:189 targetSDK0, :279 architectures2(ARM64 설정), :868-869 Android backend1(IL2CPP 설정), :569-571 Android graphics API15000000 자동0. 이 숫자들의 직렬화 설정만 확인했고 타깃 런타임 지원/SDK 설치/서명/빌드 성공은 확인하지 않았다. Keystore 경로는 설정에 있으나 파일/비밀값은 열지 않았다. Windows/Android release 프로필·배포ID·버전·재현 가능한 build manifest 필요.
+XRGeneralSettingsPerBuildTarget에는 Standalone/Android OpenXRLoader meta GUID54863b214ad6f4e4c81f9dc85bd3a2cf, InitManagerOnStart1. Provider AutomaticLoading/Running0 값의 실제 수명은 XRGeneralSettings 초기화 경로와 함께 검증해야 하며 이것만으로 XR 미시작 결함을 단정하지 않는다.
+OpenXR Android MetaQuestFeature(:108-136) enabled1/Quest3 항목, OculusTouch(:1054-1056) enabled1, TouchPlus Android enabled1 등 입력 profile 설정 존재. Standalone OculusTouch enabled1. 두 platform renderMode1/depthSubmission0 직렬화. Hands feature가 있다는 사실은 컨트롤러 없이 맨손 handtracking gameplay 완료를 뜻하지 않음. 이번 '맨손 전투'는 무기 없는 펀치 단계라는 범위로 이해한다.
+URP-Performant.asset:26 HDR0 :28 MSAA4 :29 renderScale1 :57 shadowDistance15 :72 SRPBatcher1. GraphicsSettings/세 품질은 같은 URP GUIDd0e2fc... 참조. RT 세 파일 :15-20 각각2048²/AA4/ColorFormat4/DepthStencil94. CockpitLiveView :25-26 세 카메라 항상 enabled. HMD 외 12,582,912 RT 출력 픽셀/프레임, 4x면 단순 sample-site 50,331,648(실제 shaded fragment 수/드로우콜/FPS와 다름). color 4byte 가정의 resolved color 합48MiB, MSAA color만 단순192MiB 수준이 될 수 있으나 resolve/depth/backend allocation 여부를 측정하지 않은 추산. 메모리 총량으로 제시하지 않음. 기존 2048x435/AA1 ArmMotionFeed와 현재 panorama3개를 혼동하지 않는다.
+모든 cockpit은 동일 RT를 사용하므로 selector를 바꿔도 RT budget 감소가 아니다. 이전 variant는 inactive일 뿐 Destroy하지 않아 instantiate할수록 모델/재질 메모리를 보유한다(Selector :10-17/34). 비교 자산을 배포 제외하는 것은 최종 채택본 결정 후.
+CPU/GC 정적 구조: CombatHud :80-98 GetComponent 여러 번·문자열 조합·매 frame Vector3[3], HU :121 Layout 및 :123/:129/:130 문자열 :153 Find, Flow :85 문자열/elapsed 및 :86 GetComponent, Feedback :34 online GetComponent, PunchCue :46 GetComponent. cache·변경 때 text 갱신·buffer 재사용·layout aspect/FOV 변경 때 갱신이 후보. uGUI는 같은 값 대입마다 반드시 재생성된다고 단정하지 않으며 실제 Canvas rebuild/GC allocation을 Profiler로 확인한다.
+온라인 client 비활성 boss는 OnlineState :105 Animator.Play Idle 반복, enabled animated boss와 많은 skins 비용/clip reset 가능성을 확인한다. Boss/접촉 collider 비용은 다른 담당이 소유; Renderers 감소/LOD/캐시/물리 query 통계를 함께 측정. 10/13 renderer 숫자를 이번 현장 측정으로 표현하지 않는다.
+측정 계획: 같은 짧은 battle sequence에서 PC VR와 Android 각각 warmup→calibrate/wait→공격/가드/boost→승패→재시작/재접속→지속 반복. CPU main/render/GPU ms, GC bytes/frame 및 spikes, draw/SetPass/triangles, RT/depth/texture/mesh memory, shader warmup, tracking 입력→시각/음향/impulse 지연, 네트워크 jitter를 기록. RT1024/1536/2048 및 AA1/2/4, 그림자/가이드 on-off 비교는 권장 실험이며 이번 변경 없음. 실제 선택 refresh rate의 frame budget=1000/Hz로 목표 설정, 72/90/120 등 특정 목표를 임의 확정하지 않음. Quest 발열/배터리·앱 중단복귀, PC 연결 방식/전시장 무선 부하에서 2인 동시 측정 필요.
+
+6. P0/P1/P2 권장 순서와 완료 검증
+P0-1 저장 씬을 바꾸지 않는 preflight부터: IntegratedPlayValidation.cs:47, IntegratedNetworkBuild.cs:11, PunchPhaseValidation.cs:14, HudValidation.cs:31-34. Validate와 Repair/Generate를 분리. 원본 scene/settings 파일 hash와 git diff가 검사 전후 동일, Missing model/연결/input/UI/start-scene 여부는 발견한 상태 그대로 report. fixture copy는 원본 경로에 저장하지 않고 별도 검사 공간에서만 생성. Unity import가 설정을 바꾸는 경우도 별도 기록.
+P0-2 아트/전투 담당의 player model 복구·준비 gate·실제 이동 회피 완료를 기다리며 HUD 요구 인터페이스 정의. 과거 defect를 정상 ready/dodge UI로 덮어 버리지 않음. 팔 렌더 존재/손 좌우와 guide/world feed에서 보임까지 검사.
+P0-3 실제 배포 부팅/2인 진행 동선 확립: EditorBuildSettings.asset:9, OnlineState.cs:111, HU :77-99/:116, Flow :74/:85. 직접 HMD 조작을 요구하면 world Canvas+XR UI input+tracked raycaster+포인터+IP 입력 방식까지. 운영자 방식이면 PC controls/role/ready/시작과 HMD 피드백을 명확히 제공. 확정된 방식의 첫 씬→두명 접속→준비→시작→승패→다음 사용자 retry를 동일 exe에서 반복. 현재 부분적인 B reset만으로 완결 UI 판정 금지.
+P1-1 next side/중립/남은 기회/실패·추적유실 이유/host 전용 제어 상태를 authoritative snapshot에서 표시(CombatHud :83/:98, Flow :84-85, session snapshot.next :288). 오른손 시작은 안내 우선으로 다룰 수 있으나 왼쪽 공격 금지 규칙은 확정 전 변경하지 않음. 전투 페이즈/적 attack kind/담당에 따라 guide를 공급. 부스트는 적중후 추가입력을 안내하고 창 길이/슬로우 강도만 튜닝값으로 다룬다.
+P1-2 feedback event→시각·소리·controller haptic consistency: Feedback :28/:42 및 Combat :163/:168. combo 소리 정책, warning/counter/boost 구별, 두 손 owner feedback와 공유 소리를 구분. restart/disconnect/disable 뒤 impulse/audio/cue가 남지 않아야 함. 이벤트 합침 테스트에 audio selection/권한별 delivery 의미를 추가; 실제 장치에서 구별 가능 여부는 따로 평가.
+P1-3 RT/GC/렌더 budget 측정과 플랫폼 프로필. 설정 숫자와 실제 적용값을 함께 report. HMD frame drop·글자 양안 정렬·일관된 head comfort·오디오/haptic 체감·키/팔길이 차이 확인. 두 PC 네트워크·Quest standalone 선택은 실증 후 결정.
+P1-4 운영자 메뉴와 복구: 네트워크 실패/대기/추적 유실 표시, 권한 없는 restart 설명, 방화벽/주소/버전/빌드ID 확인, 사용자 교체 후 calibration/epoch/hit/damage/cue/메뉴가 모두 reset. 버튼 오입력으로 전투가 반복 reset되지 않는 정책은 협의 후. 메뉴 중 적 warning/피해 안내 유지 또는 권한 상태변경을 설계하고 온라인 로직을 임의 pause하지 않음.
+P2 품질/문서 정리: HUD 장식과 실제 상태 의미를 일치, 전투 전용 음향/환경음·출격/결과 표현을 확정 범위에서 제작. Assets/Editor/legacy tests와 compare cockpit 자산은 용도 표시 후 보존/정리. README 명중전/명중후, 단독훅, 이동 담당 문구를 프로토타입 버전별로 통일. 새 weapon/필살기/외골격 기능은 확정 후 별도 착수.
+
+검사 범주별 완료 기준:
+- 정적/에디터: 저장 scene GUID·필수 참조·camera/RT/screen/anchors/폰트·shader·audio/meta 누락을 명시, source commit/build scene/platform/quality/XR settings hash를 artifact와 연결. 기존 pure tests는 여전히 필요하나 이번 미실행.
+- Desktop/합성 입력: accepted/rejected start/restart 이유 및 client 문구, READY 피해차단, 종료 입력·피해차단, 메뉴/감사 수명, 한번 타격/이벤트 합침/재시작 cleanup, player renderer/guide next-arm checks, repeat validator 동일 session state 누적 방지.
+- 실제 HMD 두대: startup부터 retry까지 선택 방식으로 완결, 양안/목표 글자/색·중앙 가림·동료/몸 표시/주변 guide legibility, 해당 팔 normal guard 안내, 실제 공격 타이밍 이동, HMD pose를 적 feedback가 밀지 않는지, tracking loss/rearm/recenter, 실제 sound/impulse, 네트워크 latency 및 콤보 timeout 체감. 자기 담당 손 하나만 추적되는 오류와 양손 필수 표시를 구분.
+- Windows: 정식 첫 씬·release/Development 비교, PC별 설치·OpenXR runtime·head/hand input·LAN 연결·방화벽·강제 종료/재연결 및 정상 recovery. 사용한 PC 사양/연결 방식 기록.
+- Android: 새 빌드 성공→설치→cold start→XR/input/audio/HUD shader/RT→두기기 LAN→app pause/resume→지속 반복/열/메모리·프레임을 단계별 증명. 이번 자료는 이 성공을 입증하지 않음.
+- 시연 운영: 정확한 소요 시간은 미정이나 체험자의 진행 정체/실패 시 operator 개입과 clean retry가 관찰가능해야 함. 최종 시간 확정 후 최악 경과시간/사용자 교체 시간과 관람객 연속 반복으로 acceptance 추가.
+
+7. 재사용할 구현 / 비연결·구형 / 외골격 경계
+재사용 우선은 화면을 가리지 않는 line geometry, persistent damage state, HMD vs robot-world coordinate 분리, 메뉴 lifecycle/cleanup, authoritative Feedback RPC/epoch, haptic coalesce/capability/reset, 승인 boost render reaction, 빌드 result 실패 확인, 합성 fixture와 과거 검증 자산이다. 코드 재사용 자체가 목적이 아니라 같은 공간에 탑승한 두 사람의 협동을 이해시키는 경험을 유지하는 것이 기준이다.
+비연결/구형: HU standalone demo PunchCompleted/TrackingValid가 통합의 비활성 ArmMotionInput에 묶임. 구형 RobotPlay statusText는 next 표시가 있으나 통합 씬 statusText=null이라 새 HUD로 자동 전달 안 됨. RobotPlayValidation precontact boost/단독훅금지, local fixture, SampleScene UGS/Relay/Vivox 템플릿은 현재 통합 LAN 플레이/기획 완료를 보장하지 않음. Gameplay tutorial과 Assets/Editor 제작 tutorial은 다르다.
+외골격: IRobotFeedback.Receive(kind,side,strength)(RobotCombat.cs:11)와 session.Feedback event가 확장 접점. 이 strength는 damage/bonus 등 gameplay 값이고 모터 토크/저항 지시량이 아니다. RobotFeedbackView에는 실제 IO가 없다. 컨트롤러 Boost 진동 .9는 외골격 모터 밀기 승인 근거가 아니다. 후속에 승인된 adapter를 만들 때 hit/guard 저항, boost 저항해제를 distinct policy로 변환하고 disconnect/disable/reset의 해제·timeout·장치 상태는 별도 책임으로 둬야 한다. 지금 통신/수치/adapter/모터 동작을 구현하지 않는다. 이벤트 serial/epoch/time/source 검증 등 전달 메타데이터 필요성만 인터페이스 협의 대상으로 기록한다.
+
+8. 다른 파트와 겹치는 파일·인터페이스
+전투/진행: RobotCombat.cs, RobotPlaySession.cs, IntegratedPlayFlow.cs, IntegratedBossEncounter.cs, IntegratedRulesChecks.cs/RobotCombatChecks.cs. 사용자 행동 판정/NextSide/deadline/부스트 타이밍/이동 attack state는 전투가 소유, HUD는 snapshot 소비. 피해량/부위 의미를 UI에서 다시 만들지 않음.
+입력/콕핏/아바타: RobotPilotInput.cs, ArmMotionInput.cs, CockpitLiveView.cs, CockpitPilotAvatar.cs, ControllerArmFollower, 모든 cockpit prefabs/materials/RT/HMD camera와 레이어27/29/30/31. 입력 소유권, local head pose, seat anchor/comfort, renderer culling 협의 필요. 구형 ArmMotionInput를 다시 켜는 방식은 소유권 충돌 위험.
+보스/아트/성능: BossMecha.prefab/BossAnimationDriver/Animator/FBX/skins, player v025 및 씬 GUID 복구, targetMarker·boosters. 신규 보스 패턴 attackKind/side/timing, render reaction과 원본 transforms/clip speed 소유권 협의. 새 배경은 feed camera layer budget에 연결.
+네트워크: IntegratedOnlineState.cs/IntegratedFrame, RobotPlaySession.State/FeedbackRpc/epoch, IntegratedNetworkSmoke.cs, Tools/Validation/IntegratedOnlineProcesses.py. HUD에서 host-only controls와 failure reason 소비, overlay lifecycle; command/event schema와 latency deadline은 네트워크 담당 승인 경계.
+빌드·테스트: EditorBuildSettings/ProjectSettings/Packages/XR/URP, IntegratedPlayBuilder 및 모든 Editor validator, INTEGRATED_PLAY_KO.md. 통합 빌더는 다른 파트 씬/튜닝/소리까지 저장하므로 여러 담당이 공유 checkout에서 실행하면 안 됨. 총괄이 착수 때 codex/ 브랜치·격리 경로·씬/설정 병합 소유권 지정 예정. 본 단계는 공유 checkout 진단만.
+
+9. 기획 확정 없이 안전하게 착수할 첫 작업 하나 (후속 지시 전 미착수)
+'원본을 수정하지 않는 UI/빌드 preflight 검사'를 별도 도구로 추가하는 것을 권장한다. 저장된 EditorBuildSettings/scene YAML/meta/settings를 읽어서 기본 시작 경로, 필요한 UI 연결, 3개 RT budget, audio/selector/anchor refs, old model GUID 누락을 현재 그대로 report한다. 기존 UpdateOwnedScene/BuildTestScene/AssetDatabase.SaveAssets를 호출하지 않고 source hash/commit 및 검사 한계를 출력한다. XR 입력이 연결됐다고 추정하지 않고 required UI component 경로의 유무를 증거로 출력한다.
+완료 기준은 원본 파일 hash/작업트리 불변, missing ref를 스스로 복구하여 숨기지 않음, Windows/Android를 아직 선택하지 않아도 서로 다른 배포/검사 경로와 비용 구조를 보여줌이다. UI의 전투 규칙·부스트 타이밍·플랫폼을 고정하지 않는 작업이며 다른 담당 변경을 덮어쓰지 않는다. 아직 구현/새 브랜치/Unity 실행하지 않았고 개발 후속 지시를 기다린다.
+
+10. 관련 파일 목록과 직접 사용 의존 (아래 자동 수집 부록)
+목록은 현재 Git 추적 경로 기준으로 담당 디렉터리 전체(메타 포함), 공유 경계의 관련 Runtime/씬, 직접 참조 프리팹/RT/URP/audio와 텍스트 GUID 의존을 보조한다. 파일 목록화는 해당 바이너리 내부/외부 패키지 전체를 검증했다는 뜻이 아니다. Library·Logs·로컬 빌드 산출물은 현재 소스 인벤토리에서 제외한다.
+
+[부록 A: 담당 디렉터리 및 공유 경계 파일 — 649개, Git 추적 기준]
+AnseongSteel/Assets/_BossPrototype/Generated/BossMecha.prefab
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/ArmMotionInput.cs
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/ArmMotionInput.cs.meta
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/CockpitLiveView.cs
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/CockpitLiveView.cs.meta
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/CockpitPilotAvatar.cs
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/CockpitPilotAvatar.cs.meta
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/CockpitViewPosition.cs
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/CockpitViewPosition.cs.meta
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/ControllerArmFollower.cs
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/ControllerArmFollower.cs.meta
+AnseongSteel/Assets/_Project/02_Art/02_Textures/ArmMotionFeed.renderTexture
+AnseongSteel/Assets/_Project/02_Art/02_Textures/ArmMotionFeed.renderTexture.meta
+AnseongSteel/Assets/_Project/02_Art/02_Textures/ArmMotionPanoramaCenter.renderTexture
+AnseongSteel/Assets/_Project/02_Art/02_Textures/ArmMotionPanoramaCenter.renderTexture.meta
+AnseongSteel/Assets/_Project/02_Art/02_Textures/ArmMotionPanoramaLeft.renderTexture
+AnseongSteel/Assets/_Project/02_Art/02_Textures/ArmMotionPanoramaLeft.renderTexture.meta
+AnseongSteel/Assets/_Project/02_Art/02_Textures/ArmMotionPanoramaRight.renderTexture
+AnseongSteel/Assets/_Project/02_Art/02_Textures/ArmMotionPanoramaRight.renderTexture.meta
+AnseongSteel/Assets/_Project/02_Art/CockpitV01/Prefabs/Cockpit_V01.prefab
+AnseongSteel/Assets/_Project/02_Art/CockpitV02/Prefabs/Cockpit_V02.prefab
+AnseongSteel/Assets/_Project/04_Scenes/ArmMotionTest.unity
+AnseongSteel/Assets/_Project/04_Scenes/sunwoo_HUDTest.unity
+AnseongSteel/Assets/_Project/04_Scenes/sunwoo_IntegratedPlay.unity
+AnseongSteel/Assets/_Project/HudUI/Editor.meta
+AnseongSteel/Assets/_Project/HudUI/Editor/HudValidation.cs
+AnseongSteel/Assets/_Project/HudUI/Editor/HudValidation.cs.meta
+AnseongSteel/Assets/_Project/HudUI/README.md
+AnseongSteel/Assets/_Project/HudUI/README.md.meta
+AnseongSteel/Assets/_Project/HudUI/Runtime.meta
+AnseongSteel/Assets/_Project/HudUI/Runtime/BattlefieldGuide.cs
+AnseongSteel/Assets/_Project/HudUI/Runtime/BattlefieldGuide.cs.meta
+AnseongSteel/Assets/_Project/HudUI/Runtime/Resources.meta
+AnseongSteel/Assets/_Project/HudUI/Runtime/Resources/HudUiLines.shader
+AnseongSteel/Assets/_Project/HudUI/Runtime/Resources/HudUiLines.shader.meta
+AnseongSteel/Assets/_Project/HudUI/Runtime/Resources/HudUiText.shader
+AnseongSteel/Assets/_Project/HudUI/Runtime/Resources/HudUiText.shader.meta
+AnseongSteel/Assets/_Project/HudUI/Runtime/Resources/HudWorldLine.shader
+AnseongSteel/Assets/_Project/HudUI/Runtime/Resources/HudWorldLine.shader.meta
+AnseongSteel/Assets/_Project/HudUI/Runtime/SuitDamageState.cs
+AnseongSteel/Assets/_Project/HudUI/Runtime/SuitDamageState.cs.meta
+AnseongSteel/Assets/_Project/HudUI/Runtime/SuitHudController.cs
+AnseongSteel/Assets/_Project/HudUI/Runtime/SuitHudController.cs.meta
+AnseongSteel/Assets/_Project/HudUI/Runtime/SuitHudDetail.cs
+AnseongSteel/Assets/_Project/HudUI/Runtime/SuitHudDetail.cs.meta
+AnseongSteel/Assets/_Project/HudUI/Runtime/SuitWireframe.cs
+AnseongSteel/Assets/_Project/HudUI/Runtime/SuitWireframe.cs.meta
+AnseongSteel/Assets/_Project/HudUI/Scenes.meta
+AnseongSteel/Assets/_Project/HudUI/Scenes/Hud_V02_Test.unity
+AnseongSteel/Assets/_Project/HudUI/Scenes/Hud_V02_Test.unity.meta
+AnseongSteel/Assets/_Project/RobotPlay/Editor.meta
+AnseongSteel/Assets/_Project/RobotPlay/Editor/IntegratedNetworkBuild.cs
+AnseongSteel/Assets/_Project/RobotPlay/Editor/IntegratedNetworkBuild.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Editor/IntegratedPlayBuilder.cs
+AnseongSteel/Assets/_Project/RobotPlay/Editor/IntegratedPlayBuilder.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Editor/IntegratedPlayValidation.cs
+AnseongSteel/Assets/_Project/RobotPlay/Editor/IntegratedPlayValidation.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Editor/IntegratedRulesChecks.cs
+AnseongSteel/Assets/_Project/RobotPlay/Editor/IntegratedRulesChecks.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Editor/PunchAssetProbe.cs
+AnseongSteel/Assets/_Project/RobotPlay/Editor/PunchAssetProbe.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Editor/PunchPhaseValidation.cs
+AnseongSteel/Assets/_Project/RobotPlay/Editor/PunchPhaseValidation.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotCombatChecks.cs
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotCombatChecks.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotLocalBothValidation.cs
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotLocalBothValidation.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotLocalPunchScene.cs
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotLocalPunchScene.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotPlayBuilder.cs
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotPlayBuilder.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotPlayerBuild.cs
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotPlayerBuild.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotPlayValidation.cs
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotPlayValidation.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Amber.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Amber.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Cyan.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Cyan.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Floor.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Floor.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_JointOriginal_p63_v020.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_JointOriginal_p63_v020.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_JointOriginal_p87_v020.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_JointOriginal_p87_v020.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p10.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p10.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p100.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p100.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p103.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p103.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p105.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p105.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p106.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p106.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p108.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p108.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p111.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p111.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p114.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p114.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p115.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p115.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p118.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p118.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p119.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p119.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p120.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p120.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p122.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p122.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p125.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p125.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p127.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p127.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p128.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p128.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p131.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p131.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p133.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p133.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p135.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p135.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p137.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p137.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p139.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p139.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p141.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p141.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p143.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p143.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p145.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p145.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p147.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p147.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p152.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p152.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p153.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p153.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p155.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p155.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p156.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p156.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p157.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p157.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p162.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p162.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p163.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p163.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p166.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p166.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p167.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p167.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p168.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p168.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p169.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p169.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p17.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p17.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p172.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p172.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p173.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p173.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p174.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p174.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p175.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p175.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p177.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p177.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p181.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p181.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p183.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p183.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p184.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p184.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p186.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p186.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p188.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p188.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p189.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p189.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p19.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p19.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p190.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p190.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p191.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p191.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p192.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p192.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p193.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p193.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p197.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p197.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p198.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p198.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p2.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p2.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p20.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p20.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p200.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p200.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p201.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p201.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p202.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p202.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p204.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p204.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p205.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p205.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p208.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p208.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p209.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p209.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p215.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p215.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p22.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p22.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p229.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p229.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p230.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p230.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p231.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p231.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p232.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p232.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p233.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p233.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p234.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p234.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p235.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p235.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p25.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p25.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p27.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p27.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p28.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p28.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p30.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p30.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p31.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p31.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p33.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p33.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p34.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p34.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p35.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p35.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p38.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p38.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p39.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p39.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p4.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p4.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p40.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p40.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p43.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p43.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p44.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p44.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p46.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p46.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p47.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p47.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p5.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p5.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p52.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p52.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p54.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p54.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p56.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p56.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p57.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p57.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p6.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p6.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p60.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p60.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p62.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p62.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p64.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p64.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p65.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p65.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p66.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p66.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p68.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p68.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p7.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p7.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p70.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p70.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p71.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p71.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p72.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p72.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p74.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p74.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p75.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p75.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p77.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p77.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p8.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p8.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p80.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p80.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p83.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p83.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p84.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p84.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p85.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p85.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p88.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p88.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p89.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p89.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p9.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p9.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p91.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p91.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p93.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p93.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p95.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p95.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p97.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p97.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_RED_Emission_Floor_Only.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_RED_Emission_Floor_Only.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Ring_Metal_Frame.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Ring_Metal_Frame.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/Materials/RobotSteel.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/RobotSteel.mat.meta
+AnseongSteel/Assets/_Project/RobotPlay/README_KO.md
+AnseongSteel/Assets/_Project/RobotPlay/README_KO.md.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedBossEncounter.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedBossEncounter.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedCockpitSelector.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedCockpitSelector.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedCombatHud.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedCombatHud.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedFeedback.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedFeedback.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedLanRules.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedLanRules.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedNetworkSmoke.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedNetworkSmoke.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedOnlineState.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedOnlineState.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedPlayFlow.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedPlayFlow.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedPunchCue.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedPunchCue.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/MechaVRBossContact.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/MechaVRBossContact.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/MechaVRBossTarget.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/MechaVRBossTarget.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotCombat.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotCombat.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotFeedbackView.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotFeedbackView.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotNetworkSmoke.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotNetworkSmoke.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotPilotInput.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotPilotInput.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotPlaySession.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotPlaySession.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotRigVisual.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotRigVisual.cs.meta
+AnseongSteel/Assets/_Project/RobotPlay/Scenes.meta
+AnseongSteel/Assets/_Project/RobotPlay/Scenes/LocalPunchTest.unity
+AnseongSteel/Assets/_Project/RobotPlay/Scenes/LocalPunchTest.unity.meta
+AnseongSteel/Assets/_Project/RobotPlay/Scenes/RobotPlay.unity
+AnseongSteel/Assets/_Project/RobotPlay/Scenes/RobotPlay.unity.meta
+AnseongSteel/Assets/CockpitVariants/A_CloseArc/Prefabs/Cockpit_A_CloseArc.prefab
+AnseongSteel/Assets/CockpitVariants/B_RearDome/Prefabs/Cockpit_B_RearDome.prefab
+AnseongSteel/Assets/CockpitVariants/C_SideDome/Prefabs/Cockpit_C_SideDome.prefab
+AnseongSteel/Assets/CompositionLayers/UserSettings.meta
+AnseongSteel/Assets/CompositionLayers/UserSettings/CompositionLayersPreferences.asset
+AnseongSteel/Assets/CompositionLayers/UserSettings/CompositionLayersPreferences.asset.meta
+AnseongSteel/Assets/CompositionLayers/UserSettings/Resources.meta
+AnseongSteel/Assets/CompositionLayers/UserSettings/Resources/CompositionLayersRuntimeSettings.asset
+AnseongSteel/Assets/CompositionLayers/UserSettings/Resources/CompositionLayersRuntimeSettings.asset.meta
+AnseongSteel/Assets/Editor/EditorUtils.meta
+AnseongSteel/Assets/Editor/EditorUtils/BuildIncrementer.meta
+AnseongSteel/Assets/Editor/EditorUtils/BuildIncrementer/BuildIdIncrementer.cs
+AnseongSteel/Assets/Editor/EditorUtils/BuildIncrementer/BuildIdIncrementer.cs.meta
+AnseongSteel/Assets/Editor/EditorUtils/MeshSaver.cs
+AnseongSteel/Assets/Editor/EditorUtils/MeshSaver.cs.meta
+AnseongSteel/Assets/Editor/EditorUtils/TextConverter.cs
+AnseongSteel/Assets/Editor/EditorUtils/TextConverter.cs.meta
+AnseongSteel/Assets/Editor/InEditorTutorials.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_000.png
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_000.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_001.png
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_001.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_002.png
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_002.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_003.png
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_003.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_004.png
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_004.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_005.png
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_005.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_006.png
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_006.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_007.png
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_007.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_008.png
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/Feature_Image_008.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/WelcomeMessage_Image.png
+AnseongSteel/Assets/Editor/InEditorTutorials/FeatureImages/WelcomeMessage_Image.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Homepage.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Homepage/0_TableOfContentsContainer.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Homepage/0_TableOfContentsContainer.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Homepage/1_ConfigureUGS.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Homepage/1_ConfigureUGS.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Homepage/2_TemplateTutorials.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Homepage/2_TemplateTutorials.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Homepage/3_Resources.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Homepage/3_Resources.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/Icon_Authentication.png
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/Icon_Authentication.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/Icon_Discord.png
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/Icon_Discord.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/Icon_GitHub.png
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/Icon_GitHub.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/Icon_Lobby.png
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/Icon_Lobby.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/Icon_Relay.png
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/Icon_Relay.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/Icon_Vivox.png
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/Icon_Vivox.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/IconLink@2x.png
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/IconLink@2x.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/project-header-vr.png
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/project-header-vr.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/Unity Logo.png
+AnseongSteel/Assets/Editor/InEditorTutorials/Icons/Unity Logo.png.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Resources.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Resources/3_HelpXRI.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Resources/3_HelpXRI.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Resources/4_HelpNGO.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Resources/4_HelpNGO.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Resources/5_HelpUGS.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Resources/5_HelpUGS.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/StartupLayout.wlt
+AnseongSteel/Assets/Editor/InEditorTutorials/StartupLayout.wlt.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial Project Settings.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial Project Settings.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial Welcome Page.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial Welcome Page.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial0_SetupUGS.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial0_SetupUGS/1-Verify And Setup UGS.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial0_SetupUGS/1-Verify And Setup UGS.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial0_SetupUGS/2-CheckServices.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial0_SetupUGS/2-CheckServices.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial0_SetupUGS/3-CheckVivox.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial0_SetupUGS/3-CheckVivox.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial0_SetupUGS/8-Project Successfully Linked.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial0_SetupUGS/8-Project Successfully Linked.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial0_SetupUGS/Tutorial 0 - UGS Setup.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial0_SetupUGS/Tutorial 0 - UGS Setup.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial1_BasicScene.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial1_BasicScene/1-StartPage.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial1_BasicScene/1-StartPage.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial1_BasicScene/2-PressStartPage.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial1_BasicScene/2-PressStartPage.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial1_BasicScene/3-Connect Online.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial1_BasicScene/3-Connect Online.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial1_BasicScene/4-Last Page.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial1_BasicScene/4-Last Page.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial1_BasicScene/Tutorial 1 - Basic Scene.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial1_BasicScene/Tutorial 1 - Basic Scene.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial2_PlayerSetup.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial2_PlayerSetup/1-Start Page.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial2_PlayerSetup/1-Start Page.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial2_PlayerSetup/2-Appearance.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial2_PlayerSetup/2-Appearance.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial2_PlayerSetup/3-XRI Network Player Avatar Overview.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial2_PlayerSetup/3-XRI Network Player Avatar Overview.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial2_PlayerSetup/4-XRI Network Player Avatar IK Systems.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial2_PlayerSetup/4-XRI Network Player Avatar IK Systems.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial2_PlayerSetup/5-Player Name Tag.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial2_PlayerSetup/5-Player Name Tag.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial2_PlayerSetup/6-Last Page.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial2_PlayerSetup/6-Last Page.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial2_PlayerSetup/Tutorial 2 - Sample Scene Player Setup.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial2_PlayerSetup/Tutorial 2 - Sample Scene Player Setup.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial3_LobbyandRooms.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial3_LobbyandRooms/1-Start Page.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial3_LobbyandRooms/1-Start Page.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial3_LobbyandRooms/2-LobbyUI.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial3_LobbyandRooms/2-LobbyUI.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial3_LobbyandRooms/3-Room Info UI.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial3_LobbyandRooms/3-Room Info UI.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial3_LobbyandRooms/4-LastPage.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial3_LobbyandRooms/4-LastPage.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial3_LobbyandRooms/Tutorial 3 - Lobby and Rooms.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial3_LobbyandRooms/Tutorial 3 - Lobby and Rooms.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial4_SampleSceneExamples.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial4_SampleSceneExamples/1-Start Page.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial4_SampleSceneExamples/1-Start Page.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial4_SampleSceneExamples/2-Music Player UI.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial4_SampleSceneExamples/2-Music Player UI.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial4_SampleSceneExamples/3-Message Board UI.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial4_SampleSceneExamples/3-Message Board UI.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial4_SampleSceneExamples/4-Spatial Panel UI.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial4_SampleSceneExamples/4-Spatial Panel UI.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial4_SampleSceneExamples/5-Network Object Spawner.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial4_SampleSceneExamples/5-Network Object Spawner.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial4_SampleSceneExamples/6-Player Menu UI.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial4_SampleSceneExamples/6-Player Menu UI.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial4_SampleSceneExamples/7-LastPage.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial4_SampleSceneExamples/7-LastPage.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial4_SampleSceneExamples/Tutorial 4 - Sample Scene Examples.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial4_SampleSceneExamples/Tutorial 4 - Sample Scene Examples.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial5_SampleSceneMiniGames.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial5_SampleSceneMiniGames/1-Start Page.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial5_SampleSceneMiniGames/1-Start Page.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial5_SampleSceneMiniGames/2-Mini Game Prefab Overview.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial5_SampleSceneMiniGames/2-Mini Game Prefab Overview.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial5_SampleSceneMiniGames/3-Mini Game Variant Prefabs.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial5_SampleSceneMiniGames/3-Mini Game Variant Prefabs.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial5_SampleSceneMiniGames/4-Climbing Mini Game.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial5_SampleSceneMiniGames/4-Climbing Mini Game.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial5_SampleSceneMiniGames/5-Whack A Pig Mini Game.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial5_SampleSceneMiniGames/5-Whack A Pig Mini Game.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial5_SampleSceneMiniGames/6-Slingshot Mini Game.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial5_SampleSceneMiniGames/6-Slingshot Mini Game.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial5_SampleSceneMiniGames/7-LastPage.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial5_SampleSceneMiniGames/7-LastPage.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial5_SampleSceneMiniGames/Tutorial 5 - Sample Scene Mini Games.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/Tutorial5_SampleSceneMiniGames/Tutorial 5 - Sample Scene Mini Games.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/TutorialCallbacks.asset
+AnseongSteel/Assets/Editor/InEditorTutorials/TutorialCallbacks.asset.meta
+AnseongSteel/Assets/Editor/InEditorTutorials/TutorialCallbacks.cs
+AnseongSteel/Assets/Editor/InEditorTutorials/TutorialCallbacks.cs.meta
+AnseongSteel/Assets/Editor/Readme.meta
+AnseongSteel/Assets/Editor/Readme/Readme.cs
+AnseongSteel/Assets/Editor/Readme/Readme.cs.meta
+AnseongSteel/Assets/Editor/Readme/ReadmeEditor.cs
+AnseongSteel/Assets/Editor/Readme/ReadmeEditor.cs.meta
+AnseongSteel/Assets/Scenes/BasicScene.unity
+AnseongSteel/Assets/Scenes/SampleScene.unity
+AnseongSteel/Assets/Settings/PlayMode.meta
+AnseongSteel/Assets/Settings/PlayMode/Two Player Scenario.asset
+AnseongSteel/Assets/Settings/PlayMode/Two Player Scenario.asset.meta
+AnseongSteel/Assets/VRMPAssets/Audio/SFXClips/Button_22_Click.wav
+AnseongSteel/Assets/VRMPAssets/Audio/SFXClips/Button_22_Click.wav.meta
+AnseongSteel/Assets/VRMPAssets/Audio/SFXClips/CoinSplash.wav
+AnseongSteel/Assets/VRMPAssets/Audio/SFXClips/CoinSplash.wav.meta
+AnseongSteel/Assets/VRMPAssets/Audio/SFXClips/HoverSound.wav
+AnseongSteel/Assets/VRMPAssets/Audio/SFXClips/HoverSound.wav.meta
+AnseongSteel/Assets/VRMPAssets/Audio/SFXClips/NegativeSound.wav
+AnseongSteel/Assets/VRMPAssets/Audio/SFXClips/NegativeSound.wav.meta
+AnseongSteel/Assets/VRMPAssets/Settings/New Lighting Settings.lighting
+AnseongSteel/Assets/VRMPAssets/Settings/New Lighting Settings.lighting.meta
+AnseongSteel/Assets/VRMPAssets/Settings/UniversalRenderPipelineGlobalSettings.asset
+AnseongSteel/Assets/VRMPAssets/Settings/UniversalRenderPipelineGlobalSettings.asset.meta
+AnseongSteel/Assets/VRMPAssets/Settings/URP-Performant-Renderer.asset
+AnseongSteel/Assets/VRMPAssets/Settings/URP-Performant-Renderer.asset.meta
+AnseongSteel/Assets/VRMPAssets/Settings/URP-Performant.asset
+AnseongSteel/Assets/VRMPAssets/Settings/URP-Performant.asset.meta
+AnseongSteel/Assets/VRMPAssets/Settings/XRMPTLightingSettings(High).lighting
+AnseongSteel/Assets/VRMPAssets/Settings/XRMPTLightingSettings(High).lighting.meta
+AnseongSteel/Assets/VRMPAssets/Settings/XRMPTLightingSettings(Low).lighting
+AnseongSteel/Assets/VRMPAssets/Settings/XRMPTLightingSettings(Low).lighting.meta
+AnseongSteel/Assets/VRMPAssets/Settings/XRMPTLightingSettings(Standard).lighting
+AnseongSteel/Assets/VRMPAssets/Settings/XRMPTLightingSettings(Standard).lighting.meta
+AnseongSteel/Assets/XR/Loaders.meta
+AnseongSteel/Assets/XR/Loaders/OpenXRLoader.asset
+AnseongSteel/Assets/XR/Loaders/OpenXRLoader.asset.meta
+AnseongSteel/Assets/XR/Loaders/SimulationLoader.asset
+AnseongSteel/Assets/XR/Loaders/SimulationLoader.asset.meta
+AnseongSteel/Assets/XR/Resources.meta
+AnseongSteel/Assets/XR/Resources/XRSimulationRuntimeSettings.asset
+AnseongSteel/Assets/XR/Resources/XRSimulationRuntimeSettings.asset.meta
+AnseongSteel/Assets/XR/Settings.meta
+AnseongSteel/Assets/XR/Settings/OpenXR Editor Settings.asset
+AnseongSteel/Assets/XR/Settings/OpenXR Editor Settings.asset.meta
+AnseongSteel/Assets/XR/Settings/OpenXR Package Settings.asset
+AnseongSteel/Assets/XR/Settings/OpenXR Package Settings.asset.meta
+AnseongSteel/Assets/XR/Settings/XRSimulationSettings.asset
+AnseongSteel/Assets/XR/Settings/XRSimulationSettings.asset.meta
+AnseongSteel/Assets/XR/Temp.meta
+AnseongSteel/Assets/XR/UserSimulationSettings.meta
+AnseongSteel/Assets/XR/UserSimulationSettings/Resources.meta
+AnseongSteel/Assets/XR/UserSimulationSettings/Resources/XRSimulationPreferences.asset
+AnseongSteel/Assets/XR/UserSimulationSettings/Resources/XRSimulationPreferences.asset.meta
+AnseongSteel/Assets/XR/UserSimulationSettings/SimulationEnvironmentAssetsManager.asset
+AnseongSteel/Assets/XR/UserSimulationSettings/SimulationEnvironmentAssetsManager.asset.meta
+AnseongSteel/Assets/XR/XRGeneralSettingsPerBuildTarget.asset
+AnseongSteel/Assets/XR/XRGeneralSettingsPerBuildTarget.asset.meta
+AnseongSteel/Assets/XRI/Settings.meta
+AnseongSteel/Assets/XRI/Settings/Resources.meta
+AnseongSteel/Assets/XRI/Settings/Resources/InteractionLayerSettings.asset
+AnseongSteel/Assets/XRI/Settings/Resources/InteractionLayerSettings.asset.meta
+AnseongSteel/Assets/XRI/Settings/Resources/XRDeviceSimulatorSettings.asset
+AnseongSteel/Assets/XRI/Settings/Resources/XRDeviceSimulatorSettings.asset.meta
+AnseongSteel/Assets/XRI/Settings/Resources/XRInteractionRuntimeSettings.asset
+AnseongSteel/Assets/XRI/Settings/Resources/XRInteractionRuntimeSettings.asset.meta
+AnseongSteel/Assets/XRI/Settings/XRInteractionEditorSettings.asset
+AnseongSteel/Assets/XRI/Settings/XRInteractionEditorSettings.asset.meta
+AnseongSteel/Packages/manifest.json
+AnseongSteel/Packages/packages-lock.json
+AnseongSteel/ProjectSettings/AndroidXRSettingsManager.asset
+AnseongSteel/ProjectSettings/AudioManager.asset
+AnseongSteel/ProjectSettings/BurstAotSettings_Android.json
+AnseongSteel/ProjectSettings/BurstAotSettings_StandaloneWindows.json
+AnseongSteel/ProjectSettings/BurstAotSettings_WebGL.json
+AnseongSteel/ProjectSettings/ClusterInputManager.asset
+AnseongSteel/ProjectSettings/CommonBurstAotSettings.json
+AnseongSteel/ProjectSettings/DynamicsManager.asset
+AnseongSteel/ProjectSettings/EditorBuildSettings.asset
+AnseongSteel/ProjectSettings/EditorSettings.asset
+AnseongSteel/ProjectSettings/GraphicsSettings.asset
+AnseongSteel/ProjectSettings/InputManager.asset
+AnseongSteel/ProjectSettings/MemorySettings.asset
+AnseongSteel/ProjectSettings/MultiplayerManager.asset
+AnseongSteel/ProjectSettings/NavMeshAreas.asset
+AnseongSteel/ProjectSettings/NetcodeForGameObjects.asset
+AnseongSteel/ProjectSettings/PackageManagerSettings.asset
+AnseongSteel/ProjectSettings/Packages/com.unity.ai.assistant/Settings.json
+AnseongSteel/ProjectSettings/Packages/com.unity.learn.iet-framework/Settings.json
+AnseongSteel/ProjectSettings/Packages/com.unity.multiplayer.tools/CustomColorSettings.asset
+AnseongSteel/ProjectSettings/Packages/com.unity.services.vivox/Settings.json
+AnseongSteel/ProjectSettings/Packages/com.unity.testtools.codecoverage/Settings.json
+AnseongSteel/ProjectSettings/Physics2DSettings.asset
+AnseongSteel/ProjectSettings/PresetManager.asset
+AnseongSteel/ProjectSettings/ProjectSettings.asset
+AnseongSteel/ProjectSettings/ProjectVersion.txt
+AnseongSteel/ProjectSettings/QualitySettings.asset
+AnseongSteel/ProjectSettings/SceneTemplateSettings.json
+AnseongSteel/ProjectSettings/ShaderGraphSettings.asset
+AnseongSteel/ProjectSettings/TagManager.asset
+AnseongSteel/ProjectSettings/TimelineSettings.asset
+AnseongSteel/ProjectSettings/TimeManager.asset
+AnseongSteel/ProjectSettings/UnityConnectSettings.asset
+AnseongSteel/ProjectSettings/URPProjectSettings.asset
+AnseongSteel/ProjectSettings/VersionControlSettings.asset
+AnseongSteel/ProjectSettings/VFXManager.asset
+AnseongSteel/ProjectSettings/VirtualProjectsConfig.json
+AnseongSteel/ProjectSettings/XRPackageSettings.asset
+AnseongSteel/ProjectSettings/XRSettings.asset
+INTEGRATED_PLAY_KO.md
+Tools/Validation/IntegratedOnlineProcesses.py
+
+[부록 B: 통합 씬·6 prefab·XR/URP 텍스트 GUID의 Assets 의존 목록 — 797개]
+아래는 Unity AssetDatabase 의존성 조회가 아니라 YAML GUID 재귀 추적이다. 4MB 초과/비YAML/바이너리 내부는 따라가지 않았으며 패키지 GUID는 Assets index에서 제외한다. 이름·meta 및 파일 존재 목록이며 실제 import/fileID 유효성 검증은 아니다. 각 Assets 파일의 .meta는 동일 경로+.meta로 대응한다.
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/AlternatingCombo.anim
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/Death.anim
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/DrawSword.anim
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/Feint.anim
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/Grab.anim
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/GroundCast.anim
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/OverheadSmash.anim
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/PowerUp.anim
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/SheatheSword.anim
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/Stagger.anim
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/SwordIdle.anim
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/SwordSlash.anim
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/WalkBackward.anim
+AnseongSteel/Assets/_BossPrototype/Animation/Idle.fbx
+AnseongSteel/Assets/_BossPrototype/Animation/Punch.fbx
+AnseongSteel/Assets/_BossPrototype/Animation/Walk.fbx
+AnseongSteel/Assets/_BossPrototype/Combat/AlternatingCombo.asset
+AnseongSteel/Assets/_BossPrototype/Combat/ArmLock.asset
+AnseongSteel/Assets/_BossPrototype/Combat/AttackPreview.mat
+AnseongSteel/Assets/_BossPrototype/Combat/EMP.asset
+AnseongSteel/Assets/_BossPrototype/Combat/Feint.asset
+AnseongSteel/Assets/_BossPrototype/Combat/Grab.asset
+AnseongSteel/Assets/_BossPrototype/Combat/HeavyPunch.asset
+AnseongSteel/Assets/_BossPrototype/Combat/LaserSweep.asset
+AnseongSteel/Assets/_BossPrototype/Combat/MissileBarrage.asset
+AnseongSteel/Assets/_BossPrototype/Combat/MissilePreview.mat
+AnseongSteel/Assets/_BossPrototype/Combat/OverheadSmash.asset
+AnseongSteel/Assets/_BossPrototype/Combat/SensorJam.asset
+AnseongSteel/Assets/_BossPrototype/Combat/Shockwave.asset
+AnseongSteel/Assets/_BossPrototype/Combat/SwordSlash.asset
+AnseongSteel/Assets/_BossPrototype/Combat/VisionDisruption.asset
+AnseongSteel/Assets/_BossPrototype/Combat/WeaponBreak.asset
+AnseongSteel/Assets/_BossPrototype/Generated/BossAnimator.controller
+AnseongSteel/Assets/_BossPrototype/Generated/BossMecha.prefab
+AnseongSteel/Assets/_BossPrototype/Generated/GreatswordLongGrip.asset
+AnseongSteel/Assets/_BossPrototype/Generated/TurnLeftInPlace.anim
+AnseongSteel/Assets/_BossPrototype/Generated/TurnRightInPlace.anim
+AnseongSteel/Assets/_BossPrototype/Models/BossUpdatedCompatible.fbx
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin000.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin001.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin002.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin003.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin004.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin005.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin006.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin007.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin008.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin009.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin010.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin011.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin012.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin013.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin014.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin015.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin016.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin017.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin018.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin019.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin020.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin021.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin022.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin023.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin024.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin025.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin026.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin027.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin028.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin029.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin030.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin031.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin032.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin033.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin034.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin035.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin036.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin037.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin038.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin039.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin040.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin041.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin042.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin043.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin044.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin045.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin046.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin047.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin048.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin049.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin050.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin051.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin052.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin053.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin054.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin055.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin056.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin057.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin058.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin059.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin060.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin061.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin062.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin063.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin064.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin065.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin066.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin067.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin068.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin069.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin070.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin071.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin072.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin073.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin074.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin075.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin076.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin077.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin078.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin079.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin080.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin081.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin082.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin083.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin084.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin085.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin086.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin087.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin088.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin089.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin090.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin091.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin092.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin093.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin094.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin095.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin096.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin097.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin098.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin099.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin100.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin101.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin102.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin103.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin104.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin105.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin106.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin107.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin108.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin109.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin110.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin111.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin112.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin113.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin114.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin115.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin116.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin117.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin118.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin119.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin120.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin121.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin122.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin123.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin124.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin125.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin126.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin127.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin128.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin129.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin130.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin131.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin132.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin133.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin134.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin135.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin136.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin137.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin138.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin139.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin140.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin141.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin142.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin143.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin144.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin145.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin146.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin147.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin148.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin149.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin150.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin151.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin152.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin153.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin154.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin155.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin156.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin157.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin158.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin159.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin160.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin161.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin162.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin163.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin164.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin165.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin166.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin167.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin168.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin169.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin170.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin171.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin172.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin173.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin174.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin175.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin176.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin177.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin178.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin179.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin180.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin181.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin182.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin183.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin184.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin185.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin186.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin187.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin188.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin189.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin190.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin191.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin192.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin193.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin194.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin195.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin196.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin197.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin198.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin199.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin200.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin201.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin202.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin203.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin204.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin205.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin206.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin207.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin208.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin209.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin210.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin211.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin212.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin213.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin214.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin215.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin216.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin217.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin218.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin219.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin220.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin221.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin222.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin223.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin224.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin225.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin226.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin227.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin228.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin229.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin230.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin231.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin232.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin233.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin234.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin235.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin236.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin237.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin238.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin239.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin240.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin241.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin242.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin243.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin244.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin245.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin246.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin247.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin248.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin249.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin250.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin251.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin252.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin253.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin254.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin255.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin256.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin257.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin258.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin259.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin260.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin261.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin262.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin263.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin264.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin265.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin266.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin267.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin268.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin269.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin270.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin271.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin272.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin273.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin274.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin275.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin276.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin277.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin278.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin279.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin280.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin281.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin282.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin283.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin284.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin285.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin286.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin287.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin288.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin289.asset
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin290.asset
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_JointOriginal_p63_v020.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_JointOriginal_p87_v020.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p10.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p100.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p103.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p105.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p106.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p108.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p111.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p114.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p115.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p118.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p119.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p120.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p122.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p125.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p127.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p128.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p131.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p133.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p135.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p137.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p139.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p141.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p143.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p145.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p147.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p152.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p153.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p155.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p156.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p157.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p162.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p163.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p166.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p167.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p168.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p169.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p17.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p172.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p173.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p174.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p175.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p177.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p181.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p183.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p184.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p186.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p188.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p189.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p19.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p190.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p191.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p192.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p193.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p197.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p198.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p2.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p20.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p200.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p201.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p202.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p204.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p205.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p208.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p209.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p215.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p22.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p229.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p230.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p231.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p232.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p233.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p234.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p235.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p25.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p27.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p28.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p30.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p31.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p33.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p34.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p35.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p38.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p39.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p4.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p40.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p43.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p44.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p46.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p47.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p5.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p52.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p54.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p56.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p57.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p6.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p60.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p62.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p64.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p65.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p66.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p68.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p7.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p70.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p71.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p72.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p74.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p75.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p77.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p8.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p80.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p83.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p84.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p85.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p88.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p89.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p9.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p91.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p93.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p95.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p97.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/RED_Emission_Floor_Only.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Ring_Metal_Frame.mat
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-000.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-001.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-002.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-003.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-004.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-005.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-006.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-007.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-008.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-009.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-010.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-011.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-012.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-013.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-014.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-015.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-016.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-017.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-018.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-019.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-020.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-021.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-022.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-023.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-024.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-025.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-026.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-027.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-028.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-029.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-030.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-031.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-032.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-033.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-034.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-035.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-036.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-037.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-038.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-039.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-040.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-041.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-042.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-043.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-044.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-045.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-046.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-047.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-048.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-049.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-050.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-051.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-052.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-053.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-054.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-055.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-056.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-057.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-058.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-059.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-060.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-061.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-062.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-063.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-064.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-065.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-066.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-067.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-068.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-069.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-070.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-071.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-072.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-073.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-074.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-075.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-076.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-077.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-078.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-079.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-080.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-081.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-082.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-083.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-084.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-085.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-086.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-087.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-088.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-089.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-090.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-091.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-092.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-093.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-094.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-095.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-096.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-097.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-098.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-099.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-100.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-101.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-102.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-103.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-104.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-105.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-106.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-107.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-108.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-109.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-110.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-111.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-112.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-113.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-114.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-115.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-116.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-117.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-118.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-119.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-120.png
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-121.png
+AnseongSteel/Assets/_BossPrototype/Models/Sword/BossGreatsword.fbx
+AnseongSteel/Assets/_BossPrototype/Runtime/BossAnimationDriver.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/BossAnimationEvents.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/BossHeavyPunch.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/BossMovement.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/BossRotation.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossAttackDefinition.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossChestLaser.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossCombatController.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossFootPoseInput.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossHandPose.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossSwordAttachment.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossSwordEquip.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossAlternatingCombo.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossArmLock.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossEMP.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossFeint.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossGrab.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossHeavyPunchPattern.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossLaserSweep.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossMissileBarrage.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossOverheadSmash.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossSensorJam.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossShockwave.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossSwordSlash.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossVisionDisruption.cs
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossWeaponBreak.cs
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/ArmMotionInput.cs
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/CockpitLiveView.cs
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/CockpitPilotAvatar.cs
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/CockpitViewPosition.cs
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/ControllerArmFollower.cs
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/DefaultFistPose.cs
+AnseongSteel/Assets/_Project/02_Art/01_Models/ArmMotionArms.asset
+AnseongSteel/Assets/_Project/02_Art/01_Models/ArmMotionFirstPersonArms.asset
+AnseongSteel/Assets/_Project/02_Art/02_Textures/ArmMotionFeed.renderTexture
+AnseongSteel/Assets/_Project/02_Art/02_Textures/ArmMotionPanoramaCenter.renderTexture
+AnseongSteel/Assets/_Project/02_Art/02_Textures/ArmMotionPanoramaLeft.renderTexture
+AnseongSteel/Assets/_Project/02_Art/02_Textures/ArmMotionPanoramaRight.renderTexture
+AnseongSteel/Assets/_Project/02_Art/ArmMotion_Arena.mat
+AnseongSteel/Assets/_Project/02_Art/ArmMotion_Boss_Red.mat
+AnseongSteel/Assets/_Project/02_Art/ArmMotion_Cyan.mat
+AnseongSteel/Assets/_Project/02_Art/ArmMotion_LiveFeed.mat
+AnseongSteel/Assets/_Project/02_Art/ArmMotion_Panorama.shader
+AnseongSteel/Assets/_Project/02_Art/ArmMotion_Player_Armor_Blue.mat
+AnseongSteel/Assets/_Project/02_Art/ArmMotion_Player_Blue.mat
+AnseongSteel/Assets/_Project/02_Art/ArmMotion_Skin_52575F.mat
+AnseongSteel/Assets/_Project/02_Art/ArmMotion_Skin_7C7C7C.mat
+AnseongSteel/Assets/_Project/02_Art/ArmMotion_Skin_E7E7E7.mat
+AnseongSteel/Assets/_Project/02_Art/ArmMotion_Yellow.mat
+AnseongSteel/Assets/_Project/02_Art/CockpitV01/Models/Anseong_Cockpit_v01.fbx
+AnseongSteel/Assets/_Project/02_Art/CockpitV01/Models/PadCollider_-1.asset
+AnseongSteel/Assets/_Project/02_Art/CockpitV01/Models/PadCollider_1.asset
+AnseongSteel/Assets/_Project/02_Art/CockpitV01/Prefabs/Cockpit_V01.prefab
+AnseongSteel/Assets/_Project/02_Art/CockpitV02/Models/Anseong_Cockpit_v02.fbx
+AnseongSteel/Assets/_Project/02_Art/CockpitV02/Models/PadCollider_-1.asset
+AnseongSteel/Assets/_Project/02_Art/CockpitV02/Models/PadCollider_1.asset
+AnseongSteel/Assets/_Project/02_Art/CockpitV02/Prefabs/Cockpit_V02.prefab
+AnseongSteel/Assets/_Project/02_Art/PilotV04/AS_Pilot_v04_QuestCandidate.fbx
+AnseongSteel/Assets/_Project/02_Art/PilotV04/Prefabs/AS_Pilot_Reduced_Review.prefab
+AnseongSteel/Assets/_Project/02_Art/PilotV04/Runtime/PilotLocalView.cs
+AnseongSteel/Assets/_Project/02_Art/PilotV04/Runtime/PilotReviewRig.cs
+AnseongSteel/Assets/_Project/05_Prefabs/TrackedRobotArms.prefab
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Amber.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Cyan.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Floor.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_JointOriginal_p63_v020.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_JointOriginal_p87_v020.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p10.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p100.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p103.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p105.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p106.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p108.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p111.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p114.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p115.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p118.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p119.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p120.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p122.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p125.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p127.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p128.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p131.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p133.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p135.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p137.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p139.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p141.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p143.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p145.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p147.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p152.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p153.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p155.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p156.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p157.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p162.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p163.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p166.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p167.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p168.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p169.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p17.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p172.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p173.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p174.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p175.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p177.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p181.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p183.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p184.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p186.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p188.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p189.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p19.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p190.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p191.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p192.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p193.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p197.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p198.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p2.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p20.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p200.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p201.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p202.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p204.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p205.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p208.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p209.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p215.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p22.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p229.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p230.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p231.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p232.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p233.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p234.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p235.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p25.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p27.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p28.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p30.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p31.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p33.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p34.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p35.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p38.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p39.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p4.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p40.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p43.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p44.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p46.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p47.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p5.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p52.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p54.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p56.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p57.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p6.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p60.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p62.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p64.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p65.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p66.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p68.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p7.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p70.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p71.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p72.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p74.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p75.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p77.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p8.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p80.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p83.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p84.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p85.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p88.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p89.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p9.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p91.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p93.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p95.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p97.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_RED_Emission_Floor_Only.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Ring_Metal_Frame.mat
+AnseongSteel/Assets/_Project/RobotPlay/Materials/RobotSteel.mat
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedBossEncounter.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedCockpitSelector.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedCombatHud.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedFeedback.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedOnlineState.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedPlayFlow.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedPunchCue.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/MechaVRBossContact.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/MechaVRBossTarget.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotFeedbackView.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotPilotInput.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotPlaySession.cs
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotRigVisual.cs
+AnseongSteel/Assets/CockpitVariants/A_CloseArc/Models/Anseong_Cockpit_A_CloseArc.fbx
+AnseongSteel/Assets/CockpitVariants/A_CloseArc/Models/PadCollider_-1.asset
+AnseongSteel/Assets/CockpitVariants/A_CloseArc/Models/PadCollider_1.asset
+AnseongSteel/Assets/CockpitVariants/A_CloseArc/Prefabs/Cockpit_A_CloseArc.prefab
+AnseongSteel/Assets/CockpitVariants/B_RearDome/Models/Anseong_Cockpit_B_RearDome.fbx
+AnseongSteel/Assets/CockpitVariants/B_RearDome/Models/PadCollider_-1.asset
+AnseongSteel/Assets/CockpitVariants/B_RearDome/Models/PadCollider_1.asset
+AnseongSteel/Assets/CockpitVariants/B_RearDome/Prefabs/Cockpit_B_RearDome.prefab
+AnseongSteel/Assets/CockpitVariants/C_SideDome/Models/Anseong_Cockpit_C_SideDome.fbx
+AnseongSteel/Assets/CockpitVariants/C_SideDome/Models/PadCollider_-1.asset
+AnseongSteel/Assets/CockpitVariants/C_SideDome/Models/PadCollider_1.asset
+AnseongSteel/Assets/CockpitVariants/C_SideDome/Prefabs/Cockpit_C_SideDome.prefab
+AnseongSteel/Assets/VRMPAssets/Audio/SFXClips/Button_22_Click.wav
+AnseongSteel/Assets/VRMPAssets/Audio/SFXClips/CoinSplash.wav
+AnseongSteel/Assets/VRMPAssets/Audio/SFXClips/HoverSound.wav
+AnseongSteel/Assets/VRMPAssets/Audio/SFXClips/NegativeSound.wav
+AnseongSteel/Assets/VRMPAssets/Settings/URP-Performant-Renderer.asset
+AnseongSteel/Assets/XR/Loaders/OpenXRLoader.asset
+
+[부록 C: 위 추적에서 Assets index로 해석되지 않은 GUID — 78개]
+외부 패키지/구형 참조/선택적 기능 등이 섞인다. 모두 게임 결함으로 세지 않는다. 6bac2a1fb3671154babb96bd29e3fad7 player 모델 참조는 별도의 기존 실행 경고와 결합한 P0다.
+01512f11fe5096443ad972feb69271f6
+056125dd64c0ed540b40a4af74f7b495
+067e06965349e46e2adeba1822c4a125
+076937beb8763d94790d2e9cc1248ac8
+0d26f2a57848cbc44aad74c933980be8
+0d6ccd3d0ef0f1d458e69421dccbdae1
+0f6bfdbcb316ed242b30a8798c9eb853
+10e4854d42a94cccbb16cf9736c37576
+12d3bf61b014a48a2b7564c61da9d7ad
+274c02963f889a64e90bc2e596e21d13
+2764e7af2a38c4f44bc147f184a57dc5
+2a24be4b5ebfe5f4d8ed1de9b25cb7aa
+2b7365b139f7aec43b23d26b7a48b5a6
+323d71788dcf5ca4b9cb3c4a90e38335
+44ede4ee691b4974a870a100d7d3ad30
+474bcb49853aa07438625e644c072ee6
+486b5e28864f9a94b979b9620ce5006d
+4e314dfef9af0904e80129bcc0a79361
+4ec7ac3a07bc448fbb43bbcff14d5b12
+4f61610f95074135a9fd060fc37c4788
+5019471fb2174e5c852ecd4047163007
+53626a513ea68ce47b59dc1299fe3959
+573620ae32aec764abd4d728906d2587
+593a2fe42fa9d37498c96f9a383b6521
+6096094d69d82cc40947df806f66ab34
+60e1133243b97e347b653163a8c01b64
+650dd9526735d5b46b79224bc6e94025
+651d103057d74c4d8e51d0b368d3d98b
+6960e84d07fb87f47956e7a81d71c4e6
+6bac2a1fb3671154babb96bd29e3fad7
+6c36843bac48b29469f79baf3c98f9b6
+74906b43825373045a3ab2660f8002b4
+761fdd4502cb7a84e9ec7a2b24f33f37
+7de993716e042c6499d0c18eed3a773c
+7e567abbf4d944210acb6315178bb015
+81584f2a3904547cfbeab4ce1ebd866b
+85fd4a84074c74cb183c18e803dabb9e
+8b775c5dcb9e3cf46b2c4064f97b02e1
+8b9b8cd1fcf8499eb57f194da9698fcd
+90ae1e8c3c7a542bba339faf2e771c5a
+92efb7dda02dc484c90845a437c4784e
+933532a4fcc9baf4fa0491de14d08ed7
+9968a003be3847388ac9899285499b9d
+9c5b5af5107e35a43818d5411328bfc3
+9ef793c31862a37448e907829482ef80
+9f06e90513f934dc6891726a9f2a0444
+9f0ebc320a151d3408ea1e9fce54d40e
+a9cc40e7c09aec94ca78bbcd76fc3508
+b213d3e3c7f3109449eb46a4c8ee42f0
+b3aced3429e5911458f4da2dac9d0f29
+b3cf79659a011bd419c7a2a30eb74e9a
+b5a1f07dc5afe854f9f12a4194aca3fb
+bf2edee5c58d82540a51f03df9d42094
+c4b862ee14fb479fbfe5fffe655d3ed3
+cf852408f2e174538bcd9b7fda1c5ae7
+d00bb9c182ae8406ca03773119fa07ea
+d0353a89b1f911e48b9e16bdc9f2e058
+d22659b3b811f4067998fde27d63f4c4
+d236b7d11115f2143951f1e14045df39
+d2dc886499c26824283350fa532d087d
+d3552e428dc7646a88de3ed3650f87da
+d5a57f767e5e46a458fc5d3c628d0cbb
+dc65ec7c51504536bd51a47e3cb8fb6a
+de640fe3d0db1804a85f9fc8f5cadab6
+dfde4033cbc8045a69c465b226fd4284
+e3d24661c1e055f45a7560c033dbb837
+e5315f812f023cf4ebf26f7e5d2d70f2
+ee92377a8e0c873458b71a94a80f3394
+f028123e2efe1d443875bc7609b4a98b
+f2a13300a9e14cacbb01ed5d6ae84e69
+f2b3b4b0645b644019bbe43c77a897b6
+f4c3631f5e58749a59194e0cf6baf6d5
+f647cc0545697264a9878224faada6d5
+f6a75d1f5ff90154ea2a8e58222a1f59
+f928d0d73a35f294fbe357ca17aa3547
+f9ee4ed84c1d10c49aabb9b210b0fc44
+fd67f3d30312eb246a738331dc7b5cbd
+feeef8d85de8db242bdda70cc7ff5acd

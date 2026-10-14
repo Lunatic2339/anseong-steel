@@ -1,0 +1,103 @@
+안성제철 VR 입력·아바타·LAN 실제 실행 검증
+2026-10-14 / Asia-Seoul / 기준 develop 42e05e4a8bbfbbd0b85757d935572347d0556e66
+
+결론
+이번에는 새 Unity Windows 검사 플레이어를 빌드하고 실제 별도 Host/Client 프로세스를 같은 PC에서 연결하여 관찰했다. 합성 XR 입력을 기존 RobotPilotInput에 공급했고, 현재 저장된 sunwoo_IntegratedPlay 씬을 사용했다. 파일럿 팔 Follow 누락, LAN 손 회전 identity, 상대 머리 회전 미복제, 보조손 표시 누락을 런타임 값과 양쪽 카메라 캡처로 확인했다. 역할/교차팔 권한 거절·이탈·재접속·완전 종료 후 역할 교환·담당손 스틱 합의 이동은 실제 로컬 LAN 프로세스에서 동작했다. 보조손 스틱은 현 경로에 연결되지 않았다.
+실제 XR 장치 목록은 0이었고 OpenXR은 XR_ERROR_FORM_FACTOR_UNAVAILABLE/Display 초기화 실패를 기록했다. 이 검사는 Quest 컨트롤러·두 Quest·두 실제 PC·외골격·양안 시야·HMD 편안함/성능의 통과가 아니다. 10/13의 과거 PASS·재현을 이번 결과로 사용하지 않았다.
+
+1. 작업 환경·재현 도구·원본 보존
+격리 Git root: C:\Users\anthony\.codex\worktrees\vr-runtime-verification\anseong-steel
+검사 전용 브랜치: codex/vr-runtime-verification. HEAD는 42e05e4, commit/push/merge 없음.
+Unity 프로젝트: 위 root\AnseongSteel, Unity 6000.3.24f1.
+플레이어: 위 root\RuntimeEvidence\Player\VrAudit.exe.
+scene: AnseongSteel/Assets/_Project/04_Scenes/sunwoo_IntegratedPlay.unity.
+추가 파일은 Assets/AuditRuntimeProbe/VrRuntimeProbe.cs, Editor/VrAuditBuild.cs 및 Unity가 생성한 해당 meta뿐. 게임 기능 C#·프리팹·통합 씬 수정을 하지 않았다. VrAuditBuild는 BuildPipeline.BuildPlayer로 저장된 통합 씬을 빌드하며 UpdateOwnedScene/RobotPlayBuilder/ArmMotionSceneBuilder를 호출하지 않는다.
+공유 메인 checkout을 Unity로 열지 않았다. 다른 담당의 Unity 프로세스는 각각 hud-visual-verification/integrated-arm-repair 격리 경로임을 command line으로 확인했다. 이 검사의 모든 Unity 실행도 별도 vr-runtime-verification 경로였다.
+기존 Library를 읽어 격리 폴더에 복사한 뒤 Unity가 갱신했다. 게임 소스·통합 씬 6개 SHA256은 공유 기준과 같음(source-hashes.json). 격리 폴더의 Unity import/build 자동 변경은 숨기지 않았다: OpenXR feature fileID 3개 갱신, ProjectSettings.preloadedAssets 목록 변경이 semantic diff에 남음. XRSimulation 관련 자산은 중간 임포트 중 삭제/복원 흔적도 있었다. 일부 RT/URP/설정의 status는 줄바꿈 재기록이었고 semantic diff는 isolation-import-diff.txt에 보존했다. shared checkout에는 적용하지 않았다. 따라서 '저장 씬·게임 코드 기준 실행'이지 모든 임포트/빌드 환경 byte가 불변이라는 주장은 아니다.
+최종 빌드 summary: Succeeded / errors=6 / warnings=487 / size=314005535 bytes. 이를 오류·경고 없는 빌드 통과로 표현하지 않는다. Missing Prefab GUID, 에디터 패키지 타입 해석·임포트 경고 등을 포함한 전체 build-v3.log를 제공한다. C# 컴파일과 플레이어 실행은 성공했으며, 게임 모델 참조 경고는 그대로 남겼다.
+빌드 식별: build-hashes-v3.json에 VrAudit.exe·Assembly-CSharp.dll·검사 코드 SHA256. source-hashes.json에 주요 원본 파일. 최종 검사 코드 사본과 빌더를 evidence/vr-runtime에 보존했다. 빌드 소스와 계측 source의 일치도 hash로 확인 가능하다.
+
+2. 실제 실행 경로·입력의 성격
+VrRuntimeProbe는 --vr-runtime-audit 플래그가 있을 때만 AfterSceneLoad에서 검사 GameObject를 만든다. synthetic AuditController 두 개와 XRHMD 하나를 InputSystem에 등록해 devicePosition/deviceRotation/isTracked/trackingState/gripPressed/thumbstick/centerEyePosition/centerEyeRotation에 상태 이벤트를 넣는다. physical Quest 입력을 읽거나 가짜 Quest 장치를 실제 장치라고 표시하지 않는다. 실제 Unity XR InputDevices.GetDevices()의 목록 수는 모든 최종 관측에서 0이다.
+경로: 합성 device 이벤트 → 기존 RobotPilotInput.Update/ReadXR → baseline 교정·Submit → 실제 NGO SubmitRpc/Authorized/Accept → Combat.Sample/ControllerArmFollower.Follow → contact.ConstrainPose → snapshot 복제 → client Pose. 기존 CockpitPilotAvatar/PilotReviewRig/IntegratedCockpitSelector의 실제 Transform을 읽는다. 포즈를 본에 직접 써서 Follow가 정상인 것처럼 만든 것이 아니다.
+검사 설정: XRLocalBoth(기존 입력 모드)로 오프라인 양팔, online에서는 LocalSide에 따라 한쪽만 공급. port=18887, hostAddress=기존 기본 127.0.0.1. 60 target FPS는 검사 설정이며 실제 FPS/지연 측정 결과가 아니다. role/접속/시작·재시작·recenter·선택 시점은 기존 API를 호출한다. 실사용 XR UI 클릭 동선을 검사한 것은 아니다.
+측정: 로봇 손은 robotRoot-local, 사람 손은 각 CockpitPilotAvatar-local metre, 머리는 headTarget world quaternion. 단위가 다른 사람/로봇 위치를 직접 같아야 한다고 비교하지 않는다. 0.9초 뒤 안정 포즈 JSON 및 같은 명령의 카메라 PNG, command 직전 -before.json, 주기적 state.json을 기록한다. 카메라 캡처는 1280x900 단안 URP RenderRequest이며 실제 HMD 양안 캡처가 아니다.
+주요 계측 대상: RobotPilotInput private calibrated/releaseAfterLoss; RobotPlaySession private localRotations; 실제 contact.arms[].hand; 좌우 파일럿 rig 손/headTarget; online frame ready; connection/side/authority/epoch; 실제 input fresh/trajectory phase; camera pose.
+
+3. 실행별 증거와 검사 도구 오류의 처리
+run-01: 검사 도구의 XRHMD isTracked bit control에 float delta를 넣어 Size 4/size 1 ArgumentException 발생. 명령 파일 공유 충돌도 발생. 오염된 실행이라 제품 판정에서 제외했다. 삭제하지 않고 오류 로그를 보존했다.
+run-02: byte 추적 flag 및 명령 파일 write 재시도 수정 후 실행. 팔 Follow·LAN identity·권한/재접속/역할 교환 확인. 시작 요청이 캡처 직후 readiness 갱신보다 빨라 거절되어 이동은 Calibrating에서 머물렀다. 이동 동작의 통과/실패 근거로 사용하지 않는다.
+run-03: 머리·calibration·재무장/phase 직접 계측 추가. 시작 전 cached ready=true였으나 -before snapshot에서 FreshInput(left)=false였다. 실제 ControlRpc가 시작을 거절했고 Battle 대기 timeout. 캡처가 일시적으로 게임 루프를 지연해 .25초 최신 입력 조건을 깨뜨리는 조건을 확인했다. 이 현상은 synthetic capture 환경의 프레임 지연 증거이며 실제 HMD/정상 FPS에서 발생률을 주장하지 않는다. stale HUD ready와 현재 FreshInput은 다를 수 있다는 관찰을 남긴다.
+run-04: 캡처 후 1.5초 안정화 뒤 ready를 확인하고 시작. HARNESS COMPLETED, 관측 56개/PNG 56개/계측 error 0/physical XR device 수 0. 오프라인·양측 포즈·머리·추적/재교정·crossarm/crossloss·Battle 진입·접속/이탈/재접속·역할 교환 완료. 모든 제품 기능 PASS가 아니라 도구의 예정 명령 실행 완료다.
+agreement-05: run-04의 이동/반대 방향이 x=0.7 clamp에 닿아 정지 원인을 구분하기 어려웠다. 같은 최종 v3 플레이어로 두 프로세스를 새로 띄우고 x<0.7에서 입력 반전·한쪽 해제·보조손만 입력을 검사했다. 양측 JSON과 로그·명령별 PNG를 별도 보존. COMPLETED 기록. 새로운 제품 코드 변경/재빌드 없음.
+
+4. 파일·역할별 기대/실제/재현 결과
+아래 파일 경로는 AnseongSteel/Assets/_Project/ 기준. 증거 경로의 기본은 Audit/2026-10-14/evidence/vr-runtime/.
+
+항목 | 대상·역할/기대 | 이번 실제 결과 | 재현·증거
+오프라인 왼팔 위치 | RobotPlay/Runtime/RobotPilotInput:73-107 → Session.Pose:350 / 담당 손과 인간 파일럿 팔이 함께 움직임 | 로봇 접촉 손 (-.650,1.350,.450)→(-1.064,1.701,.914), 약 .715m 이동. 좌측 파일럿 손은 (-.260,1.420,.320) 그대로. Follow 누락 확인 | run-04/offline-01-neutral와02-pose JSON/PNG. 사람 위치는 avatar-local, 로봇은 robotRoot-local. raw pose (-.13,.12,.14)m을 입력.
+오프라인 오른팔 위치 | XRLocalBoth·오른쪽 시점에서도 해당 인간 팔 연결 기대 | viewright 이후 오른쪽 로봇 접촉 손 (.650,1.350,.450)→(.993,1.701,1.004), 약 .740m 이동. 우측 파일럿 오른손은 (.260,1.420,.320) 유지 | run-04/offline-12-viewright,13-neutral,14-pose,15-rotate. preview 전환과 LAN role를 구분.
+오프라인 회전 | RobotPilotInput:100/Session:346-365 / 측정 손 회전을 solver에 전달 | localRotations L이 (0,0,0)에서 Euler(25,55,55)로 변화. 인간 팔 회전/target는 고정. 회전 수집은 되지만 human Follow는 없음 | run-04/offline-03-rotate 및15-rotate, 정적 CockpitPilotAvatar.Follow:85와 ArmMotionInput:240 참고.
+LAN 양팔 위치 복제 | Host=left authority, Client=right nonauthority, 양쪽 몸/접촉 손 위치 반영 | 실제 두 프로세스 Connected. host left offset과 client right offset이 양측 snapshot/실제 robot hand에 반영. 캐릭터의 인간 손은 두 프로세스 모두 기본 위치 유지 | run-04/paired-poses-host/client.json, host-02-pose/client-02-pose PNG.
+LAN 손 회전 | 같은 rotate 입력이 online에서도 보존돼야 함 | host/client 모두 localRotations L/R=(0,0,0). offline의 Euler25/55/55 입력과 달리 online identity. 기존 SetLocalHandRotation의 !NetworkActive와 Pose identity 경로 직접 재현 | run-04/paired-rotation-host/client.json, host/client-03-rotate JSON/PNG. RobotPlaySession:348,365.
+머리·자기/상대 | RobotPilotInput:79-86 → local camera/Avatar.Evaluate. 자기 머리와 옆 동료가 각각 tracked pose를 표현해야 함 | host 자기 왼쪽 headTarget은 q=(0,.300706,0,.953717), 약35°. host가 보는 오른쪽 머리는 identity. client 자기 오른쪽 headTarget도 약35°지만 client가 보는 왼쪽 머리는 identity. 상대 head 복제 없음 확인 | run-04/host-05-head.json/client-05-head.json와 PNG. 합성 HMD yaw40°에서 처음 yaw5° 교정을 빼 35°.
+보조손 포즈 | 각자 반대손이 자기 몸 및 상대 표현에 반영돼야 함 | aux로 반대손 위치/회전을 바꿔도 사람 양손 포즈는 기본 좌표 그대로. online 담당 손 경로만 읽음. auxiliary pose 전송 필드 없음과 실제 기본 자세 유지가 일치 | run-04/host/client-04-aux, offline-04-aux JSON/PNG. 사람/로봇 전체 위치 해석과 전투용 담당팔 권한은 분리.
+HMD 추적 손실 | HMD trackingState/isTracked=0이면 안전한 미추적 안내·입력 정책 필요 | synthetic head tracked=0/flags=0인데 hand freshness/online ready는 계속 true. camera/head는 유한 위치·회전을 계속 적용. HMD validity gate 부재 확인 | run-04/host-06-headloss.json/client-06-headloss.json, offline-06-headloss. RobotPilotInput:79에 tracking flag 체크 없음. 최종 이탈 pause 정책은 아직 구현 개선 전.
+손 추적 손실 | 담당 hand loss → server readiness/input 중단, phantom attack 방지 | offline loss는 freshLeft=false, phaseLeft=WaitingForNeutral, releaseRequiredLeft=true. client right loss 후 host rightReady=false, earned 상태 유지. 구현된 input invalidation 확인 | run-04/offline-07-loss, remote-loss-host.json 및 client-09-loss. session.LoseTracking/TrackingLostRpc/ClearInput 경로.
+그립 유지 복귀/해제 | loss 후 held grip으로 즉시 공격 허용하지 않고 명시 해제/재무장 | held 재획득은 calibrated=true/fresh=true지만 releaseRequiredLeft=true, WaitingForNeutral. release 후 releaseRequired=false/Ready. 새 jab는 Recovering으로 진행. hits=0이므로 이 검사로 실제 보스 명중까지 통과라고 말하지 않음 | run-04/offline-08-jab,09-release,10-jab. right client에도 release→neutral ready 복귀, run-04/client-10-jab,11-release,12-neutral.
+재교정 | RobotPilotInput.Recenter 후 새 baseline으로 neutral/회전 초기화, scene 불변 | 정상 상태 recenter 전후 calibrated=true(안정화 후), offset/rotation=0, Ready로 복귀. 손실 중·움직이는 중 recenter의 phantom damage는 이번 충분히 검증하지 않음 | run-04/offline-11-recenter-before.json / offline-11-recenter.json 및 client-19-recenter. 0.9초 뒤 값이며 내부 flag가 false로 바뀌는 순간 전체 타임라인을 캡처한 것은 아님.
+권한/교차팔 | 반대 팔 SubmitRpc/TrackingLostRpc는 거절 | host/client crossarm와crossloss 총4회 뒤 host RejectedInputs=4. health/포즈의 상대 권한 침해 없는 상태 유지 | run-04/host/client-07-crossarm,08-crossloss JSON/로그. reflection으로 NGO RPC를 호출해 transport/서버 sender 검증을 거쳤고 손 위치를 직접 조작하지 않음.
+한 명 이동 | Battle에서 client 담당 stick만 → 로봇 이동 없음 | 양측 x=0.0 | agreement-05/one-input.json.
+두 명 같은 방향 | 각자의 현재 담당 stick 같은 방향 → host body 이동과 client 복제 | run-04 both-sticks-host x=.525202. 비clamp 검사 agreement-05/moving 양측 x=.100002. 포즈가 실제로 복제됨 | run-04/one-stick-host/both-sticks-host 및 agreement-05/moving.json. 현재는 continuous 이동이지 기획의 정해진 접근/후퇴/회피 동작 완성은 아님.
+방향 불일치 정지 | 서로 반대 방향 입력 → 이동 중단 | x=.180033에서 opposed→opposed-stable 0.7초 동안 양측 동일 값. x=.7 clamp에 닿기 전 확인 | agreement-05/opposed.json/opposed-stable.json. 전달되기 전 .100→.180 잔여 이동이 있었으나 이를 RTT 측정으로 해석하지 않음.
+한 입력 해제 정지 | host stick을 중립으로 놓고 client 입력 유지 → 정지 | x=.400589에서 one-released→released-stable 0.7초 동안 변화0. 양측 위치 동일 | agreement-05/one-released.json/released-stable.json.
+보조손 스틱 합의 | 최신 컨셉의 반대손 두 stick 합의 입력 필요 | 반대손만 양측 입력해도 x=.400589 그대로. 현 coop 경로는 담당손 stick을 읽으므로 보조손 이동 미연결 | agreement-05/aux-only.json/aux-stable.json. RobotPilotInput:105.
+이탈·재접속 | right client 이탈 시 host Waiting/remote=false, client offline authority 획득 금지, reconnect 새 epoch | client stop는 Disconnected/authority=false; host Waiting. reconnect는 Connected/right/non-authority/epoch2→4, 양측 ready 회복·host 전투 새 상태 유지 | run-04/disconnected-host.json, client-17-stop/18-connect, host-14-neutral 등. 정상 종료/수동 API 재접속이며 강제 프로세스 kill/랜케이블 단절 시험과 다름.
+역할 교환 | 세션 완전 종료 후 다른 프로세스 host 가능, local body/seat 소유권 교환 | 처음 client였던 프로세스 mode=host/side0/authority=true/localAvatarLeft=true/epoch6. 처음 host는 mode=client/side1/authority=false/localAvatarRight=true. 해당 팔 입력도 복제됨 | run-04/swapped-authority.json/swapped-client.json 및 마지막 pose PNG. 플레이 중 ownership swap UI/host migration이 있다는 뜻이 아님.
+시각 모델·통합 화면 | 입력과 몸/동료/외부 로봇 팔이 실제 표시돼야 함 | 양측 카메라 렌더 성공. 자기 파일럿 양손은 기본 위치에 남음. 현재 모델 Missing Prefab 경고가 이번 build에도 재현돼 움직이는 접촉 Transform이 있어도 외부 플레이어 팔 메시 완료가 아님 | build-v3.log Missing Prefab guid 6bac2a1fb3671154babb96bd29e3fad7, run-04 host02/client03/neutral PNG. missingActiveMesh=0은 빌드에서 누락 renderer 자체가 빠질 수 있어 모델 복구 판정에 사용하면 안 됨. 모델·스킨·리그 내부 변형 검수는 아트 파트 별도.
+
+5. 화면을 실제로 확인한 내용
+run-04/offline-05-head.png, host-02-pose.png, client-03-rotate.png, client-05-head.png를 직접 열어 확인했다. 좌우 콕핏 시점과 HMD 합성 회전에 따른 화면 변화가 있다. 보스와 반구 콕핏/HUD는 렌더되며 아래 파일럿 손은 neutral/pose/rotate에도 기본 위치에 있다. 기본 정면 프레임에서는 동료가 화면 밖 또는 가장자리이며, 자기 몸 전체·동료 전체 가시성/자연스러운 조종감의 완료를 주장하지 않는다. 머리 복제 누락은 주관적인 PNG 비교뿐 아니라 실제 headTarget quaternion으로 확인했다. 단안 desktop 렌더의 크롭/상부 프레임 가림과 actual HMD 양안 FOV는 다른 문제다.
+RobotPlaySession State/접촉 손이 움직인 결과와 아트 메시가 실제 움직이는 결과는 구별했다. broken prefab을 검사 중 교체하거나 사람 Follow를 보완해서 결과를 정상화하지 않았다.
+
+6. 확인된 결함 vs 위험 vs 이번 미검증
+실행으로 확인된 결함: human assigned/aux 팔 연결 누락; LAN 손 회전 identity; peer 머리 identity; HMD tracked/flags 손실이 hand input/ready를 차단하지 않는 구조; 보조손 이동 입력 미연결; 모델 source prefab 누락 경고와 외부 팔 시각 연결 불완전.
+확인된 보호: server 역할 검증·crossarm/crossloss 거절, 손 loss invalidation, grip release 재무장, right 이탈 host 대기·Disconnected client 권한 없음, 수동 reconnect epoch 및 역할 다시 선택, 두 담당손 입력 합의/해제/불일치 이동 정지.
+추정 위험: sample timestamp/지터·loss/버스트 도착, snapshot 직접 적용의 끊김, local/client attack phase 표시 차이, recenter 중 attack/guard/boost state, pause/focus loss·장치 전환, VRMP duplicate singleton/async session lifetime. 이전 정적 보고서의 근거는 유지하되 이번의 실제 새 재현과 구분한다. 이번에는 VRMP 샘플 scene 세션/voice/DA ownership spawn/despawn를 실행하지 않았다. 실제 통합은 일반 NGO manager/서버 좌우 역할이며 샘플이 대신 동작한다고 판단하지 않았다.
+준비 중 타격/정지 회피는 10/13 기존 재현과 현재 전투 담당 검사에 맡긴다. 이번 손 재획득 jab는 phase를 확인했지만 실제 접촉 성공 hits는0이므로 피해 규칙 통과 개수에 더하지 않는다. 기존 54 PASS도 이번에 재실행한 수치가 아니다.
+정상적인 synthetic trace에서 head loss와 role/local frame 차이는 확인했지만 실제 사용자 키·팔 길이·복싱 가드·리치·훅 체감은 아직 실기기 필요다. 지난 사용자 훅/팔뚝 결합 요구를 만족한다고 팔 Transform 존재만으로 판단하지 않는다.
+
+7. 실기기 검증표 (실행 안 한 항목은 전부 미검증)
+항목 | 현재 상태 | 필요한 다음 증거
+Quest3 컨트롤러/실제 HMD pose | 미검증, XR physical devices0/OpenXR form factor unavailable | Quest3 Link/AirLink 연결, 실제 device layout/버튼/추적 손실·회복·재교정 로그, 좌우 사용자 동작 영상.
+두 PC 실제 LAN | 미검증, 이번은 같은 PC 127.0.0.1 port18887 두 프로세스 | 실제 서로 다른 PC IP/방화벽/동일 네트워크/끊김·재접속/CPU load별 latency·jitter.
+Quest standalone | 미검증, Windows64 Development만 빌드 | Android 설치/부팅/OpenXR 입력/네트워크 앱 suspend-resume/메모리·발열·지속 frame time.
+두 Quest 동시 공동 공간/동료 | 미검증 | 상대 머리/담당·보조손 복제 수정 뒤, 두 HMD에서 자기 몸/동료/외부 팔 scale·좌표/숨김·clip 검증.
+회전·리치·훅·가드 체감 | 미검증 | 초보자 체격별 가드 기준/뒷당김/팔꿈치 상승/주먹 방향/최대 리치, tracker loss/실사용 invalid input.
+실제 연결 실패·강제 종료·네트워크 단절 | 미검증 | 이번은 StopNetwork API 정상 종료. kill/crash/케이블·WiFi 손실, 재접속 pending input/feedback epoch·다음 사용자 초기화.
+양안·HMD 편안함/성능 | 미검증 | 실제 양안 FOV·프레임/RT/해상도/지연/몸과로봇 분리·멀미·장시간 연속 운영.
+컨트롤러 실제 haptic | 미검증 | physical XR device0이므로 실제 impulse 전달 증거 없음.
+외골격/motor | 미검증/장치 구현 없음 | 통신·제한/비상 해제 규약과 별도 담당 검증 이후. 이번 모터 제어/가속 구현 없음.
+
+8. 결과 파일·재현 방법
+evidence base: C:\Users\anthony\Desktop\Capstone\anseong-steel\Audit\2026-10-14\evidence\vr-runtime
+VrRuntimeProbe.cs: 최종 opt-in synthetic input/pose/head/calibration 계측 소스.
+VrAuditBuild.cs: 원본 통합 씬 Windows Development 빌드, 재생성 호출 없음.
+Run-VrAudit.ps1: offline → actual host/client, 표의 명령·수동 API·권한·이탈/reconnect/role exchange 검사. v3 플레이어 + run-04 폴더가 최종 전체 결과.
+Run-Agreement.ps1: 같은 v3 플레이어로 clamp 전에 불일치/해제/aux 입력 검사. agreement-05가 최종 이동 결과.
+build.log/build-retry.log/build-v3.log, build-summary-v2.txt/build-summary-v3.txt: 실제 이번 새 빌드 로그·상태.
+build-hashes-v3.json/source-hashes.json/isolation-git-status.txt/isolation-import-diff.txt: 소스·빌드 식별과 자동 임포트 차이.
+run-04: host.log/client.log/offline.log, observations.json(56), run-result.txt, 상태 JSON·명령 직전before JSON·56 PNG. pair/reconnect/swap/손 loss의 별도 snapshot.
+agreement-05: host.log/client.log, one-input/moving/opposed/opposed-stable/one-released/released-stable/aux-only/aux-stable.json, run-result.txt, 명령별 PNG.
+run-01~03: 도구 오류·캡처 프레임 지연/불충분한 이동 검사의 한계를 보존한 앞선 시도. 최종 정상 결과와 섞지 않는다.
+실행 재현: Unity에 -batchmode -projectPath <격리 root/AnseongSteel> -executeMethod VrAuditBuild.Build --audit-build-output <격리 root/RuntimeEvidence/Player> -logFile <build log>. 이후 PowerShell Run-VrAudit.ps1 또는 Run-Agreement.ps1에 -Player <VrAudit.exe> -Output <새 빈 evidence 폴더>를 전달. 원본 공유 checkout을 Unity로 여는 방법이 아니다. 동일 포트이므로 두 runner를 동시에 실행하지 않는다.
+
+9. 다음 구현 권장 (이번에는 기록만)
+첫째 사람 metre pose와 로봇 combat offset을 분리해 담당팔·보조손·머리 local/remote 표시 계약을 정하고 Follow adapter를 연결한다. 기존 rigid forearm/wrist·elbow hint·workspace reach 요구를 보존해야 한다.
+둘째 손 회전/head/aux pose·validity와 표시용 attack phase를 network DTO에 추가하고, 서버 좌우 role 검증은 유지한다. head loss/pause/recenter가 공격 상태를 취소·재무장하는 계약을 전투/진행과 합의한다.
+셋째 현재 담당손 스틱 continuous movement와 기획의 보조손 합의/정해진 접근·회피·후퇴를 분리해 구현한다. 스냅샷 body가 복제되는 것만으로 정해진 이동/타이밍 회피 완료가 아니다.
+넷째 role/connection/ready UI와 실제 FPS가 낮아질 때 stale ready 안내를 계측한다. .25초 timeout을 무조건 늘려 현상을 숨기지 말고 입력 timestamp/표시 갱신/프레임 비용을 함께 검증한다.
+이번 작업은 검사 도구와 재현/증거만이다. 게임 개선·공유 checkout 변경·모터 구현은 하지 않았으며 후속 개발 지시를 기다린다.
+
+최종 확인: 전체 run-04와 agreement-05의 runner exit code=0. 공유 main develop HEAD=42e05e4, git status는 ?? Audit/만. 검사 후 게임 프로세스는 각 runner가 quit/WaitForExit로 종료했다. evidence-index.csv에 전체 근거 파일 경로·크기를 목록화했다.
+

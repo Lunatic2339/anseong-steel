@@ -1,0 +1,168 @@
+안성제철 — 팔 동작 추종·보정 우선 검토
+2026-10-14 KST / 기준 develop 42e05e4a8bbfbbd0b85757d935572347d0556e66
+
+0. 최우선 정정 — 개인별 유효 리치·어깨 기준이 손목 정책보다 먼저
+총괄이 전달한 최신 사용자 설명은 '훅에서 주먹이 가까우면 팔꿈치가 굽어야 하는데 조금만 떨어져도 완전히 펴짐, 실제 사용자 팔 길이를 측정할 필요'다. 따라서 아래 손목/strict 분석은 유지하되 작업 순서는 (1) 개인별 어깨·가드·유효 최대리치와 좌표 대응, (2) 같은 위치 궤적에서 elbow 방향/굽힘, (3) 공격 held wrist 전환, (4) 분류/피해·LAN으로 둔다. wrist modifier만 고쳐 근본 거리 문제가 해결됐다고 보고하지 않는다.
+
+고정 가정의 실제 위치: ControllerArmFollower.cs:49 transverseScale=(upperLength+forearmLength)/robotFrame.lossyScale.x/.65f; CockpitPilotAvatar.cs:47 movementScale=가상 팔 길이/.65f. '.65'는 측정한 이번 사용자의 팔 길이가 아니다. defaultForwardReach=.45 역시 편한 가드에서 앞쪽 최대 신전까지의 기본 가정이다. CalibrateReach는 정면 endpoint gain을 보정하고 lateral/back gain은 그대로 둔다. 통합 RobotPilotInput:99의 first pose baseline에는 실제 어깨 기준이나 사용자 길이 측정이 없다.
+
+최소 개인 보정 제안(기능 구현 아님, 유일한 해법 아님):
+1) 좌표 기준을 먼저 고정: controller tracking origin→공용 cockpit/몸 기준의 metre 변환을 기록한다. HMD를 둘러볼 때마다 몸/어깨 yaw를 돌리지 않는다. 기존 초기 yaw calibration과 로봇 시야 분리 방향은 유지한다. body heading이 충분히 관측되지 않으면 seat-forward 고정/사용자 확인을 사용하는 추정이라고 명시한다.
+2) control point 계약: 'controller grip pose'와 '가상 손목 또는 닫힌 주먹 중심'은 같은 점이 아니다. 각 손의 grip→선택한 손목/주먹점 offset을 동일한 정의로 두고, p_control = p_grip + q_grip*offset_grip_to_control로 계산한다. 실제 선택점을 확정하지 않은 채 controller position을 anatomical wrist라 이름 붙이지 않는다. arm 모델/role/handOffset에도 같은 점·축 규약을 적용한다.
+3) 어깨 기준 위치 S를 추정 또는 보조손 접촉으로 획득: 보조손 컨트롤러의 알려진 접촉점으로 담당 어깨 위치를 가리키고 확인하는 방법이 후보다. 이때 보조 controller grip origin 자체가 어깨 표면점은 아니므로 접촉점 offset/정지·반복 오차가 필요하다. 양 어깨/seat-forward/HMD-floor 높이를 보조 자료로 사용할 수 있으나 실제 chest tracker처럼 정확한 측정이라고 주장하지 않는다. 어깨를 반복 추정한 오차와 몸 움직임 후 drift를 기록한다.
+4) 편한 guard control point G와 어깨→G 벡터를 측정: 현재처럼 첫 tracked pose를 무조건 guard로 처리하지 않는다. 이 거리 |G-S|는 HMD-손 거리 또는 guard 이후 손 이동량과 구별한다.
+5) 편안히 뻗은 유효 최대리치 R_eff를 같은 S/control point 정의로 측정: 해부학적 상완+전완의 정확한 뼈길이와는 다를 수 있다. 팔을 불편하게 과신전하도록 요구하지 않고 사용자 확인된 endpoint를 반복 측정한다. 정면뿐 아니라 옆/사선·뒤로 당김도 기록해 endpoint 하나의 가정이 훅 workspace를 망가뜨리지 않는지 확인한다.
+6) 모델 팔 길이와 상대 리치 대응: r=|p_control-S|/R_eff, 방향은 안정된 body-frame 안의 (p_control-S)로 표현하고 virtual shoulder S_v/팔 길이 L_v/가상 guard를 기준으로 대응한다. 예를 들어 r가 커질 때 가상 신전이 단조롭게 증가하고, guard r_G는 가상 guard에, 편한 최대리치는 도달 한계 안쪽에 대응해야 한다. virtual guard 비율과 실제 guard 비율이 다르면 gain 하나로 둘 다 맞출 수 없으므로 원점/guard 또는 단조 radial mapping의 앵커를 검토해야 한다. 수식/비율을 이번에 제품에 적용하지 않았다.
+7) 위치/팔꿈치를 따로 평가: L_upper/L_forearm 모델 비율에 대해 손목 distance d가 주어지면 cos(theta_elbow)=(L_upper²+L_forearm²-d²)/(2 L_upper L_forearm) 형태의 2-bone 기하로 굽힘 정도를 계산할 수 있지만, elbow circle의 방향은 남는다. 사용자 R_eff 하나로 실제 상완/전완 비율이나 실제 elbow/shoulder 움직임 전체가 측정되는 것은 아니다. 방향은 controller orientation·궤적 hint·prior로 추정하는 한계를 표시한다.
+
+gain 중복 여부: 현재 input motionScale=2.6과 tuning.controllerMotionScale=2.6은 Submit 전에 곱하고 Pose/분류에서 나누므로 기본 설정에서 상쇄된다. 이를 '무조건2.6² 중복 확대'라 부르면 틀림. 다르면 physical delta에 inputGain/tuningGain 비율이 남고, 중간 clamp/서버 변화 제한은 상쇄되지 않는다. 별도로 follower/human의 length/.65 및 forward gain이 적용되므로 값의 단위/소유권을 분리해야 한다. user reach가 바뀌어도 통합은 현재 개인 full-reach API를 호출하지 않고 기본 .45 가정으로 Initialize한다.
+
+거리 우선 최소 검증: 손을 shoulder 가까이 둔 compact guard/훅에서 '거리 변화→팔꿈치 굽힘'이 자연스럽고, 조금 벌려도 바로 완전 신전되지 않으며, 뒷당김과 앞 sweep 이동도 충분히 보여야 한다. 짧은/긴 팔, 좁은/넓은 어깨, 앉기/서기·lean 조건에서 동일한 보정 과정을 비교한다. R_eff·S·G·control-point offset·body frame·physical→virtual ratio·Extension·elbow plane·contact 제한을 모두 기록한다. 이 기준을 통과하기 전에 손목 회전/분류 임계값이나 전체 gain을 임의로 바꾸지 않는다.
+
+1. 문제 정의와 최신 정책
+우선 문제는 컨트롤러가 추적 중인데 화면의 팔이 사용자의 훅·뒷당김·신전·주먹 방향을 납득 가능하게 따라가지 않는 것이다. device tracking loss와 별개로 조사한다. 원시 위치/회전, 보정된 사람 단위 delta, IK 요청·최종 뼈·실제 메시, 공격 분류를 각각 기록해야 한다. Hook 판정 PASS와 사용자가 '훅을 하고 있다'고 느끼는 표시 품질은 다른 완료 조건이다.
+
+기존 「로봇 플레이 구현 — 안성제철 VR」의 사용자 피드백:
+- 01a1076a-f73d-7a71-a69c-b7fb496d9313: 사용자의 훅이면 팔도 훅 궤적이어야 함, 컨트롤러만으로 공격 파악 질문.
+- 01a10c47-5dc2-7fb2-bff8-4dc9c1f2e77c: 팔꿈치가 아래에 남음, 끝까지 뻗는 느낌 부족, 손목 위주로 움직임.
+- 01a10c87-8d2b-7073-8eec-1c78b4726832: 손목의 절대 회전 고정이 아니라 손목과 팔뚝 결합, 주먹 안으로 돌리면 팔꿈치가 올라야 함.
+- 01a10d0f-2f9a-74f2-aab4-e188186e1ad0: 작은 벌림에 완전 신전되어 훅이 편팔 옆치기처럼 보임.
+- 01a10d3f-9e20-73d1-8482-ce8bc2ee7383: 반대 보정 이후 뒤로 당기고 훅해도 이동이 거의 없음.
+이 직접 사용자 내용은 앞선 03 보고서에서 해당 채팅의 반환된 전체 28턴을 읽어 확인했고, 총괄이 이번에 정확한 turn ID를 다시 지정했다. 과거 수정한 worktree·자동 PASS를 현재 체감 해결 증거로 전용하지 않는다.
+
+최신 사용자 직접 설명(이번 총괄 전달)이 우선:
+공격 버튼을 누르고 있는 구간에는 주먹-손목-전완의 축을 일자로 정렬해 펀치하도록 한다. 팔꿈치를 완전히 펴라는 뜻이 아니며 훅의 팔꿈치 굽힘은 유지한다. 위치와 곡선은 연속 실입력을 따른다. 부스트는 별도 추가 입력이다. 비공격 중 손목 자유도·각도 한계는 아직 제안/미정이며, 과거 '항상 손목 고정'을 현재 확정 정책으로 강제하지 않는다.
+「펀치 페이즈 완성하기」01a130e2-c292-74eb-98bf-08ead7c8d081의 전완 일자 인계는 총괄이 알려 준 맥락으로만 사용했다. 그 채팅을 이번 담당이 추가 원문 조회했다는 주장은 하지 않는다. 자동 검사의 정렬 성공을 최신 사용자 요구 전체가 해결됐다는 결론으로 바꾸지 않는다.
+
+2. 이번 조사·추가 관측의 범위
+게임 기능 변경·임의 gain 조절·펀치 애니메이션 치환·새 센서 구매/장치 구현 없음.
+공유 checkout HEAD 42e05e4, 시작/종료 git status는 ?? Audit/뿐. 적용 AGENTS.md는 앞선 조사에서 발견되지 않았다.
+기존 검사 worktree: C:\Users\anthony\.codex\worktrees\vr-runtime-verification\anseong-steel / codex/vr-runtime-verification / HEAD42e05e4. shared Unity 프로젝트를 열지 않았다.
+새 검사 도구 TrackingReview11.cs를 격리 Assets/AuditRuntimeProbe/Editor에만 추가해 Unity 6000.3.24f1 -batchmode -nographics에서 실행했다. 기존 ArmMotionValidation.Core만 직접 호출하고 두 저장 씬을 열어 follower의 실제 참조/길이/MapWorkspace/회전·힌트 기하를 관측했다. ArmMotionValidation.Run은 ArmMotionSceneBuilder.Build를 먼저 호출하므로 실행하지 않았다. 씬 생성·SaveScene 호출 없음. 기하를 바꾼 것은 메모리 안의 검사 pose뿐이며 저장 없이 닫았다.
+새 결과: 기존 순수 motion Core 62 PASS. 이 숫자는 이번 새 실행 결과지만 실제 XR·ArmMotionTest Play Mode·전체 통합·실기기 PASS가 아니다.
+추가 기하 관측은 direct Follow/CalibrateReach API 검사다. RobotPilotInput를 통과한 공격 상태 smoothing·네트워크·충돌·카메라 렌더 전체 재현으로 해석하면 안 된다. strict=false의 회전 기하와 strict 공격의 '수렴한 identity'에 해당하는 입력을 비교했으며 .08/.18초 전환 시간의 실측은 하지 않았다.
+기존 08의 run-04/동일 PC Host-Client 계측은 실제 합성 InputSystem → RobotPilotInput 경로의 Follow 누락·LAN identity·head/aux 누락·표시 결과를 보강 근거로 사용한다. 이번 새 기하 결과와 구분한다. 실제 XR 장치는 해당 실행에서0/OpenXR form factor unavailable였고 이번에도 Quest 동작·체감은 검증하지 않았다.
+근거: Audit/2026-10-14/evidence/tracking-11/TrackingReview11.cs, geometry-observations.txt, geometry-observations-initial.txt, existing-motion-core.txt, unity-geometry.log, unity-reference-confirmation.log. 기존 실행 근거는 evidence/vr-runtime/run-04 및 08 보고서.
+
+3. 현재 경로 — 분류와 표시가 어디서 갈라지는가
+경로 A (ArmMotionTest의 설계 코드):
+raw HMD/assigned controller → 같은 device의 position/rotation/state 확인 → 정지 가드 보정 → 사람 단위 상대 delta → [표시: robot Follow + human Avatar.Follow] / [분류: Recognizer.Sample] 두 갈래.
+ArmMotionInput.ApplyVisual을 호출한 뒤 분류기를 관찰한다. BeforeRender는 표시만 갱신하고 분류 이벤트를 중복 발생시키지 않는다. 팔 위치/회전으로 분류 결과를 재생하는 구조가 아니다.
+
+경로 B (현재 Integrated):
+raw HMD/controller → 첫 유효 pose 기준 baseline → (p-baseline) yaw 좌표변환 ×2.6 → magnitude clamp → Submit → 권한/속도/순서 검사 → Combat.Sample(분류 상태) → Pose(분류·버튼 상태로 회전 입력 조건부 변경) → contact 제약 → RobotRigVisual → 전장 RT/콕핏 화면.
+사람 Avatar.Follow 갈래는 끊겼다. 사람 머리의 local camera 연결만 남았다. 위치 자체를 Jab/Hook 애니메이션으로 바꾸지는 않지만, 분류 상태가 손 회전/팔꿈치 추정의 modifier에 다시 들어가므로 표시가 분류와 완전히 독립된 것은 아니다.
+
+4. 단계별 코드 비교·유지/단절/덮어쓰기
+약칭: VR=AnseongSteel/Assets/_Project/01_Scripts/04_VR/, RP=AnseongSteel/Assets/_Project/RobotPlay/Runtime/, CORE=AnseongSteel/Assets/_Project/01_Scripts/01_Core/.
+
+단계 | ArmMotionTest 코드 | Integrated 코드·차이 | 판단
+원시 pose | VR/ArmMotionInput:204 ReadTrackedPose가 같은 장치의 위치·회전·state를 묶음. HMD와 담당손 모두 필수(:195-200) | RP/RobotPilotInput:79-97 독립 activeControl와 hand tracking bit 검사. HMD는 finite/activeControl만. input mode에 따라 양손/담당손 | pose 유효성 검사는 일부 유지, 같은-device 결합/HMD flag는 단절. 이것은 표시 기하 문제와 별도 안전 항목.
+가드 기준 | VR/ArmMotionInput:150-159 머리/손이 .35초 정지한 뒤 referenceHand/referenceRotation 획득 | RP/RobotPilotInput:99 첫 유효 손 pose 즉시 baseline. Recenter:57도 다음 유효 pose 기준 | 자동 '첫 pose'가 편한 복싱 가드와 같다는 보장 없음. 중립/가드 기준이 바뀌면 같은 물리 동작도 다른 가상 공간에 배치된다.
+몸/머리 이동 보정 | RelativeHand:229는 trackingToRobot*(hand-hp) 또는 hand-headOrigin, compensateHeadTranslation=true가 저장돼 있음 | :105 trackingToRobot*(p-baseline); hp-headBaseline은 camera에만 적용 | 머리 평행이동 제거 정책이 통합에서 빠짐. HMD yaw는 초기 기준을 역회전해 고개를 돌린다고 로봇 팔이 같이 돌아가는 것을 방지. 몸을 숙인 펀치/몸 전체 이동을 어떻게 셀지는 선택 필요, 무조건 hp를 빼는 것도 정답으로 단정 못 함.
+최대 리치 보정 | :165/:242 CalibrateFullReach → robot.CalibrateReach + Avatar.CalibrateReach(:247-249), E/left thumbstick click(:43) | RobotPilotInput에는 해당 API/입력 호출 없음. RP Pose의 follower.Initialize가 기본 .45m forward reach를 가정 | 보정 API는 존재하지만 사용자별 최대 신전 저장 호출은 통합에서 단절. serialized motionScale만 보고 완료라 할 수 없음.
+좌표/크기 | ArmMotionInput LastControllerDelta는 사람 metre. follower.Initialize는 actual limb length/.65로 transverse gain, TryWorkspaceReachScale로 forward gain 결정 | RobotPilotInput.motionScale2.6 → RPC offset → Session.Pose:361, Combat.Sample:99에서 각각 tuning.controllerMotionScale2.6으로 나눔 | 두 값이 같은 현재 설정에서는 2.6이 대부분 상쇄된다. follower의 IK gain 4.020473과 2.6은 다른 단계의 값. 모두 한 gain이라 보고 한쪽만 조절하면 표시/분류가 함께 변한다.
+clamp | MapWorkspace의 reachable sphere/끝 압축 | 입력 offset magnitude2.45 clamp(:105), server offset2.5 cap(:258), Follow의 작업영역 압축도 추가 | 현재 2.6 기준 physical delta 약.942m 넘으면 upstream radial clamp. 일반 작은 훅/20cm 뒷당김은 이 clamp에 닿지 않음. 큰 동작의 곡선·방향/분류가 함께 압축될 위험은 별도 기록.
+workspace | ControllerArmFollower:121-134. 뒤/옆은 transverse gain, z>0만 forwardTransition(:135). radial soft compression, tangent 방향 유지 | 같은 MapWorkspace 실제 호출(Session:365→Follower:65). Initialize 시 serialized gain을 geometry로 다시 계산(:49-54) | 최근 뒷당김 복원 구현은 solver 단계에서 유지. 함수 존재만 확인한 것이 아니라 이번 실제 통합 contact rig에 직접 적용해 측정함.
+팔꿈치 위치 힌트 | ArmMotionInput:238 human delta로 ControllerElbowHint 업데이트, robot 및 human 양쪽에 같은 lift 전달(:240) | Session:362에도 elbowHints.Update 있음. pose delta는 위 나눗셈 결과. human Follow 없음 | 로봇 위치 기반 elbow cue는 유지, 사람 갈래는 단절. 현재 hint는 실제 elbow tracking이 아니라 lateral/sweep/y 상승으로 추정하는 연속 IK hint.
+손목·전완/회전 | ControllerArmFollower:44 기준 wrist local alignment, :80/:100-101 rigid lock. RigidWristConstraint.Bend/AlignForearm으로 회전이 팔꿈치/전완을 안내. ArmMotionTest에는 strict state를 켜는 호출 없음 | Session:363 strictPunchPose=true 강제. :364 punchPose의 combat condition. Follower:62 targetRotation=identity 또는 measured rotation, :63 smoothing. LAN :365는 항상 identity | 위치 힌트는 남지만 컨트롤러 회전 기반 elbow/shoulder branch·forearm roll 신호를 덮어씀. identity는 '손목 relative flex만0'과 다른 연산.
+사람 표시 | VR/ArmMotionInput:240 Avatar.Follow → CockpitPilotAvatar:85, Evaluate:117은 review wrist freedom을 모두0으로 하고 Forearm와 hand를 결합 | ArmMotionInput은 integrated scene:148 enabled0. RobotPilotInput/Session/selector에서 Avatar.Follow 호출 없음 | 원시 위치/방향이 정상이어도 화면 아래 사람 손은 그대로다. 08 run-04에서도 로봇 손 약.715m 이동/인간 손 0m 이동.
+로봇 실제 메시 | follower는 solver 뼈, DefaultFistPose의 palm frame이 있으면 이용(:39-40) | contact proxy → RobotRigVisual:22-26 authored bones 복사. 실제 모델 source GUID 누락은 08 build에서도 경고 | solver wristLocal lock=0만으로 실제 모델의 주먹 장축과 전완 정렬·그립 축 일치까지 통과라고 할 수 없음. abstract hand 기본축/FBX handOffset/손가락·skin을 아트 검수와 맞춰야 함.
+충돌 후 포즈 | ArmMotionTest 패드 검사/기하 자체가 중심 | MechaVRBossContact:108-150 accepted pose로 되돌린 뒤 sweep. 막힘/작업 budget이면 일부만 진행. 후속 RobotRigVisual은 constrained source 복사 | requested target과 최종 실제 pose 차이는 의도된 접촉 제한일 수 있음. '입력 안 움직임'과 contact-blocked를 별도 로그로 구분.
+분류 | CORE Recognizer는 pose observer(:37), 위치·시간의 forward/sweep/arc를 이용(:160-205). 회전은 wristTurn 기록, jab/hook 핵심 조건에는 사용 안 함 | RobotCombat:99 사람 delta로 분류하지만 rotation은 identity. Candidate/phase/attackHeld는 damage와 strict modifier에 연결 | 위치 관찰 분류기는 재사용. wristTurn 정보는 통합에서0, 하지만 이것만으로 위치 기반 Hook 판정이 실패하는 것은 아님. 분류로 위치 궤적을 바꾸지 않는 방향은 유지해야 함.
+연출/카메라 | BeforeRender로 로컬 표시만 갱신 | IntegratedPunchCue:47 boss Animator만 슬로우, :60 이후 Boost reaction 때 render-only arm/boss transform 임시 변경·복원. HMD camera/robot RT 분리 | 평상시 훅 테스트와 적중후 부스트 연출을 분리. '슬로우가 손 입력 clock도 느려짐'으로 해석하면 안 됨. camera-scale/시야가 리치감을 바꾸는지는 실제 HMD 관측 필요.
+
+5. 최신 버튼 유지 요구와 strictPunchPose의 실제 차이
+현 RP/RobotPlaySession.cs:364 조건:
+  punchPose = attackHeld && (attackAttempt || contactConsumed) && trajectory.Phase != Ready
+Follower:62는 이 값이 true일 때 measured controllerRotationDelta 대신 identity를 목표로 .08초 exponential smoothing/450deg/sec limit 적용. false일 때 measured delta로 .18초 복귀.
+
+identity의 뜻은 보정한 가드 기준에 대한 회전 변화0이다. 손의 월드 회전0도 아니고 팔꿈치 각도180°도 아니다. RigidWristConstraint.Bend는 delta가0에 가까우면 rotation-based bend cue를 reset하고 위치 hint의 fallback으로 돌아간다. 이후 AlignForearm도 guard-frame orientation으로 맞춘다. 반면 주먹/전완 relative alignment는 그보다 앞에서 LockedWristRotation으로 이미 계속 유지된다. 따라서 strict의 identity 전환은 '일자 wrist를 보장하는 유일한 방법'이 아니며, 공격 중 원래 주먹 방향에 맞춰 팔꿈치를 안내하는 정보를 추가로 줄이는 효과가 있다.
+
+상태 | 현 modifier | 최신 요구와 비교
+버튼 막 누름 + Ready | attackHeld=true지만 Phase==Ready → punchPose=false, measured orientation 경로 | 사용자는 유지 구간 시작부터 정렬 요구. 다만 현재 rigid wrist 자체는 이 상태에도 적용되므로 'Ready에서는 손목이 반드시 꺾인다'는 결론은 틀림. 상태 조건은 wrist alignment보다 추가 orientation suppression의 시작을 결정함.
+Moving 초기 후보가 아직 짧음 | attackAttempt는 candidate.forward>=minimumForward(.18m) 등 조건 이후 설정(RobotCombat:104), 그 전에는 false | physical 버튼보다 늦게 orientation suppression이 시작할 수 있음. 짧고 옆으로 도는 훅에서는 일부 궤적은 raw rotation, 일정 시점부터 identity 목표가 되어 팔꿈치 표현이 달라질 수 있음.
+Moving + attackAttempt | held && attempt → punchPose=true | 위치는 계속 추종하지만 rotation-based elbow cue는 감소. 팔꿈치 굽힘/어깨 위치는 IK로 유지하므로 완전 신전 애니메이션으로 치환되는 것은 아님.
+contactConsumed/Recovering + held | Phase가Ready 전까지 true가 계속 가능 | contact 이후 중립복귀 동안 orientation suppression이 남음. held 구간 정렬 정책과 모양 전환/복귀를 함께 평가해야 함.
+버튼 유지 가드 | Ready 또는 attackAttempt=false이면 raw rotation. 이전 strike의 contactConsumed가 남아 있고 Ready가 아니면 identity 경로 가능 | 같은 가드라도 이전 펀치 상태에 따라 방향 cue가 달라질 수 있음. 사용자 요구상 '그립을 유지하며 해당 팔을 올리는 방어'도 명시적인 전환 검증 대상.
+버튼 해제 | punchPose=false, measured orientation 복귀하지만 wrist rigid lock은 여전히 적용 | 비공격 wrist 자유도가 구현된 상태가 아님. 최신 요구는 비공격 자유도를 아직 확정하지 않았으므로 이를 새 요구/버그로 단정하지 않음.
+하드웨어 손 추적 손실 | ClearInput/Invalidate로 attackHeld/rotation/hint 초기화, release required | 공격 정렬 지속보다 valid pose/재무장 우선. 추적복귀와 버튼 유지의 정확한 상태 경계를 검사할 필요.
+render sample gap | RobotCombat:100-101에서 phase를WaitingForNeutral로 바꾸고 contactConsumed=true. held라면 modifier가 다시 true 가능 | tracking flags가 살아 있어도 분류/표시 modifier 경계가 바뀜. 실제 device loss와 같은 원인이라고 설명하면 안 됨.
+LAN | measured rotation을 SetLocalHandRotation:348에서 받지 않음/Follow:365에 identity 강제 | 버튼과 무관하게 rotation cue가 사라짐. 현재 LAN에서는 최신 정책과 비공격/공격 비교 자체가 데이터 없이 평평해짐.
+원격 client의 modifier | snapshot에 attackHeld/attackAttempt/contactConsumed/trajectory phase 없음. client Pose는 client의 simulation arms를 읽음 | 현재는 전체 identity가 이 차이를 가릴 수 있음. 회전 복제 이후에도 role별 표시 상태 계약을 먼저 맞춰야 함.
+
+보강 방향의 가설(구현 지시/사용자 확정 아님): relative wrist/forearm 정렬 제약과 controller orientation에 따른 elbow/shoulder 기하를 별도로 표현하면, 버튼 유지 중 일자 wrist와 굽힌 훅을 동시에 보존할 수 있다. identity를 무조건 켜거나 strict를 무조건 끄는 것으로 해결했다고 판단하지 않는다. 공격 버튼/validity/게임 피해 허용/분류 phase를 별개 신호로 기록해 검사한다.
+
+6. 이번 데스크톱 직접 관측
+6-1 저장된 ArmMotionTest
+ArmMotionInput enabled=true, RobotPilotInput 없음. 하지만 양측 follower Initialize 결과 IsReady=false였다. 최초 도구 로그는 이를 INVALID bone references라 묶었으므로, 참조/길이를 구분하는 추가 재실행을 했다. 최종 결과 upper/forearm/hand/robotFrame 참조 객체는 모두 존재하지만 upperLength=0/lowerLength=0으로 읽혔다(geometry-observations.txt:3-4, unity-reference-confirmation.log). 이는 null 참조와 다른 저장된 rig 기하 문제다. 이 결과는 EditMode direct probe이며 해당 저장 씬의 Play 초기화 후 길이를 별도로 실측한 결과는 아니다. 정상 실험 씬의 시각·IK 비교 성공으로 취급하지 않는다. TrackedRobotArms.prefab의 authored bone source refs에는 fd67f3d30312eb246a738331dc7b5cbd가 남아 있고 현재 Assets meta 검색에 해당 GUID 없음. 실제 mecha-finger-rig-mixamo-v026.fbx.meta는 5f2a703d67e284b49a38486f82cad5b1. source/fileID 연결은 아트 담당이 복구/검증해야 하며 이번에 자동 재생성해 숨기지 않았다.
+따라서 ArmMotionTest 코드와 통합 코드 비교는 가능하지만, 현재 저장된 두 씬을 모두 정상 Play 대상으로 했다고 말할 수 없다. 기존 ArmMotionValidation.Run의 scene 생성 후 PASS와 현 authored scene 정상성은 별개다.
+
+6-2 통합 contact rig의 direct geometry (양측 대칭 결과)
+실제 upper+forearm 길이=1.9m, root scale=(1,1,1), neutral left=(-.65,1.35,.45), forward gain Initialize=4.020473, transverse gain=1.9/.65≈2.923077. strict smoothing/충돌/분류를 제외해 요청 기하를 분리했다.
+입력 사람 delta | 로봇 손 이동량/신전 비율 | 의미
+옆 .15m | .438462m / .310576 | 이 조건의 현재 solver는 작은 벌림을 완전 신전으로 보내지 않음.
+뒤 .18m | .526154m / .158594 | 현재 MapWorkspace의 rearward gain은 살아 있음.
+밖 .12m + 뒤 .20m | .681773m / .183026 | 뒤로 당긴 훅 준비가 이 기하에서는 정지/미세 이동이 아님.
+안 .18m + 위 .03m + 앞 .10m | .640524m / .559707 | 이 지점도 굽힘이 남음. 한 endpoint가 자연스러운 실제 훅 전체를 보장하지는 않음.
+앞 .35m | 1.242547m / .902326 | 기본 가정은 .45m 최대reach이므로 .35m에서는96%가 아님.
+앞 .45m | 1.359262m / .960000 | 기본 .45m full reach 가정과 일치.
+direct CalibrateReach(.35m) 이후 | gain5.360282 / .960000 | API는 작동하지만 현재 통합 입력에서 호출하지 않음. 이번 메모리 검사 후 저장하지 않았으며 gain 변경을 제품 개선으로 적용하지 않았음.
+neutral 손 위치에서 inward roll55° | elbow Y +.649645m, wrist 위치 변화 약3.2e-7m, local wrist lock error0° | 회전 기반 elbow cue와 relative wrist lock이 동시에 가능함을 실제 기존 solver에서 확인.
+동일 neutral 위치에 identity | elbow Y 변화0 | strict 공격 상태가 identity에 수렴하면 위 rotation-driven cue가 사라지는 기하 근거. 실제 transient smoothing을 측정한 결과는 아님.
+같은 lateral hook 위치 lift0→1 | elbow Y +.749185m, extension .546474 | identity여도 위치 기반 elbow hint는 남는다. 'strict가 모든 훅/팔꿈치 추정을 없앤다'는 결론은 틀림.
+
+현재 함수를 임의로 gain 감소/확대할 근거는 이 관측에서 나오지 않았다. 과거 사용자의 '거의 안 움직임'은 당시 버전, 실제 baseline, head compensation, 체격/리치, pose frame, 충돌, 표시 모델·사람 연결, 카메라 체감 중 어디서 발생했는지 raw→final trace로 식별해야 한다. 현재 direct solver endpoint 결과를 실기기 해결로 확대하지 않는다.
+
+6-3 다른 확인된 통합 단절(08 결과)
+원시 pose 이동→robot contact 손은 약.715m 이동하나 human 손은0m 이동. offline measured rotation Euler(25,55,55)는 받아지지만 LAN에서 양측 localRotations는 identity. own head는35°/peer head는0°. 이것들은 실제 합성 input/프로세스 경로에서 확인된 단절이며 geometry gain 문제로 해결할 수 없다.
+
+7. 데스크톱에서 재현/계측할 원인과 아직 모르는 것
+확인됨: 리치 API 호출 부재, human Follow 부재, LAN rotation 폐기, strict 상태가 회전 cue를 identity로 바꾸는 코드, 저장된 ArmMotionTest의 본 객체는 존재하나 direct probe에서 팔 길이0/IsReady=false, 현재 direct MapWorkspace rearward 반응·굽힘 보존.
+계산으로 확인됨: input gain/tuning gain이 모두2.6일 때 상쇄, 물리 delta .942m 이상은2.45 clamp 영향, forward-only gain과 rear/lateral gain이 별개.
+추정·추가 관측 필요: pose/head frame 변화가 실제 리치 감소를 만드는 정도, Initialize 재호출이 사용자 보정값을 덮는 시점, classifier phase 진입/종료와 strict smoothing의 transient elbow 궤적, local/remote ElbowHint의 cadence 차이, contact substep/recovery로 실제 손이 막히는 구간, authored 메시/skin/handOffset의 축, HMD display projection에 따른 거리감.
+hint는 delta 변화량/Time.deltaTime를 써서 표시 프레임마다 Update(Session:362)한다. 50Hz 입력/다른 render Hz·30Hz snapshot에서는 새 샘플 점프와 동일값 반복이 다른 derivative를 만들 수 있다. 같은 curve를 30/50/72/90Hz 시각화해 비교할 대상이며 이번에는 실제 차이를 측정하지 않았다.
+분류는 minimumForward .18, outset .10, sweep .22 등의 사람 metre 임계값을 쓴다. compact hook의 forward .14m처럼 좋은 모양이어도 Unknown이 될 수 있다. 반대로 Hook 판정만 되어도 가상 팔꿈치/주먹 표시가 좋다고 보장 못 함. 표시 문제를 Unknown 숫자만 낮춰 덮지 않는다.
+
+8. 먼저 결정/기록할 사항
+이미 확정돼 다시 물을 항목이 아님: continuous real pose, 공격 버튼 유지 중 주먹-손목-전완 일자, 훅 팔꿈치 굽힘 유지, 부스트 별도 입력. 오른손 시작 선호와 실제 피해/진행 규칙은 본 보정 진단과 구분한다.
+남은 선택(몸/어깨·리치 획득인3/4를 손목 자유도2보다 우선 검토):
+1) 정렬의 모델 축 계약: 실제 controller grip 축·닫힌 주먹 장축·forearm 축/handOffset을 어느 authored frame으로 맞출지. 'identity' 또는 imported local rotation0 같은 코드값만 정렬 기준으로 쓰지 않는다.
+2) 비공격 wrist freedom/한계와 공격 누름·해제 전환의 허용 정도. 최신 발언을 근거로 비공격 자유 손목 또는 완전 자유회전까지 확정하지 않는다.
+3) 머리/몸 평행이동 보정: 화면을 보는 고개 이동, torso lean 펀치, 실제 몸 이동을 팔 delta에 얼마나 포함할지. head subtraction은 몸통 센서 측정과 같지 않음. raw hand/head·둘의 차이를 함께 기록해 결정한다.
+4) 사용자 가드와 최대 리치 획득 동선: 첫 tracked pose를 자동 guard로 쓸지, 편한 가드 정지 후 확인할지; full reach를 언제 저장·재교정/역할/새 사용자 때 언제 폐기할지. 최대 리치 수치는 실제 참여자 측정으로 정한다.
+5) 공격 정렬은 held 신호에서, 공격 분류/피해는 valid/ready/role/combat 상태에서 처리한다는 책임 계약. grip release 재무장·추적 loss·UI/menu/준비 상태와 표시가 서로 충돌하지 않게 한다.
+6) 물리 접촉은 최종 pose 제한이므로 원시/요청 IK/접촉후/실제 renderer 상태를 어디까지 보여 줄지. hit 후 boost 연출을 평상시 tracking 품질 평가에서 제외한다.
+새 센서 구매·정해진 Jab/Hook 애니메이션·임의 gain 튜닝은 이 결정의 대체물이 아니다.
+
+9. 최소 진단 환경과 우선순서
+먼저 저장된 v26 ArmMotionTest의 참조가 실제로 연결되는 비교 기준을 아트 담당과 확보한다. 정상으로 만들기 위해 기존 빌더를 무조건 돌리지 않고 원본/재생성 결과를 별도 구분한다. 통합 contact rig와 human V04도 실제 render가 있는지 확인한다.
+최소 표시는 동일 raw pose를 다음 네 줄로 동시에 보여 주는 검사 모드: (a) raw hand/head와 validity, (b) shoulder estimate/control point/guard/사용자 R_eff·상대리치 r/좌표 단위와 calibrated delta, (c) requested IK 손·elbow plane와 collision-constrained 실제 손, (d) 사람/로봇 authored mesh. 분류 phase/kind/forward/arc, raw held/effective held, punchPose/strict, smoothed rotation, feedback/boost는 별도 시간 그래프로 기록한다.
+먼저 오프라인 한 팔, 접촉 없는 공간에서 개인 어깨·가드·편한 최대리치를 측정하고, 가까운 훅·작은 옆 이동·뒷당김·앞 sweep·잽을 같은 trace로 비교한다. 그 거리 대응을 확보한 다음 rotation-only·held/release, 다음 사람/로봇 두 표시, 다음 양측 LAN을 비교한다. sample gap/장치 loss는 별도 그룹으로 검사한다. 이것은 순서 제안이며 이번에 기능 구현하지 않았다.
+기존 순수 Core는 보조 회귀 검사로 재사용 가능하다. ArmMotionValidation.Run/PunchPhaseValidation.Run의 scene 재생성·UpdateOwnedScene 부작용을 피하고 저장된 scene as-is 검증 entrypoint가 필요하다. 기존 08 도구에 frame trace/curve를 더할 수 있지만, endpoint 캡처만으로 strict 전환 품질을 평가하면 부족하다.
+이번 추가 기하 도구는 '기본 공간에서 solver가 어느 만큼 움직이는가'를 보는 가장 작은 분리 검사이며 개인 어깨/길이를 측정한 보정기나 full path validator가 아니다. 직접 API로 forward gain을 바꾼 기하 관측은 일반 gain 확대를 권하는 결과가 아니다.
+
+10. 실기기 동작별 합격 기준 (권장 진단 기준, 승인된 gameplay 수치 아님)
+동작 | 확인할 합격 조건 | 기록·회귀 지표
+가드 교정 | 편한 실제 guard가 양팔/사람/로봇 neutral에 일치. 고개를 좌우로 돌려도 정해진 guard frame이 따라 돌아가지 않음 | raw head/hand, baseline/yaw/reach, 실제 eye·seat frame; 역할/앉기·서기별.
+작은 옆 벌림 | 작은 손 이동이 연속적으로 반영되고 즉시 완전 신전하지 않음 | raw→requested→actual 경로, Extension. 기존 자동 검사 small outward .15m/Extension<.85는 시작 회귀 기준일 뿐 실제 체격별 UX 합격 보장 아님.
+뒤로 당김→훅 | 뒷당김 이동이 충분히 보이며 그대로 안쪽 곡선으로 이어짐. 접힘/리치 경계에서 멈춤·스냅·편팔 옆치기 없음 | 같은 trace의 이동 거리/연속 step/Extension, elbow 높이·회전, head lean. 기존 자동회귀 windup 이동>.28×limb, sweep>.4×limb·compact hook Extension<.92는 참고.
+직선 잽/최대 신전 | 사용자 full reach가 목표 신전까지 자연스럽게 가고 반환도 연속. 짧은 팔과 긴 팔의 full reach 저장 결과 비교 | 실제 physical reach와 calibrated mapping. 기존 API의96% reach는 코드 계약이며 사용자 체감 기준은 별도.
+rotation-only 가드 | 주먹 방향 변화에 따른 elbow/shoulder 기하를 보면서 wrist가 단독 꺾이는 것으로 오인되지 않음 | closed-fist longitudinal axis vs forearm, wrist position 보존. 직접 solver 기준 손 위치2mm/뼈길이1mm 이내는 수학 회귀 참고값.
+공격 버튼 누름/유지 | 시작/Ready/Moving/접촉/Recovering/유지 가드에서 주먹-손목-전완 정렬, elbow bend·손 곡선 유지. classifier가 Unknown/Jab/Hook으로 바뀌어도 손 위치가 preset motion으로 바뀌지 않음 | raw/effective held, phase/attempt/consumed, punchPose, controller vs smoothed rotation; render된 fist 축으로 검사. LockedWristRotation과 자기 자신을 비교하는 검사만으로 완료 판정하지 않음.
+누른 채 훅·가드 | 굽힌 훅과 방어 높이를 유지하며 눌렀다는 이유로 elbow가 갑자기 아래로 떨어지거나 일자로 펴지지 않음 | pulse entry/hold 이후 elbow circle branch·plane·Extension을 1 frame 단위 기록.
+버튼 해제/복귀 | 위치 연속성, 팔꿈치 branch 급변 없음, 승인된 비공격 wrist policy로 부드럽게 복귀 | 원시와 표시 사이 angle/delay. .08/.18 현재 수치는 체감 검증 전 tuning 값.
+그립 유지 중 추적 loss/복귀 | missing pose를 정상 curve로 이어 공격·boost하지 않음. fresh valid pose+명시 release/rearm 후 다시 정상 추종 | tracking flags와 sample gap 원인을 별도 표기, pending edge/held/neutral 상태; physical HMD loss도 포함.
+보조손/동료 | 자기 몸의 두 손과 옆 동료가 같은 입력 의미·frame으로 따라옴 | human metre frame과 robot scale 분리, role별 position/rotation/lift/time. 현재 Follow/LAN rotation 단절부터 해결 필요.
+50Hz input/실제 HMD Hz/LAN | 같은 실제 trace에서 hint·곡선·전환이 FPS별로 의미 있게 달라지지 않음 | timestamp/sequence/frame dt/server arrival/snapshot age/actual vs requested. 실제 2PC 지터·패킷/Link 지연 측정.
+타격/부스트 분리 | 접촉후 손 제약과 boost 추가 입력은 별도 feedback으로 읽힘. 모터가 팔을 밀어 가속하는 기능으로 바꾸지 않음 | raw hand, collision state, boost edge/event/렌더 연출 시점. 외골격 실제 제어는 이번 범위 아님.
+
+11. 인계·완료 상태
+최신 버튼 유지 손목 정책을 반영한 문제 정의·호출 경로·strict modifier 차이·현재 데스크톱 원인 분리·최소 환경·실기기 기준을 작성했다. 새 Unity 관측은 direct geometry와 Core 62이며, ArmMotionTest의 현재 direct-probe 팔 길이0을 숨기지 않았다. 다른 팔/아바타/LAN 새 기능은 구현하지 않았다.
+공용 파일 영향: RobotPilotInput/RobotPlaySession/RobotCombat 표시 상태, ControllerArmFollower/RigidWristConstraint/CockpitPilotAvatar, RobotRigVisual 및 authored v26/V04/meta, IntegratedPunchCue/카메라. 아트·전투 담당과 axis/state/좌표 단위 계약을 먼저 맞춰야 한다.
+보고서 절대경로: C:\Users\anthony\Desktop\Capstone\anseong-steel\Audit\2026-10-14\11_TRACKING_PRIORITY_REVIEW.txt
+근거 절대경로: C:\Users\anthony\Desktop\Capstone\anseong-steel\Audit\2026-10-14\evidence\tracking-11
+실제 Quest 추적·리치감·훅 체감·버튼 유지/해제 전환의 실기기 합격 여부는 아직 미검증이다. 사용자 문제 설명과 순서를 먼저 맞춘 뒤 후속 개발 지시를 기다린다.
+
+최종 우선순위: 사용자별 어깨 기준·grip→control point·편한 가드·유효 최대리치와 모델 상대리치 대응 → 훅 workspace/팔꿈치 방향 추정 → held wrist 전환 → 분류·피해/LAN. 손목만 먼저 수정하지 않는다. geometry 관측을 두 번 실행했고 최종 Core62/직접 rig 결과를 보존했지만, 신규 실기기 검증·게임 기능 구현은 없음.
+

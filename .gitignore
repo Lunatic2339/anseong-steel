@@ -43,3 +43,9 @@ MechaVR_*Backup_*/
 MechaVR_Validation/
 # Robot play prototype local test reports and development player
 AnseongSteel/RobotPlayValidation/
+
+# Audit: version only top-level dated reports; keep evidence and backups local
+/Audit/**
+!/Audit/20??-??-??/
+!/Audit/20??-??-??/*.txt
+!/Audit/20??-??-??/*.md

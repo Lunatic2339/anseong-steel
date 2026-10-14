@@ -1,0 +1,27 @@
+PASS: movement plus contact without attack hold does no damage
+PASS: attack hold plus valid trajectory and contact damages
+PASS: held attack cannot duplicate contact damage
+PASS: L R L combo keeps ordinary hook damage when precontact boost is ignored
+PASS: postcontact boost adds bonus once without a fourth hit
+PASS: repeat boost edge cannot duplicate bonus
+PASS: releasing grip cancels post-hit boost without losing ordinary hook damage
+PASS: regripping cannot resurrect cancelled boost opportunity
+PASS: R L R combo supports the opposite start side
+PASS: missed boost opportunity preserves ordinary final hook damage
+PASS: wrong-side hit ends combo while keeping earned damage
+PASS: nonattack arm motion does not break the sequence
+PASS: guard pose is not an out-of-order attack even with grip held
+PASS: correct guard deals zero damage and preserves combo
+PASS: guard does not pause the combo deadline
+PASS: a held-button punch miss ends combo without reverting damage
+PASS: incoming damage ends combo and keeps previous outgoing damage
+PASS: one-arm heavy guard fails without partial damage reduction
+PASS: two-arm heavy guard blocks all damage
+PASS: unguardable attack ignores raised arms
+PASS: one pilot alone cannot move robot
+PASS: opposed pilot directions stop movement
+PASS: matching maintained inputs move even without simultaneous starts
+PASS: defeat stops outgoing damage
+PASS: restart resets health combo and hit count
+PASS: victory stops incoming damage
+PASS: new stroke clears stale candidate while preserving completed hook history

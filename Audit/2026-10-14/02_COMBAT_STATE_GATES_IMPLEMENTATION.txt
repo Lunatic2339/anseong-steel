@@ -1,0 +1,56 @@
+안성제철 전투 1차 개발 — 비전투 상태 게이트
+작성일: 2026-10-14 Asia/Seoul
+
+완료 변경
+통합 flow가 붙은 세션은 활성 Battle + 서버/오프라인 권한 + 생존 HP + 온라인 두 조종사 조건을 충족할 때만 전투를 허용한다. Calibrating/Waiting/Won/Lost/비활성 flow에서는 적중·콤보·추가 부스트·보스 피격·새 전투 피드백을 생성하지 않는다. 팔 추적 샘플·중립 복귀·포즈/접촉 솔버는 계속 갱신한다. 전투를 닫거나 재개할 때 이전 콤보/부스트/진행 중 펀치를 취소해, 비전투 중 시작한 동작이 Battle 진입 직후 유령 명중으로 이어지지 않게 했다.
+flow가 없는 기존 RobotPlay/LocalPunchTest와 순수 RobotCombat은 기본 허용 정책을 유지한다. 피해량·시간·가드·콤보 시작팔·회피·메뉴 pause·네트워크 wire schema는 바꾸지 않았다.
+
+작업 공간
+수정본: C:/Users/anthony/.codex/worktrees/combat-state-gates/anseong-steel
+브랜치: codex/combat-state-gates / 시작 42e05e4 / 미커밋 변경
+원본 비교: C:/Users/anthony/.codex/worktrees/combat-runtime-baseline/anseong-steel
+브랜치: codex/combat-runtime-baseline / HEAD 42e05e4 / 런타임 무수정, 진단 Editor probe만 추가
+공유 원본 develop에는 코드·씬을 쓰지 않았다. 원격 push/PR/merge/원본 반영 없음. managed worktree 두 개는 이 채팅에 첨부되어 있다.
+
+변경 파일(수정본 작업공간 내)
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotCombat.cs
+  CombatEnabled/SetCombatEnabled. 기본 true로 독립 규칙 호환. 닫힌 상태에서도 trajectory/guard pose를 관찰하되 Hit/ReceiveAttack/boost와 combat intent는 차단. 전환 시 moving history는 중립 재복귀를 요구한다. HP0 종료 상태도 닫힌 gate에서는 포즈 보정 가능.
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotPlaySession.cs
+  CombatAllowed/RefreshCombatPermission. pose sampling 전에 gate를 갱신하고, contact fallback/OnContact와 기본 boss timeline·reset에도 같은 계약 적용. Sample 안의 post-hit boost 경로까지 순수 상태 gate로 보호한다.
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedPlayFlow.cs
+  SetState로 상태 변경과 permission 갱신을 연결. Retry는 다른 callback/reset보다 먼저 Calibrating으로 닫는다. OnDisable도 닫아 테스트용 flow 비활성화가 우회 통로가 되지 않도록 한다.
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedBossEncounter.cs
+  Update/Impact가 동일 gate를 확인. 늦은 애니메이션 후보 callback도 비전투 상태에서 counter/피해/피드백을 만들지 않는다.
+AnseongSteel/Assets/_Project/RobotPlay/Editor/CombatStateGateChecks.cs (+ 새 meta)
+  기존 순수 체크 + memory role matrix + 저장 통합 씬 합성 XR/접촉/Ready/Battle/RLR/부스트/guard/retry 검사. Build/UpdateOwnedScene/Save를 호출하지 않는다.
+AnseongSteel/Assets/_Project/RobotPlay/Editor/CombatRuntimeProbe.cs (+ 새 meta)
+  원본과 수정본 동일 시나리오, 자동 보스 모션/정지 회피/실제 이동, 승패·XR retry, 14패턴 독립 실험, 저장 독립 씬, 원본 씬 그대로 Windows 검사 빌드 진입점. Editor에만 존재하며 게임 기능을 추가하지 않는다.
+
+검증 결과
+Unity 6000.3.24f1에서 실제 실행. 과거 10/13 PASS를 재사용한 결과가 아니다.
+- RobotCombatChecks 27 PASS, IntegratedRulesChecks 27 PASS.
+- 새 memory gate 78 PASS. offline/host/client 권한 플래그를 fixture에 주입한 분기 검사이며 실제 LAN 검사와 별개다.
+- 저장 통합 씬 Play gate 15 PASS. 실제 InputSystem 합성 XR→RobotPilotInput→Submit→trajectory/pose/contact→combat 경로. 정상 RLR·명중후 fresh trigger로 HP104/hits3, 정상/양팔 guard0, pending boost 직후 Retry 후 HP160/hits0/feedback0, 추적 유실 즉시 무효화. 씬 파일 SHA256 불변.
+- 같은 확장 시나리오: 원본 20 PASS/9 FAIL/24 OBSERVED, 수정본 28 PASS/1 FAIL/24 OBSERVED. FIX된 8 FAIL은 비전투 4상태의 실제 접촉과 늦은 impact callback이다. 남은 FAIL은 정지 x=.6 회피 편법이며 이번에 수정하지 않았다.
+- 두 저장 독립 씬: 원본/수정본 동일, 각각 12 PASS + 2 OBSERVED. Ready·잽·교대 잽·최종 훅 피해 및 씬 불변. candidate-driven 구형 precontact boost 시도는 양쪽 HP124(보너스 없는 일반 훅)여서 이 시도를 부스트 성공 PASS로 세지 않았다. 순수 구형 boost 규칙 검사는 PASS.
+- BossModelTest 기존 suite: 원본/수정본 모두 14 PATTERN PASS 및 guard/parry/grab/status/cooldown/cancel/projectile/core/death/reset 전체 PASS. 저장 씬 SHA256 불변. 실제 메인 전투에서 14개를 호출한 결과가 아니다.
+- 새 Windows 개발 빌드 result=Succeeded, sceneUnchanged=True. BuildReport totalErrors=6와 missing prefab 경고가 있어서 '오류 없는/시각 완성 빌드'로 표현하지 않는다. 모델 참조는 기존 상태 그대로이며 아트 파트의 복구가 필요하다.
+- 실제 동일 PC의 host/client/extra Windows 프로세스 LAN: 기존 검증 + 비전투 공격·trigger 음성 시나리오 106 PASS(ACK 포함), RESULT PASS. 서버 역할/권한/epoch·추적 유실·전투·post-hit boost·중복·재시작·이탈·재접속·협동 이동 확인. HMD/두 실제 PC는 미검증.
+종료 상태 추가 LAN 66 checks(ACK 포함)도 PASS. 실제 client hook8회로 양쪽 Won, 실제 보스 clip/event/Physics normal impact9회로 양쪽 Lost, 종료 뒤 실제 contact/trigger 무효·host retry reset 확인. 전체 대상별 기대/실제/제한은 09_COMBAT_RUNTIME_VERIFICATION.txt에 기록했다.
+
+검사 통제와 한계
+원본/수정본 저장 씬을 생성·보정하지 않았다. 논리 Play fixture에서만 런타임 카메라를 끄고 Time.captureDeltaTime=.02로 합성 시각을 사용했다. 캡처 시 authored 전장 feed를 직접 갱신하고 cockpit을 렌더했다. 이것은 실제 FPS/HMD 편안함 검사가 아니다. 고정 시각·강제 상태/위치·직접 damage/impact 호출과 자연 입력 경로를 각 로그에서 구분했다.
+초기 -nographics 통합 Play는 URP native crash가 있어 그래픽 배치로 재실행했다. 검사 helper의 상속 private setter·EditMode 시각·recenter 첫 보정 pose를 수정하고 최종 결과를 얻었다. 실패한 준비/기대 조건을 숨겨 PASS로 합산하지 않았다.
+Unity 자동 OpenXR/RT/URP/Graphics/ProjectSettings 변경은 별도 diff로 보관하고 자기 worktree에서 HEAD 값으로 복원 완료했다. 최종은 허용 Runtime4·신규 Editor2/meta2만 남는다. 게임 씬/프리팹/모델/기존 meta 변경으로 납품하지 않는다.
+기존 IntegratedPlayValidation.Run은 flow를 disabled한 채 피해를 시험하는 구간이 있다. 새 계약상 그 우회는 막힌다. 해당 기존 검사 파일을 임의 변경하지 않았으며, 생성/보정 기반 기존 harness는 별도 후속 정리가 필요하다. 독립 두 씬은 실제 저장 상태로 별도 검증했다.
+
+남은 확인된 문제(이번 scope 밖)
+정지 x=.6 편법, 일반 공격 오른팔 고정/3종 같은 Punch, 단독 훅8회로 Lesson.Jab에서 승리, 실험실14패턴 미연결·두 HP 체계, 누락 플레이어 팔 prefab/아바타 연결, 실제 2HMD/2PC/Quest standalone·시야 comfort·외골격. 새 기획 결정이나 기능 확장을 이 gate 작업에 섞지 않았다.
+
+통합 순서
+1. 총괄이 Runtime 네 파일과 테스트 두 파일/새 meta를 검토한다. RobotPlaySession 공유 변경은 VR/네트워크 담당 diff와 함께 병합 소유권을 정한다.
+2. 모델/씬 파트 변경과 통합하되 이 브랜치의 원본 씬을 덮어쓰지 않는다. 생성 builder로 상태를 '고친 뒤' 테스트하지 않는다.
+3. 통합 checkout에서 memory gate + 저장 scene gate + 실제 LAN을 다시 실행한다. 양쪽 Ready/Battle, 종료/재시작, post-hit boost의 server approval을 유지해야 한다.
+4. 그 다음 회피/패턴/진행 설계 보강과 실기기 검증을 배정한다. push/merge/원본 적용은 총괄 후속 지시 전에는 하지 않는다.
+
+증거: C:/Users/anthony/Desktop/Capstone/anseong-steel/Audit/2026-10-14/evidence/02_combat

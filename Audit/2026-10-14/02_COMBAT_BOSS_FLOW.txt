@@ -1,0 +1,1933 @@
+안성제철 전투·보스·진행 정밀 진단 — 2026-10-14 (Asia/Seoul)
+담당: PunchTrajectoryRecognizer / RobotPlay 전투·타격·콤보·학습·승패 / _BossPrototype Runtime·Tests·Editor
+
+0. 조사 경계와 결론
+현재 develop / 42e05e4. 시작 시 git status는 ?? Audit/만 있었다. AGENTS.md는 저장소 rg 검색 및 C:\부터 저장소까지 상위 경로 검사에서 발견되지 않았다. 추가 채팅/하위 에이전트 생성, 다른 채팅 메시지 송신, Unity 실행·임포트, 소스·씬·프리팹·메타·설정 변경, Git 변경 작업은 하지 않았다. 이번 결과는 정적 코드·Unity YAML·GUID 참조·과거 채팅/기록 읽기 진단이며 새 실행 PASS가 아니다. 저장은 이 txt에 한정한다.
+
+결론: 실제 궤적→주먹 접촉→한 번의 피해→번갈아 콤보→적중 후 추가 부스트라는 중심 규칙은 보존할 가치가 크다. 그러나 '둘이 한 기체를 완성하고 짧은 전투를 끝내는 경험'을 강제하거나 충분히 안내하는 진행은 아직 없다. 먼저 준비/대기/종료와 전투 피해 경계를 일치시키고, 공격별 시간 안에서 실제 이동한 회피를 판정해야 한다. 14개 보스 모듈은 실험실에 있는 자산이며 통합 AI 14종 완성이 아니다.
+
+과거 근거: Audit/2026-10-13/PROJECT_AUDIT_KO.md, unity-audit-02-results.txt, unity-visual-results.txt, combat-checks.txt, integrated-rules-checks.txt를 읽었다. 과거 54 PASS와 준비중 HP136/hits3, 정지 x=.6에서 dodge1/damage0 재현은 10월13일 검사자의 기록이다. 이번에는 같은 원인을 현재 코드에서 다시 확인했다. HMD/2PC/Quest 빌드/장치 모터는 검증하지 않았다. FBX·Blender·dll 내부 리그/클립 재생·실행 결과는 바이너리 내부 검증 불가이며 메타·텍스트 참조 수준에 한정한다.
+
+이하 경로 약어(모두 저장소 루트 기준):
+C = AnseongSteel/Assets/_Project/01_Scripts/01_Core
+R = AnseongSteel/Assets/_Project/RobotPlay/Runtime
+E = AnseongSteel/Assets/_Project/RobotPlay/Editor
+B = AnseongSteel/Assets/_BossPrototype
+S = AnseongSteel/Assets/_Project/04_Scenes/sunwoo_IntegratedPlay.unity
+파일:줄은 현재 읽은 원본 기준. 부록에는 경로를 생략하지 않은 파일 목록을 둔다.
+
+1. 컨셉과 개발방향의 변천 및 현재 코드와의 차이
+출처는 read_thread로 읽기만 했다. 다른 checkout의 완료 주장/assistant 제안은 현재 완료 또는 사용자 결정으로 승격하지 않는다.
+
+출처 A 「협동 VR 레벨디자인」 (6aac8bf0-ff0c-83e9-9dc3-d812445ff53d), 2026-09-18(KST), 반환 1턴/hasMore=false.
+사용자 직접 방향: HMD와 컨트롤러 2개를 받되 한쪽 팔 권한만 갖는 협동 VR; 당시 3분 내외 튜토리얼 체험; 긴 스토리 대신 즉시 긴박한 전투; 움직임·공격·협동 자체로 자연 학습.
+assistant의 거점방어/증폭 사격/포탑/1초 합동포/시간표는 제안이다. 사용자 승인 후속은 반환 이력에 없다. 이것을 이번 맨손 필수 구현이나 확정 3분으로 쓰지 않는다.
+
+출처 B 「전투 로직 설계 — 안성제철 VR」 (01a0b354-e5f5-7ee2-90e1-054ef138bac4, local).
+최신부터 10턴 페이지 11개와 마지막 6턴을 읽어 nextCursor=null까지 확인했다(최초 응답 포함 총116턴). 도구는 turn summary/일부 길이 제한 결과이므로 모든 툴 출력·외부 Google Docs 전체 원문을 재검증한 것은 아니다. 아래는 반환 사용자 발언과 바로 인접한 질문/답의 맥락 기준이다.
+시점 | 사용자 결정 또는 선호 | 제안/미해결 | 현재 코드 차이
+2026-09-18 | Meta Quest3, 이동도 다같이, 실제 전장, 가슴 부근, 공격/피격 시야 흔들림 완화에 동의 | VR 체감 수치 | 통합 광학 카메라는 독립이나 실제 HMD 편안함은 미검증. 모터로 팔 밀기와 별개.
+2026-09-20 | 일반 이동은 두 방향 일치, 동시 시작 불필요. 전투는 가까이 붙기/떨어지기/회피, 자동 접근 후 정지·근접 범위 밖 후퇴 선호. 자동 보스 대면 기본안 동의 | 회피 후 둘 다 스틱 놓기 재무장은 assistant 제안이며 별도 사용자 확정 없음 | R/RobotPlaySession:280-282는 계속 평행 이동+고정 월드 clamp. 정해진 이동 동작·대면 없음.
+2026-09-20 | 버튼 유지 펀치, 별도 추가 버튼 부스트. 사용자가 '마지막 훅이 성공했을 때 피격과 동시에 슬로모션+버튼 표시' 직접 설명, 추가 밀어넣어 날리기 느낌에 동의. 실패 시 일반 훅 피해 유지 동의 | 정확한 버튼/시간은 보류. 양쪽 시작 '될듯?'은 당시 기본안 수준 | R/RobotCombat:83-87,162는 최종 훅 적중 후 .45초 추가 입력. 예전 '훅 도중' 설명은 사용자 다음 발언으로 바뀌었다. 총괄 최종 공통기준도 적중후 순서를 확정했다. .45초/slow 강도는 미정 조정값이다.
+2026-09-20~21 | 헛침 종료, 잘못된 담당 차례 종료, 명중 사이 시간 제한, 받은 실제 피해 시 종료/성공 가드 유지, 올바른 가드 피해0, 강공격 양팔 필요/한팔 완전실패 선택, 좌우 어느 방향이든 제때 함께 회피 | 피해량·판정 허용자세·시간 수치 미정 | strictComboRules·시간·양팔가드 코드가 있다. 회피는 제때 이동이 아니라 절대 x로 판정. 강공격 피해20은 임시값이지만 양팔 성공 피해0/한팔 실패 정책은 확인된 선택이다.
+2026-09-24 | 플레이어 행동→보스 행동→플레이 흐름 순으로 설계하고 싶다고 명시. 기본/번갈아 펀치·양손 내려찍기 희망 | 어깨 돌진은 9/29 '애니메이션 가능하면' 후보로 하향, 확보 동작도 더 찾아야 함 | 통합은 같은 Punch만 3종 이름으로 사용. AlternatingCombo는 실험실에 있지만 통합에서 안 부름. 내려찍기는 현재 검 패턴 자산이므로 맨손 동작 대체 완료 아님.
+2026-09-28~29 | 보스 방어 없이. 공격타이밍 외 큰효과 주지 않기를 원함. 공격후 기본 빈틈+방어 성공 시 더 긴 빈틈 '둘다 해보자' | 타이밍 밖 저피해 vs 무피해, 정확한 보상 창은 합의 수치 없음 | R/RobotCombat:147은 창 닫히면 피해0/콤보종료. 구형 Session:318은 방어보너스가 있으나 externalBossTimeline이면 우회. IntegratedBossEncounter:58-64는 방어 성공과 무관한 .8초 recovery, 명중 직후 같은 반격창.
+2026-10-04~05 | '문제는 협동이지', 펀치는 유지. 검은 중세기사 검/방패로 컨셉 변경, 손으로 쥐는 검·장비 고정 직접 선택. 막고→밀치고→한번 찌르기, 방어후 반격 선호. 방패 전개/축소로 손도 사용 가능 | 접고 잡기 가능한 정확한 창·최종 좌우 역할·이번 시연 포함은 미정 | 예전 손등 칼날/이도류/자유 전환을 최신 설계처럼 되살리면 안 됨. 현재 WeaponMode enum은 행동구현 없음. 이 단계 맨손 우선은 다른 페이즈 폐기를 뜻하지 않는다.
+
+출처 C 「펀치 페이즈 완성하기」 (01a130e2-c292-74eb-98bf-08ead7c8d081, durable), 2026-10-13 KST, 반환3턴/hasMore=false.
+일반 사용자의 원문 메시지보다 부모 인계 codex_delegation와 assistant 실행/완료 보고가 중심이다. 인계에는 기존 모델/콕핏 비교, 엄격 추적, 가상 손목 일자 정렬·자연 훅, 컨트롤러 햅틱, 실제 접촉, 마지막 적중후 부스트·그립유지, 다른 무기 확장 금지가 적혔다. 코드와 일치하는 부분은 확인했으나 인계를 독립적인 사용자 확정으로 보지 않는다. feat/player-script / 0f8525d 및 전투27·규칙27·통합41·펀치47·모션62·HUD49·온라인53의 완료 보고는 과거 작업 결과이며 develop42e05e4의 신규 실행 증거가 아니다. 모터가 아닌 선택적 렌더 연출로 구현된 이유가 드러난다.
+
+최신 총괄의 정정까지 반영한 우선 순위(00_DIRECTION_AND_COORDINATION.txt 읽음):
+- 2026-12-11 대중 공개 2인 시연, Quest3 두 대/PC 두 대 예상. PCVR vs standalone 미정. 짧고 안정적으로 완결하는 맨손 우선.
+- 오른손 시작 콤보 선호. 왼손 시작 금지 미확정; RLR 안내 우선과 LRL 판정 차단은 서로 다른 변경이다.
+- 일반은 해당 팔 가드, 강공격 양팔, 성공피해0/강공격 한팔 완전실패. 회피는 공격 타이밍에 실제 이동. 전투 접근/회피/후퇴는 두 명의 같은 방향 입력으로 정해진 동작을 발동. 일반 이동도 각자 보조손·로봇정면 기준 동일방향이며 한명이 놓거나 다르면 정지.
+- 최종 훅 적중후 슬로우/안내/추가입력 부스트 순서 확정. 정확한 입력창·강도·피해수치·시연 시간·이번 출격/정비 필수 여부 미정.
+- 총괄이 추가 확인한 「구글독스 내용 확인 가능 여부」의 사용자 선택: 탑승감, 조종사/로봇 분리, 공용 공간 동료/자기 몸, 반구 화면, 정비 시작·합동 마무리로 발전. 이 채팅은 본 담당이 직접 read_thread하지 않았으므로 총괄 전달 근거임을 명시한다. 옛 즉시전투3분과 코드300초보다 최신 미정이 우선.
+- 외골격은 적중/방어 약한 저항·부스트 저항해제, 팔을 모터로 밀지 않음. 통신/제한 미정이며 장치 동작 구현 금지. 가상 armPush 연출을 실제 모터 명령으로 연결해서는 안 됨.
+
+개발방향 제안(확정 아님): 새 공격 수를 늘리기보다 '내 팔을 이해→동료 차례를 보고 이어침→둘이 대응→협동 마무리→다음 관람객 초기화'가 실제 체험 중 보이는지 완료 기준으로 둔다. 학습 요구와 승리 조건/HP를 함께 설계하되 강제 성공/고정 시간을 지금 임의로 넣지 않는다.
+
+2. 담당 자체 코드 파일별 역할·상태·보강점 표
+상태 '통합'은 직접 참조/호출 또는 통합에 들어간 프리팹의 전이 참조를 뜻한다. 존재/부착만으로 실제 기능 호출 완료를 뜻하지 않는다.
+
+파일 | 역할·현재 상태 | 보강점
+C/PunchTrajectoryRecognizer.cs | Waiting/Ready/Moving/Recovering/TrackingLost; 최대256 점; 좌우 대칭 잽/훅/수직 배제; 순수 관찰자(통합 RobotCombat와 ArmMotionInput 재사용) | 체격/노이즈/앉기·서기 실측. 중립·갭·유한값·복귀 안전장치 보존. wristTurn 관찰값은 통합에서 Quaternion.identity로 공급되어 실제 측정 아님(:99/139 RobotCombat).
+R/RobotCombat.cs | HP160/100, 실제 명중 카운트, LRL/RLR, 제한2.4s, 명중후 .45s 부스트, 그립해제 취소, 가드·피해 피드백(통합 핵심) | 진행 허용과 분리된 상태머신 장점 보존; 수치/종류 오류 정책 임시표시. now 유한/순서, ReceiveAttack side·음수피해 입력 계약 보강 후보.
+R/RobotPlaySession.cs | 권한·RPC·샘플 수신·팔포즈·접촉·snapshot·기본보스 시간·movement·reset(통합/초기2씬) | 전투 허용 게이트 통일; Sample의 추가피해 포함 게이트 필요. 고정 월드 이동 교체 인터페이스; 출력 snapshot 즉시 리셋 동기화·HMD 실기 점검.
+R/MechaVRBossContact.cs | 팔 BoxCollider swept pose/겹침복구·주먹/전완 구분·신규접촉·속도/쿨다운·QueriesLastFrame(3씬) | collider 접촉과 실제 전투명중의 카운트 구분. 최악 프레임 비용과 reset쿨다운/이름기반 Fist 계약 검증.
+R/MechaVRBossTarget.cs | colliders 캐시, LastArm/Point/Speed, onHit UnityEvent(3씬) | HP 소유자는 아님. HitCount는 원시접촉이며 reset되지 않아 재시작 전투명중과 불일치; 의도적 누적/세션별 표시 정책 명시.
+R/IntegratedBossEncounter.cs | Normal/Heavy/Unguardable 순환, driver.TryPunch, 실제 impact 후보→RobotCombat 피해(통합) | 제때 실제 이동 회피, 일반 타격 팔, 공격별 예고·클립, 성공방어 창 보상; Stop/Begin 전체 메타데이터 reset.
+R/IntegratedPlayFlow.cs | Calibrating/Battle/Won/Lost/Waiting, Jab→Hook→Defence→Combo, 재시작·objective(통합) | 허용상태 일치, 학습 전에 보스가 죽는 우회, 두 사람 개별 경험/부스트 완료 안내, 시간·출격·결과 단계 정책 확정 필요.
+R/IntegratedCombatHud.cs | snapshot/Feedback→HP·실험 부위손상·Confirmed 이벤트; 고정 왼 잽 guide(통합) | NextSide/Deadline/중립복귀/실패원인/RLR 우선 안내. 옛 z 후퇴 회피 추정(:74-75)을 실제 공격결과 이벤트로 통일.
+R/IntegratedPunchCue.cs | 추가부스트 기회/animator만 slow; 카메라 렌더중 보스와 가상팔을 이동·복원(통합) | 실제 전투 거리/넉백 아님. clock·client재생·여러 카메라 검증 보존. 실기 체감 튜닝. 장치 밀기 금지와 별개.
+
+B/Runtime/BossMovement.cs | 상대방향 정해진 거리/목적지·점프·취소·유한값 검증. BossAttack/Movement/Rotation/Model 실험+통합 프리팹 | 재사용 가능한 정해진 동작 기초이나 현재 플레이어 이동과 자동 연결 아님; 관성·충돌·VR 카메라 정책 별도.
+B/Runtime/BossRotation.cs | 월드Y 최단대면·상대회전·가속감속/animation handler·취소. 실험+통합 프리팹 | 보스의 LookAt 호출은 실험 demo만. 플레이어 자동대면으로 오해 금지.
+B/Runtime/BossHeavyPunch.cs | Windup→Recovery→Idle, timer 또는 AnimationImpact, sphere overlap 후보1회 | 후보만 제공/피해 판단 분리 좋음. 이벤트 유실 시 피해 없이 끝나는 fallback를 예고/판정 테스트에 포함.
+B/Runtime/BossAnimationDriver.cs | Punch/Walk/Turn, motion lock복원, timeout, combat action, ResetMotion | 애니메이션/물리시간과 Slow/온라인 경계 점검; 본·animator 참조 validation. 통합에선 이 driver의 Punch만 실제 선택.
+B/Runtime/BossAnimationEvents.cs | PunchImpact/PunchFinished→driver relay(프리팹/ModelTest) | FBX meta 이벤트와 유지; 클립 변경시 impact 이벤트 검사.
+B/Runtime/Combat/BossAttackDefinition.cs | 14 enum/공격 SO, guard/status/hit/시간/클립/거리 | 14 asset 존재. 통합규칙으로 복사해 중복 튜닝하지 말고 adapter 계약을 먼저 합의.
+B/Runtime/Combat/BossCombatController.cs | 독립공격 선택/쿨다운/거리/대면/검장비/충돌/잡기/코어/HP500/죽음/리셋 | 통합 프리팹에 부착되지만 target null이고 스케줄러 없음. 권한 adapter 없음. HandPoint First/LINQ cache·본없음 예외·이중 impact 소비 위험.
+B/Runtime/Combat/BossCombatTarget.cs | 실험 플레이어 receiver HP300, 지속가드10%피해·.22s parry·grab/status | ModelTest dummy만. RobotCombat 가드0/HP100과 규칙 다름. 통합 수신기로 단순 부착하면 피해 이중소유.
+B/Runtime/Combat/BossChestLaser.cs | 런타임 라인/충전·ray trace·잔광·취소(프리팹/실험) | 실험 패턴 외 통합 사용 없음. 동적 셰이더/머티리얼 할당·layers·실기 비용 확인.
+B/Runtime/Combat/BossMissile.cs | 런타임 생성 투사체, spherecast 정렬, generation/취소/요격/6s lifetime | 직접 씬 참조 없음은 정상(SpawnMissile). 유도 미사일이 아니라 초기 목표 직선속도; 플레이어 미사일/드론 구현으로 세지 않는다. 풀링·지연 권한 future.
+B/Runtime/Combat/BossHandPose.cs | animation 상태별 주먹/잡기/캐스팅/검그립, 다음 프레임 원본 복원(프리팹) | 손목/발 복원과 충돌 query 순서 보존. 통합 주먹 시각에도 전이 사용.
+B/Runtime/Combat/BossFootPoseInput.cs | Generic 상수 발 회전 입력 매프레임 복원(프리팹) | 취소 후 포즈 잔류 방지 구현 보존.
+B/Runtime/Combat/BossSwordAttachment.cs | 등/손 attach·transfer·grip·blade endpoints/IK(프리팹) | 이번 맨손에 검 전투 연결 필수 아님; 모델 바꿀 때 bone 계약 확인. 기존 손/검 제작 결과 되돌리지 않는다.
+B/Runtime/Combat/BossSwordEquip.cs | Draw/Sheathe clip·전환시점·wrist input 복원·equip lock(프리팹) | 공격 상태와 권한/state 동기화 시 후속 통합; reset 후 back socket 의도 확인.
+
+3. 공격 패턴 파일별 실사용 상태
+공통: B/Runtime/Combat/Patterns 아래 15파일(추상 base 포함). 14구현 모두 BossMecha.prefab와 BossModelTest.unity에 스크립트 GUID 직접 참조. 통합 S는 BossMecha 프리팹을 전이 포함하지만 IntegratedBossEncounter:45는 driver.TryPunch만 호출한다. 통합에서 TryAttack/TryExecute 호출은 없다. 테스트 UI BossCombatTester:68 및 BossCombatVerification:185가 선택한다.
+파일 | 판정 방식 / 자산 연결 | 통합 전투 선택
+BossAttackPattern.cs | 추상 Kind/TryExecute/Begin/Tick, 자동 chaining 없음(:4) | 없음
+BossHeavyPunchPattern.cs | Tick 비어있음; BossHeavyPunch 이벤트 경로. HeavyPunch.asset clip0은 잘못된 누락이 아니라 legacy Punch 사용 | 이 모듈 선택 없음(동일 driver Punch는 사용)
+BossAlternatingCombo.cs | strikeTimes threshold별 좌·우 손 point Query; step마다 struck reset | 없음; AlternatingCombo.anim
+BossSwordSlash.cs | 실제 칼끝 sweep, 클립 없으면 각도 보간 volume | 없음; SwordSlash.anim
+BossOverheadSmash.cs | 검 sweep 또는 위→아래 capsule | 없음; OverheadSmash.anim; 맨손 내려찍기 구현으로 간주 불가
+BossMissileBarrage.cs | progress별 projectileCount 생성 | 없음; clip0/생성 projectile
+BossGrab.cs | right hand sweep/임시앞 point, target grab | 없음; Grab.anim
+BossFeint.cs | clip이면 sword sweep; fallback는 처음45% 무피해 후 반전 | 없음; Feint.anim. authored clip의 실제 feint timing는 재생 필요
+BossShockwave.cs | 커지는 수평 반경 안 target 판정 | 없음; GroundCast.anim
+BossLaserSweep.cs | muzzle부터 좌우 ray trace+sweep | 없음; clip0/ChestLaser 표현
+BossEMP.cs | 몸위 중심 sphere Query / HudDisabled | 없음; PowerUp.anim
+BossSensorJam.cs | 같은 radial Query / LeftSensorHidden | 없음; PowerUp.anim 공유
+BossVisionDisruption.cs | 같은 radial Query / RightVisionDistorted | 없음; PowerUp.anim 공유
+BossArmLock.cs | Grab와 같은 sweep / LeftArmDisabled | 없음; Grab.anim 공유
+BossWeaponBreak.cs | 검 sweep 또는 앞 capsule / WeaponsDisabled | 없음; SwordSlash.anim 공유
+통합 HUD/입력/네트워크는 BossStatus, GrabChanged, CoreExposureChanged를 소비하지 않는다. 상태 enum을 추가한다고 상태이상·절단·합동마무리가 완료되지 않는다.
+
+4. Tests/Editor 파일별 역할·상태·보강점
+Tests는 실험실 또는 동적검증 전용. Editor는 scene serialized GUID가 없는 것이 정상이다. 검증/설치 도구를 이번 단계에서 실행하지 않았다.
+파일 | 역할·상태 | 보강점/주의
+B/Tests/BossAttackTester.cs | BossAttackTest에서 context 메뉴 공격/취소, 후보 로그 | 피해/온라인/VR 검증 아님
+B/Tests/BossMovementTester.cs | Attack/Movement/Rotation 씬 이동 context메뉴 | 정해진 동작 기초 실험; 통합 플레이어 경로 별도
+B/Tests/BossRotationTester.cs | RotationTest 대면/회전 context메뉴 | 카메라 편안함 별도
+B/Tests/BossModelDemo.cs | ModelTest 자동 접근·대면·펀치, 모델 reset | demo가 target 시각색을 바꿔도 RobotCombat 피해 없음
+B/Tests/BossCockpitView.cs | ModelTest 1인칭/외부 카메라 테스트 | 공용 2인 콕핏 시스템과 별도
+B/Tests/BossCombatTester.cs | ModelTest IMGUI 14공격 버튼·가드/패링·counter·요격·코어 | 사용자 입력 대신 lab UI, revive/autoApproach로 조건 보정됨
+B/Tests/BossCombatVerification.cs | runner 동적생성, 각14패턴 재진입/명중횟수·쿨다운·status·잡기·죽음/리셋·취소·검·손·발 검증 | dummy·조작된 초기위치, 실제 조종사/RobotCombat/online 연결 없음. 기대값은 전시 경험의 완결 기준 아님
+B/Editor/BossCombatVerificationRunner.cs | ModelTest 열고 Play 진입·runtime 검증 생성/검 equip 녹화 | 이번 읽기 단계 실행 금지; 저장씬 그대로/변경 여부 기록 필요
+B/Editor/BossModelSmokeTest.cs | 모델/대면/걷기/펀치 재생·오류·preview 검사 | 통합 HP/학습/VR 미포함
+B/Editor/BossModelTestBuilder.cs | 모델test 씬/프리팹/controller 생성·펀치/turn 수정 | SaveAsPrefabAsset/SaveScene. 원본 작업 훼손 방지, 생성과 검증 분리
+B/Editor/BossCombatInstaller.cs | 14개 SO·모듈·target·lab panel 설치/clip bind | prefab.target null, ModelTest에서만 dummy 연결(:28-29). 재설치는 씬/프리팹/자산 변경
+B/Editor/BossCombatAnimationBuilder.cs | CombatSource FBX→동일리그 Generic clip bake·hip drift·stance | 모델 버전 계약/수작업 보존. 현재 asset clip 공유도 추적
+B/Editor/BossCombatAnimationAudit.cs | clip 곡선/길이/바인딩 조사 | Run:11 Refresh, :15 importer Generic/avatar/importAnimation/compression 설정 변경+SaveAndReimport. 이름이 Audit이어도 읽기전용이 아니므로 공유checkout 정적진단에서 실행금지
+B/Editor/BossAttackPoseAudit.cs | 공격 포즈/발/스윙 샘플·렌더 점검 | 독립 scene/정적 샘플 한계
+B/Editor/BossCombatPolishAudit.cs | 전투 보정 클립·거리·손발/검 검토 | 통합 피해와 별개
+B/Editor/BossCombatPoseReview.cs | 검 polish 후 capture / 포즈 review | PolishAndCapture는 변경을 동반
+B/Editor/BossCombatFinishInstaller.cs | 칼날 roll bake·ChestLaser·전투 연출 설치/Review | prefab/씬 저장 경로; 맨손 필수 확장 아님
+B/Editor/BossAttackFootPolish.cs | 발 contact 보정·clip stamp·PoseInput 설치/Review | 재bake 시 기존 발 보정 유지
+B/Editor/BossHandPoseInstaller.cs | 기계손 주먹/relaxed/grip 설치 | 제작 자산 보존, bone validation
+B/Editor/BossHandRigWorkshop.cs | 손 포즈 후보/곡선·bake·렌더 검토 | 직접/정적 포즈에서 실제 transition 검증으로 이어져야 함
+B/Editor/BossSwordEquipBuilder.cs | Draw/Sheathe clip·상태·equip 설치/Review | 검 페이즈 포함 확정 후 사용, wrist 복원 유지
+B/Editor/BossSwordCockpitInstaller.cs | back sword/1인칭 view 설치·Validate | 기존 제거된 cockpit geometry 존중하는 코드를 유지
+B/Editor/BossSwordFitAudit.cs | 검·grip·등부착 fit 샘플 | 바이너리 모델 변경 시 재검증
+B/Editor/BossSwordPolishInstaller.cs | 검grip/거리 polish·ConfigureGrip | 수동 조정값 덮어쓰기 주의
+B/Editor/BossSurfaceInstaller.cs | Blender 텍스처/재질→model 적용 | 렌더 비용/참조 검증은 아트파트 공유
+B/Editor/BossUpdatedModelInstaller.cs | v026 source→compatible skin/model 교체·Audit | BossV11 자동대체 아님; Bone 이름/clip 호환 확인
+B/Editor/BossDemoHeadingFix.cs | demo 모델 visual heading 보정·test | 실험 씬 save; 통합 독립 확인
+
+E/RobotCombatChecks.cs | 순수 전투/trajectory 접촉/권한27 조건 코드 | 기본 tuning으로 구형 precontact boost도 테스트. 이것만 통합정책 PASS로 세면 안 됨
+E/IntegratedRulesChecks.cs | grip/strict combo/postcontact boost/강공격/협동move/terminal/reset27 조건 | 준비/Waiting/메뉴와 실제 회피시점 없음. 가드정책은 사용자 선택이며 피해량은 임시 시연값
+E/IntegratedPlayValidation.cs | 합성 XR·현재 통합 scene play, 피해/HUD/학습/회피/승패/reset/boost 렌더 | Run:47 UpdateOwnedScene 저장 후 검사. 기존 회피 stage는 이동 성공만 확인해 stationary false-positive를 잡지 못함(:131,193)
+E/PunchPhaseValidation.cs | core 정책/햅틱 queue·추적flag/회복·손목/5콕핏/렌더 검증 | Run:14 씬 업데이트/Play. RunMotionCore는 분리 진입점 존재. 실제 HMD 품질은 별도
+E/RobotPlayValidation.cs | 초기 RobotPlay build+keyboard 전투/guard/retreat | Run:24 씬 재생성. precontact boost·기본boss 정책 전용으로 표시 필요
+E/RobotLocalBothValidation.cs | 초기 LocalPunchTest 합성2 XR 손/실제 접촉 | Run:42 Build 호출. controller state에 grip필드 없음, 최신 통합 테스트 대신 사용 금지
+E/RobotPlayBuilder.cs | 초기 NGO/UTP·팔·target·contact 씬 생성 | RigPath v025, scene 재생성 보존범위 필요
+E/RobotLocalPunchScene.cs | 초기scene→XRLocalBoth local test 씬 저장 | 최신 통합 game와 다름
+E/IntegratedPlayBuilder.cs | HUD test+LocalPunch 합성·BossMecha·encounter/flow/feedback configure | UpdateOwnedScene 저장, 기존 씬 Build 거절은 좋은 보호. ConfigureGame은 최신 tuning 일부 강제함
+E/RobotPlayerBuild.cs | RobotPlay Windows 개발빌드 | 최신 통합/Quest 빌드 아님
+E/IntegratedNetworkBuild.cs | 순수검사+UpdateOwnedScene+통합 Windows 빌드 | 빌드검사 전에 authored scene 변경. 플랫폼/소스/scene hash 표시 필요
+E/PunchAssetProbe.cs | 콕핏5종/asset·rig 조사 | 전투 모델 연결 계약 공유; 실행하지 않음
+
+범위 공유 보조 코드(별도 담당과 겹침, 전투 경로 확인용):
+R/RobotPilotInput.cs | XR/desktop source·grip/trigger edge·tracking·calibration·movement → Submit. 입력/몸파트 소유와 합의.
+R/IntegratedOnlineState.cs | run/lesson/attack/boost/bodyDamage frame, host start/restart epoch, client visual playback. HP snapshot과 별도 발행.
+R/IntegratedLanRules.cs | 순서/권한 규칙 순수함수. Boss 권한과 공통 계약.
+R/IntegratedFeedback.cs | controller 햅틱/사운드 및 reset. 추가 실제 모터 없음.
+R/RobotFeedbackView.cs | 초기 전투 text/visual feedback; 통합에 잔여 serialized 참조도 있음. 전시 HUD와 혼동 금지.
+R/RobotRigVisual.cs | 로봇 팔 model bone과 rig 표시 연결. missing model은 전투 판정 정상과 별개의 P0.
+R/IntegratedCockpitSelector.cs | existing5 cockpit/view; 전투 state 유지 인터페이스.
+R/RobotNetworkSmoke.cs, IntegratedNetworkSmoke.cs | 런타임 args로 동적생성되는 검증 driver, 전투·재시작·명령/진단 snapshot 관찰. serialized 참조 없어도 미사용 dead code라고 단정 불가.
+Tools/Validation/IntegratedOnlineProcesses.py 등 | Windows 다중 process 검사. 기존 exe와 현재소스 일치 필요, 실제 2PC/HMD 증거 아님.
+
+5. 씬·프리팹·모델 및 호출 연결
+5-1. 통합 authoritative chain
+RobotPilotInput.ReadXR/Desktop → RobotPlaySession.Submit/Accept (권한/sequence/거리/속도) → LateUpdate Sample(trajectory)·Pose(ControllerArmFollower/ElbowHint) → contact.ConstrainPose → target.RegisterHit/OnContact 또는 지속 IsBlocked fallback → TryPunchContact → RobotCombat.Hit(vulnerable) → Feedback → session RPC → HUD.Confirmed→Flow.lesson / feedback 진동·소리 / cue boost.
+명중후 boost는 Hit가 아닌 다음 Sample:83-87에서 직접 BossHealth 추가감소한다. 따라서 'Hit만 막기'로 비전투 피해 게이트를 완성할 수 없다.
+Flow.Retry → boss.Stop/driver.ResetMotion → session.ResetSimulation(Combat.Reset/contact reset) → pilot.Recenter → Hud damage reset → online.AuthorityReset(epoch) → Calibrating.
+Flow가 두 팔 Ready .35s/online StartRequested를 확인해 Begin → Warning → TryPunch → FBX PunchImpact → BossAnimationEvents → driver.OnPunchImpact → BossHeavyPunch.AnimationImpact → collider[] → IntegratedBossEncounter.Impact → RobotCombat.ReceiveAttack → recovery/반격 window → 다음 공격. Flow Battle에서 HP0이면 terminal/Stop.
+
+5-2. 저장 참조
+S:15149-15201 Session component560419632: contact1473419225, target2002046135, robotRoot1473419226, requiresAttackButton/strict/postBoost/cooperative 모두1, HP160/100, trainingWindow1/externalBossTimeline1. :15635-15661 Flow→pilot560419633/bridge560419637/boss560419640; encounter→driver1812169574, warning1.5/recovery.8/sidestep.5/피해12,20,16; opening4/target300.
+S:47871 BossMecha source GUID b042c21d9676caa4285bf8e77f2a310e. prefab:2443 BossCombatController.target fileID0, :2465 maximumHealth500. ModelTest에서는 BossCombatTarget(dummy HP300)를 별도로 연결한다. S에 receiver script GUID 직접 참조도 없고 builder는 receiver 생성/연결하지 않는다. 현재두 HP 계층은 연결되지 않았으며 지금 이중피해가 재현되었다고 주장하지 않는다.
+S:46274 driver hitRadius override, builder:44에서는 .75로 설정한다. 모든 모델 child collider 비활성화(builder:42); 게임의 boss contact target은 별도 BoxCollider. 임팩트시 플레이어 robotRoot 자식 candidate만 소비한다. 부위손상은 rightarm/torso 시험맵이며 해부학 판정 아님.
+S:5721/22438 player arm source GUID6bac2a1fb3671154babb96bd29e3fad7는 과거 모델누락 근거 위치. 현존 RigPath는 E/RobotPlayBuilder:16 v025 FBX. 이번 텍스트 참조만 확인; 활성 renderer0/mesh실제 누락은 10/13 Unity 근거다. 모델복구는 아트·입력 담당 우선 공유.
+RobotPlay.unity/LocalPunchTest.unity는 Session/Pilot/Contact/Target/Rig/Feedback을 직접 참조하나 Flow/Encounter/Online 등 최신 통합 기능은 없다. 초기가드bonus/후퇴 z거리·precontact boost가 남은 별도 prototype이다.
+B/Scenes/BossModelTest.unity: driver/controller/target와 demo/test UI를 직접 포함. BossAttackTest는 capsule heavyPunch timer+movement 검사. BossMovementTest/RotationTest는 각각 기초 구현 검사용. 최종 시연 scene로 혼동하지 않는다.
+
+5-3. 아트 chain
+BossMecha.prefab → BossAnimator.controller → Idle/Walk/Punch/TurnLeft/TurnRight 및 Combat_*/DrawSword/SheatheSword/SwordIdle clips → compatible v026 skeleton/skin/materials. B/Models/BossUpdatedCompatible.fbx 메타 GUID a720a7d3114daf9499c39570721164c1. installer source는 _Project/02_Art/01_Models/mecha-finger-rig-mixamo-v026dsadsfadf.fbx(:10). B/Animation/Punch.fbx.meta:60,67 PunchImpact/PunchFinished 이벤트 유지. 모델 FBX+generated mesh/CompatibleSkins/Surface 자료의 내부 완전성은 Unity 재임포트 없이 확정 불가.
+CombatSource→baked Combat .anim→14 SO .asset clip GUID→controller 상태. HeavyPunch는 clip0이나 driver legacy Punch; Missile/Laser도 clip0이나 projectile/laser 구현. 나머지 여러 패턴은 같은 Grab/SwordSlash/PowerUp를 공유한다. 서로 다른14개 모션이 확보된 것으로 세면 안 된다.
+ArtSource/BossV11/Boss_v011.blend 등 최신원본은 현재 BossMecha compatible 모델과 동일적용본이 아니다. 아트교체가 판정/크기/거리/본/클립까지 호환한다는 증거 없음.
+외부 직접사용: UnityEngine Physics/Animator/Rendering/UI, InputSystem XRController/actions, Unity.Netcode NetworkBehaviour/NetworkVariable/Rpc, UTP transport, URP Unlit, VRMPAssets 임시4SFX. 패키지 내부 전체감사는 담당범위 밖. packages 설치존재를 실기/Android 정상작동 근거로 쓰지 않는다.
+
+6. 검증된 결함 / 추정 위험 / 기획 미정
+6-A. 코드에서 확인한 결함·최신 요구와의 불일치
+D1 [P0] 오프라인 Calibrating 중 적중 피해 가능. Flow.Retry:45 trainingWindow=true/open; Session.TryPunchContact:331은 NetworkActive일 때만 IsBattle 차단. LateUpdate:275 Sample 및 :287 contact는 오프라인 Calibrating에도 수행. :278 movement gate도 오프라인은 항상 통과. 과거 준비중 피해 재현과 동일 원인. online과 offline 공통 진행게이트가 필요하되 중립 보정용 pose 샘플은 계속 허용해야 한다.
+D2 [P0] 회피가 절대x 기반. Encounter:54 abs(world x)>=.5이면 접촉 candidate가 있어도 회피 성공. attack 시작/경고·impact 시각 사이 이동량/수행동작/방향/입력협동을 저장하지 않는다. 이미 옆에 서 있거나 계속 스틱 유지한 것도 통과. 새 실행 재현은 안 했으나 조건식은 명백하고 과거실행과 일치.
+D3 [P1] 일반공격은 항상 오른팔가드. Encounter:47 SetBossWindow(false,1,...) 및 :59 ReceiveAttack(1,...), Cue:21 RIGHT GUARD. 해당팔방어를 좌우 공격마다 학습할 수 없다. 일반·강·불가 모두 TryPunch(:45)라 모션 구분/번갈아 가드 전투 미연결.
+D4 [P1] 전투 이동이 정해진 동작이 아니다. Session:281 매프레임 속도적분, :282 x[-.7,.7]/z[-1,.15] clamp. 사거리 도달 정지/회피유효시간/후퇴 목적지/자동대면 없음. 두명 같은방향 발동 규칙은 공통기준에서 확정됐다. 자유평행이동을 전투접근/후퇴/회피 완료라고 표시하면 안 된다.
+D5 [P1] '양쪽이 서로 필요'한 진행은 보장되지 않음. Combat:149-167 단독 잽8/훅20 가능, HP160. Flow:78-79은 lesson Complete 이전에도 승리. 한쪽 단독잽20회/훅8회로도 HP0 경로가 있다(산술/코드 근거, 이번 플레이 재현 아님). Lesson.Jab/Hook은 어느 side든1번, Defence는 anyGuard/anyDodge, Combo는 Combo event만으로 완료하여 추가Boost 경험을 요구하지 않음. 두 사람 각각 조작 경험·협동의 필연성은 기획검토 항목.
+D6 [P1] 성공방어 보상창이 통합에서 사라짐. Session:318에는 guardBonus 있으나 :311 externalBossTimeline return. Encounter:62 동일 recovery .8; Hit시 phase열림 자체는 있되 Guard/Dodge 성공에 따른 연장없음. 과거 '둘다 해보자' 방향과 차이. 정확한 값은 미정.
+D7 [P1] HUD 회피 관측이 이중체계. HUD:74-75는 old phase0→1/같은HP/z<=-.55면 회피 숫자와 BODY MOVEMENT 메시지. Encounter는 실제candidate 부재 또는 abs x로 DodgeCount. 뒤로 서있기만 해도 HUD 회피 표시는 가능한 조건. 실제 공격결과 이벤트를 단일 소비해야 한다.
+D8 [P2] 재시작 메타데이터 일부잔류. Encounter.Begin:31은 counters/attacks reset하지만 AttackSerial, punchBegan, Kind는 reset 안함; Stop:36은 Phase만 Idle. serial누적은 online 재생차별화를 위한 의도일 수 있어 무조건버그 아님. MechaVRBossTarget.HitCount(:27)·LastArm/Point/Speed는 resetAPI 없음. ResetSimulation:341-343은 Combat HP/콤보/입력·body·contact를 reset하나 Snapshot offline/replicated는 다음 LateUpdate에 갱신. 관찰 가능한 stale값/진단누적은 코드확인, 실제 영향은 재시작 timing검사 필요.
+D9 [P1 검증체계] IntegratedPlayValidation:47/PunchPhaseValidation:14/IntegratedNetworkBuild:11이 UpdateOwnedScene→save를 먼저 함. RobotPlayValidation:24는 Build. 원본 scene 그대로 정상 여부를 테스트하지 않는다. 모델없음·비전투 피해·회피FalsePositive가 기존PASS와 함께 남는 이유.
+
+6-B. 추정 위험(새 runtime 검증없음, 확정버그 수에 넣지 않음)
+R1 dual HP/피해이벤트: BossCombatController.Awake:53과 Encounter.Start:27이 같은 ImpactChecked 구독. 지금 receiver없어 실험피해가 적용되지 않지만 adapter 없이 BossCombatTarget 붙이면 두 체계가 동시에 소비 가능. 통합 HP와 labHP/가드0 vs10%·parry 정책 충돌.
+R2 boost edge의 시간 validation 순서: Combat.Sample:80 유한now는 검사하지만 boost처리83-87 뒤에89 중복/out-of-order 시각 차단. 보통 Session은 received>lastSample 조건이라 직접노출 완화; 앞으로 replay/adapter 직접호출 시 과거시각 boost를 받아들일 여지. Hit(now)는 유한시각 자체검사 없음. public ReceiveAttack side/음수damage 검증도 caller계약에만 의존. 외부입력/장치 연결 전 순수함수 입력계약 강화 후보.
+R3 콤보 UI next/deadline·실패원인 미전송/미표시: RobotSnapshot next는 있지만 HUD:80 combo n/2뿐. ComboDeadline과 실패원인은 frame없음. 2.4s/.45s는 latency·초보 학습·.15s samplegap·중립 dwell에 민감. 지연서버 sample now는 도착시각(Accept:259-262).
+R4 impact는 animation Update에서, guard/sample은 Session LateUpdate에서. 새 guard가 같은 frame 도착하면 이전샘플 판정일 수 있음. boundary ordering/기기지연 확인 필요.
+R5 준비중 보스를 HP0까지 깎으면 Combat.Sample:80이 further sample 거절하므로 두팔 Ready 전이/진행이 막힐 가능성. D1의 파생경로이며 이번 직접 재현 안 함.
+R6 tracking·지터: guard offset.y>=.4/Moving아님만 판정(:111). 손이 뒤·옆에 있는 경우도 높이충족 가능. 실측이 필요. rotation identity는 의도적으로 손목노이즈를 제거하지만 실제 wristTurn 데이터로 튜닝한다고 주장할 수 없음.
+R7 contact 최대서브스텝/ComputePenetration·본 First 탐색·SphereCastAll/Sort·레이저RaycastAll·런타임 생성/파괴 비용. 코드구조만 확인, 실제 Quest/PC 프레임성능 수치 없음.
+R8 클립속도 slow는 .22초/.35 시각만, simulation boost .45s timer 유지. OnlineState.punch는 wall elapsed, client Play normalized based elapsed라 host slow와 client animation 위치가 잠깐 다를 수 있음. 렌더 restore/네트워크 클럭 테스트와 HMD체감 별도.
+R9 승패 프레임·재시작 fresh input·recenter release 및 menu-open damage: 메뉴는 objective 숨김/표시인데 combat gate없음. 메뉴가 pause인지 최신규칙 미정이라 지금 결함으로 단정하지 않음. 재시작 직후 오래된 snapshot/feedback epoch·button-held 유령공격 순서 확인 필요.
+
+6-C. 기획 미정(코드의 기본값을 결정으로 삼지 않음)
+부스트 슬로우강도·피해·창 길이, 오른손시작 선호를 LRL금지로 만들지 여부, 잘못된 공격종류·단독 일반훅 허용, 실패/일반/강공격 피해량·가드자세 허용범위, 회피유효시간/거리·재사용/이동중취소·방향변경, 일반/전투 이동전환조건·이번 전투외이동 납품필수범위, 정확한 체험시간·이번 출격/정비/합동피니시 포함, timeout/운영자 skip/학습failsoft, 플랫폼과 시야 comfort값, 모터통신·한계값. 적중후 부스트 순서·강공격 양팔/성공0/한팔실패·두명같은방향 발동은 미정이 아니다. 이 결정들이 없다고 D1/D2/D9 같은 공통 경계문제까지 막힐 이유는 없다.
+
+7. P0/P1/P2 권장 순서와 완료검증 기준
+P0-1 전투진행과 피해허용 통일: R/Session:275,278,329-335 + R/Flow:38-45,70-79 + R/Combat:83-87. pose/tracking/중립보정은 유지하면서 HP·콤보·추가boost·보스공격/이동만 허용상태를 따르게 한다. 별도 Battle 상태를 RobotCombat에 중복저장하기보다 simulation이 권한/진행을 결정하는 인터페이스 제안.
+완료: 오프라인/host/client에서 준비0명·1명·2명/대기/이탈/terminal/retry 직후 주먹접촉·trigger·늦은feedback를 줘도 HP/hits/combo 증가없음. Battle 진입후 같은 정상입력은 작동. Ready 보정/팔따라가기·추적유실복구는 유지. 메뉴 pause 규칙은 별도 확정.
+P0-2 공격별 실제이동 회피: R/Encounter:45,49-64 + Session:280-307. AttackSerial/시작pose/attack timing과 이동동작 완료를 연결. 특정 attack의 유효구간 내 실제 body displacement와 충돌결과를 분리 기록. 두명 같은방향 발동은 유지하고 정확한 창/거리/재사용·취소는 임시튜닝 또는 후속 합의.
+완료: 미리 x=.6에 정지/계속 누르고만있기/제자리/좌표맵원점변경/늦은회피/반대입력/한명입력은 성공0. 유효구간 실제이동은 성공1, 같은impact 중복0. collider miss는 물리빗나감과 협동회피성공을 구분한다(학습이 단순miss만으로 완료되지 않아야 할지 기획결정).
+P0-3 저장된 scene 무변경 검사: E/IntegratedPlayValidation:47 등. 생성·설치와 smoke/regression 분리, sourcecommit/scenepath/hash/platform을 결과에 남김. 팔model/active renderer/bodyCollider/driver/events/HP소유자 검사 아트·입력파트와 공유. 기존모델복구는 해당파트 P0, 본파트는 판정·render 정상 기준 제공.
+
+P1-1 해당팔 guard+소수 맨손보스 패턴 선정: Encounter:21,45,47,59, B/Patterns/AlternatingCombo:11-16, Controller:168. 왼·오 단발/번갈아·강·불가의 대응이 보기/소리로 납득되어야 함. 14개 전체연결 전에 권한·singleHP adapter 계약을 확정. 강공격 양팔/성공0/한팔실패는 유지하고 피해수치는 조정값으로 검증.
+P1-2 협동학습/승리/시간관계: Flow:47-53,74,78-85 + Combat:149-167. RLR 우선안내, partner 차례·남은시간·중립복귀·그립유지·실패사유. 기존 LRL은 금지확정 전 유지. 1인만공격해도 바로승리하는 구조가 체험목표를 충족하는지 결정.
+완료: 실제초보2명이 각자 팔권한을 설명없이 인지, 순서교대/guard와 valid dodge/boost 추가입력의 인과를 경험; 실패→회복→재시도가 안내되고 승패→다음 사용자 초기화 완결. 완료율/시간목표 수치는 사용자확정 후 기록.
+P1-3 정해진 접근/후퇴/회피+카메라 comfort: Session:280-282, B/Movement:60-95/Rotation:58-81 참조가능. 목적거리·action 진행/취소 인터페이스에 확정된 두명같은방향 입력을 연결. 고정Clamp와 기존일반stick는 임시테스트로 구분.
+P1-4 재시작 전체상태/HP·HUD·피드백 한결과: Flow:42-45, Session:337-343, Target:25-32, OnlineState.AuthorityReset/Frame. sessionID/epoch별 AttackSerial와 contactdiagnostics의 누적 여부 정의. reset후화면·물리·권한이 같은 HP/phase로 시작하고 trigger/grip 유지·늦은RPC로 피해 안 생김.
+
+P2 유지보수/성능: Controller.HandPoint:137 본 cache/명시reference, 각 public 입력유한/side/damage 검사, 실험값을 설정자산/문서로 묶기, 구형 help정리(PilotInput:157 boost DURING 문구), pulse/음향/부스트 render profiling. 실험실14패턴 확장은 플레이어행동/시연scope 승인 후. 검·드론·총·미사일·합동필살기·모터를 맨손 진단만으로 임의 착수하지 않는다.
+
+8. 재사용할 구현과 비연결/구형 구현
+재사용: 순수 RobotCombat+PunchTrajectoryRecognizer의 contact 기반피해/중복소비/복귀/샘플유실/좌우대칭; Server-authoritative Feedback/role/sequence; MechaVR swept pose; BossHeavyPunch 후보1회+animationevent; Driver lock복원/timeout; 손/발 pose restore; optional cue render복원; 순수/합성검사 자산. 모두 이번 실행 PASS라는 뜻은 아님.
+비연결: BossCombatController의14패턴·lab HP/Target/Status/코어·잡기·투사체; 보스 lab 접근·대면; 플레이어 WeaponMode; BossV11 게임적용; 실제 device motor.
+구형이지만 보존할 fixture: RobotPlay.unity 기본 boss z거리/guardbonus/precontact boost, LocalPunchTest one-user양팔, BossMovement/Rotation/Attack capsule씬, RobotPlayValidation/RobotLocalBothValidation. 최신통합으로 변경 없이 사용하면 규칙오해 가능. 복구/수작업 모델/검/손/발 결과는 보존하고 통합으로 선택적이식.
+
+9. 다른파트와 겹치는 파일/인터페이스
+공유핵심 R/RobotPlaySession.cs: 입력(Submit/LoseTracking/Recenter), 네트워크(Authorized/Accept/RPC/Snapshot), 포즈/몸(Neutral/Pose/robotRoot), 전투(Combat/SetBossWindow/Feedback), reset이 함께 있음. 소유자·작업순서 합의없이 동시수정하면 병합/규칙충돌.
+R/RobotPilotInput.cs + C/PunchTrajectoryRecognizer.cs + _Project/01_Scripts/04_VR/ControllerArmFollower.cs/ControllerElbowHint.cs/ArmMotionInput.cs/RigidWristConstraint 관련: 좌표단위·motionScale·중립/유실·그립/boost edge·실제Rotation vsIdentity 계약 공유.
+R/IntegratedOnlineState.cs / IntegratedLanRules.cs / NetworkSmoke 2종: RunState/epoch/attack serial/boost deadline/current side/status 명세가 바뀌면 frame serialize/equality·host/client HUD·검증도 함께변경. 본파트가 임의 LAN ownership 변경하지 않는다.
+R/IntegratedCombatHud.cs + HudUI/Runtime/SuitHudController.cs/SuitDamageState.cs/BattlefieldGuide.cs: Confirmed/HP·attack result/NextSide/ComboDeadline/실패reason와 메뉴규칙 공유. HUD부위손상은 시험mapping임을 유지.
+R/IntegratedFeedback.cs / IRobotFeedback, FeedbackKind: Hit/Guard/Damage/Combo/Boost/Defeated 승인사실→햅틱. future 모터adapter는 별도허가/제한. Combo+Hit 동시이벤트는 pulse queue 강도합성 중복정책 유지.
+S / RobotPlay2씬 / B/Generated/BossMecha.prefab / BossAnimator.controller / clip meta / player FBX meta: 아트·scene입력 담당과 보스접촉Box/robotCapsule/실제팔rig/hitRadius/레이어27·타격순서 합의. 모델골격/스케일변경하면 판정재검증.
+E/IntegratedPlayBuilder.cs/Validation/NetworkBuild와 Tools/Validation/IntegratedOnlineProcesses.py: builder 덮어쓰기/검증소스식별 계약. 차기개발은 총괄 지정 codex/전용브랜치·격리작업폴더에서 진행 예정이며 지금 공유checkout은 읽기진단만 유지.
+
+10. 실기기 필요 항목과 새 실행 검증의 구분
+소프트웨어 후속: 순수규칙(현 default와 integrated 각각), 원본scene 무수정boot, 합성XR contact/trajectory/grip/boost/보스event, 상태경계표, offline/host/client 재시작·이탈·epoch, 새 build식별자 기록. 이번에는 실행하지 않았으므로 '통과'란 없음.
+실제 Quest3 두 대/PC 두 대: 좌우 담당팔·보조손 입력배치, 초보사용자 잽/훅/guard 오인식·체격/앉기서기·손유실복구, 닿음/막음/피격·추가boost의 시각/소리/진동동기, 2.4s/.45s latency체감·재접속·app suspend/복귀, 강/불가 예고 식별, 전투이동 멀미/HMD comfort·반구화면/동료/자기몸 가독성, 10회이상 연속운영 reset 안정성(횟수는 권장, 확정기준 아님).
+PCVR 후보: 실제 Link/AirLink 등 채택경로에서 frame time/최악collision/팔 latency. Quest standalone 후보: Android 빌드설치/입력·shader/RT·메모리/발열·지속성능. 현재 Windows검증으로 Android 또는 실기정상 선언 금지.
+외골격은 상태이벤트 인터페이스 검토만. 통신/제한·저항해제의 장치 검증은 허가 및 장치설계 확정 이후 별도 담당. 이번 진단/후속 첫작업에 모터 출력 없음.
+
+11. 기획 확정 없이 안전하게 착수할 첫 작업 하나(아직 실행하지 않음)
+후속 개발 허가 및 총괄의 격리작업공간 지정 후, '비전투 상태의 피해 차단'을 첫작업으로 권장한다. R/RobotPlaySession.TryPunchContact·Sample(추가boost)·기본Boss update를 공통 진행허용 계약으로 묶되 pose/Ready·tracking은 계속 갱신. offline/online 공통 Calibrating/Waiting/Terminal 경계검사를 E/IntegratedPlayValidation 또는 생성과 분리된 새 검증으로 추가한다. HP/피해수치·combo시작팔 제한·부스트창·회피거리 수치를 결정하지 않아도 가능한 작업이며 사용자 과거자산을 되돌리지 않는다. 단순 TryPunchContact 한 줄만 고치고 Sample boost경로/중립보정/online 경계검증을 빠뜨리지 않는다.
+
+12. 조사 범위 부록 안내
+뒤에 자체 소스 및 관련 자산 파일 목록을 첨부한다. 목록 존재는 파일 내부/실기 정상완료의 뜻이 아니다. 동일이름 .meta는 GUID/직렬화연결 확인용이며 생성하거나 변경하지 않았다. 작은 Runtime/패턴과 핵심진행은 전문을 읽었고 큰 Editor/검증/모델자료는 관련 entry·호출·assert·save·reference를 중심으로 읽었다. 모든 텍스처 픽셀·mesh vertex·곡선 키를 전수육안검사한 것은 아니다.
+
+부록 A. 담당 폴더/궤적 파일 전체 목록(1681개, meta 포함; bytes는 파일크기이며 runtime memory 아님)
+AnseongSteel/Assets/_BossPrototype/Animation.meta | 180 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat.meta | 180 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/AlternatingCombo.anim | 9284325 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/AlternatingCombo.anim.meta | 260 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/Death.anim | 11227521 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/Death.anim.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/DrawPull.anim | 3496189 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/DrawPull.anim.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/DrawReach.anim | 2247985 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/DrawReach.anim.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/DrawSword.anim | 24279771 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/DrawSword.anim.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/Feint.anim | 8511684 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/Feint.anim.meta | 260 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/Grab.anim | 5392337 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/Grab.anim.meta | 260 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/GroundCast.anim | 21292317 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/GroundCast.anim.meta | 260 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/OverheadSmash.anim | 5806897 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/OverheadSmash.anim.meta | 260 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/PowerUp.anim | 15671882 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/PowerUp.anim.meta | 260 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/SheatheSword.anim | 31980194 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/SheatheSword.anim.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/Stagger.anim | 5414626 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/Stagger.anim.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/SwordIdle.anim | 6904571 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/SwordIdle.anim.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/SwordSlash.anim | 8131776 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/SwordSlash.anim.meta | 260 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/WalkBackward.anim | 4624899 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Combat/WalkBackward.anim.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource.meta | 180 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/AlternatingCombo.fbx | 379376 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/AlternatingCombo.fbx.meta | 3002 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/Death.fbx | 461105 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/Death.fbx.meta | 3002 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/DrawGreatSword1.fbx | 234368 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/DrawGreatSword1.fbx.meta | 3002 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/DrawGreatSword2.fbx | 286736 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/DrawGreatSword2.fbx.meta | 3002 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/DrawPull.fbx | 286737 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/DrawPull.fbx.meta | 3002 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/DrawReach.fbx | 234353 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/DrawReach.fbx.meta | 3002 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/Grab.fbx | 623968 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/Grab.fbx.meta | 3002 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/GroundCast.fbx | 510961 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/GroundCast.fbx.meta | 3002 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/OverheadSmash.fbx | 309281 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/OverheadSmash.fbx.meta | 3002 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/PowerUp.fbx | 470145 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/PowerUp.fbx.meta | 3002 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/SheathGreatSword1.fbx | 277952 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/SheathGreatSword1.fbx.meta | 3002 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/SheathGreatSword2.fbx | 331568 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/SheathGreatSword2.fbx.meta | 3002 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/Stagger.fbx | 323569 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/Stagger.fbx.meta | 3002 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/SwordIdle.fbx | 371089 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/SwordIdle.fbx.meta | 3002 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/SwordSlash.fbx | 364753 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/CombatSource/SwordSlash.fbx.meta | 3002 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Idle.fbx | 22699344 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Idle.fbx.meta | 3859 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Punch.fbx | 22555408 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Punch.fbx.meta | 4271 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/TurnLeft.fbx | 22367312 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/TurnLeft.fbx.meta | 3862 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/TurnRight.fbx | 22376240 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/TurnRight.fbx.meta | 3863 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Walk.fbx | 22410656 bytes
+AnseongSteel/Assets/_BossPrototype/Animation/Walk.fbx.meta | 3859 bytes
+AnseongSteel/Assets/_BossPrototype/Combat.meta | 180 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/AlternatingCombo.asset | 1058 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/AlternatingCombo.asset.meta | 197 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/ArmLock.asset | 1049 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/ArmLock.asset.meta | 197 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/AttackPreview.mat | 1970 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/AttackPreview.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/EMP.asset | 1041 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/EMP.asset.meta | 197 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/Feint.asset | 37976 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/Feint.asset.meta | 197 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/Grab.asset | 1045 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/Grab.asset.meta | 197 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/HeavyPunch.asset | 997 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/HeavyPunch.asset.meta | 197 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/LaserSweep.asset | 993 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/LaserSweep.asset.meta | 197 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/MissileBarrage.asset | 996 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/MissileBarrage.asset.meta | 197 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/MissilePreview.mat | 1967 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/MissilePreview.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/OverheadSmash.asset | 26649 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/OverheadSmash.asset.meta | 197 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/SensorJam.asset | 1048 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/SensorJam.asset.meta | 197 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/Shockwave.asset | 80129 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/Shockwave.asset.meta | 197 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/SwordSlash.asset | 45774 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/SwordSlash.asset.meta | 197 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/VisionDisruption.asset | 1055 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/VisionDisruption.asset.meta | 197 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/WeaponBreak.asset | 45777 bytes
+AnseongSteel/Assets/_BossPrototype/Combat/WeaponBreak.asset.meta | 197 bytes
+AnseongSteel/Assets/_BossPrototype/Editor.meta | 180 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossAttackFootPolish.cs | 8380 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossAttackFootPolish.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossAttackPoseAudit.cs | 4812 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossAttackPoseAudit.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossCombatAnimationAudit.cs | 1200 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossCombatAnimationAudit.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossCombatAnimationBuilder.cs | 9513 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossCombatAnimationBuilder.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossCombatFinishInstaller.cs | 6637 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossCombatFinishInstaller.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossCombatInstaller.cs | 7723 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossCombatInstaller.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossCombatPolishAudit.cs | 1458 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossCombatPolishAudit.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossCombatPoseReview.cs | 5051 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossCombatPoseReview.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossCombatVerificationRunner.cs | 1458 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossCombatVerificationRunner.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossDemoHeadingFix.cs | 1986 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossDemoHeadingFix.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossHandPoseInstaller.cs | 3641 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossHandPoseInstaller.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossHandRigWorkshop.cs | 12906 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossHandRigWorkshop.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossModelSmokeTest.cs | 13916 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossModelSmokeTest.cs.meta | 62 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossModelTestBuilder.cs | 27996 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossModelTestBuilder.cs.meta | 62 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossSurfaceInstaller.cs | 5510 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossSurfaceInstaller.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossSwordCockpitInstaller.cs | 10498 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossSwordCockpitInstaller.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossSwordEquipBuilder.cs | 11285 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossSwordEquipBuilder.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossSwordFitAudit.cs | 1416 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossSwordFitAudit.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossSwordPolishInstaller.cs | 6675 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossSwordPolishInstaller.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossUpdatedModelInstaller.cs | 12396 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/BossUpdatedModelInstaller.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/extract_boss_surface.py | 1614 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/extract_boss_surface.py.meta | 162 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/make_boss_compatible.py | 1780 bytes
+AnseongSteel/Assets/_BossPrototype/Editor/make_boss_compatible.py.meta | 162 bytes
+AnseongSteel/Assets/_BossPrototype/Generated.meta | 180 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/Armor.mat | 3974 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/Armor.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/BossAnimator.controller | 19568 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/BossAnimator.controller.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/BossMecha.prefab | 417589 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/BossMecha.prefab.meta | 161 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/CockpitFrame.mat | 3977 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/CockpitFrame.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/CockpitTrim.mat | 3975 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/CockpitTrim.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/Floor.mat | 3972 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/Floor.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/GreatswordLongGrip.asset | 2267688 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/GreatswordLongGrip.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/Markings.mat | 3969 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/Markings.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/RedEmission.mat | 3974 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/RedEmission.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/Ring.mat | 3974 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/Ring.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/Target.mat | 3964 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/Target.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/TurnLeftInPlace.anim | 4568118 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/TurnLeftInPlace.anim.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/TurnRightInPlace.anim | 5119292 bytes
+AnseongSteel/Assets/_BossPrototype/Generated/TurnRightInPlace.anim.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models.meta | 180 bytes
+AnseongSteel/Assets/_BossPrototype/Models/BossUpdatedCompatible.fbx | 21112348 bytes
+AnseongSteel/Assets/_BossPrototype/Models/BossUpdatedCompatible.fbx.meta | 28834 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins.meta | 180 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin000.asset | 1334480 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin000.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin001.asset | 33017 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin001.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin002.asset | 33021 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin002.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin003.asset | 112320 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin003.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin004.asset | 112319 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin004.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin005.asset | 149034 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin005.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin006.asset | 149244 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin006.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin007.asset | 100094 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin007.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin008.asset | 100093 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin008.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin009.asset | 30972 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin009.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin010.asset | 30972 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin010.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin011.asset | 178482 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin011.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin012.asset | 178481 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin012.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin013.asset | 94931 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin013.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin014.asset | 94929 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin014.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin015.asset | 313948 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin015.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin016.asset | 116617 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin016.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin017.asset | 116615 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin017.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin018.asset | 131469 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin018.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin019.asset | 131468 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin019.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin020.asset | 117167 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin020.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin021.asset | 117161 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin021.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin022.asset | 122315 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin022.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin023.asset | 122312 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin023.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin024.asset | 114047 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin024.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin025.asset | 114046 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin025.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin026.asset | 101576 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin026.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin027.asset | 101570 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin027.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin028.asset | 30834 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin028.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin029.asset | 30828 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin029.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin030.asset | 83727 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin030.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin031.asset | 83724 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin031.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin032.asset | 89180 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin032.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin033.asset | 89178 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin033.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin034.asset | 91793 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin034.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin035.asset | 91790 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin035.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin036.asset | 117008 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin036.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin037.asset | 117007 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin037.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin038.asset | 97799 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin038.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin039.asset | 97798 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin039.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin040.asset | 98978 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin040.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin041.asset | 98974 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin041.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin042.asset | 112966 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin042.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin043.asset | 112892 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin043.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin044.asset | 98363 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin044.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin045.asset | 98361 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin045.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin046.asset | 102890 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin046.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin047.asset | 102887 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin047.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin048.asset | 88592 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin048.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin049.asset | 88590 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin049.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin050.asset | 95874 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin050.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin051.asset | 95874 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin051.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin052.asset | 100168 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin052.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin053.asset | 100165 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin053.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin054.asset | 99653 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin054.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin055.asset | 99650 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin055.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin056.asset | 101801 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin056.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin057.asset | 101798 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin057.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin058.asset | 93664 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin058.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin059.asset | 93661 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin059.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin060.asset | 99344 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin060.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin061.asset | 99338 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin061.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin062.asset | 98716 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin062.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin063.asset | 98713 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin063.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin064.asset | 104410 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin064.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin065.asset | 78036 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin065.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin066.asset | 78034 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin066.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin067.asset | 82438 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin067.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin068.asset | 82435 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin068.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin069.asset | 93435 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin069.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin070.asset | 93433 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin070.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin071.asset | 87736 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin071.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin072.asset | 87732 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin072.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin073.asset | 75947 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin073.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin074.asset | 75945 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin074.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin075.asset | 76446 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin075.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin076.asset | 76443 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin076.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin077.asset | 107887 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin077.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin078.asset | 75098 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin078.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin079.asset | 74960 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin079.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin080.asset | 74429 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin080.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin081.asset | 74426 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin081.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin082.asset | 85535 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin082.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin083.asset | 84018 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin083.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin084.asset | 84012 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin084.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin085.asset | 109512 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin085.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin086.asset | 79338 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin086.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin087.asset | 79335 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin087.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin088.asset | 75368 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin088.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin089.asset | 75366 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin089.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin090.asset | 76804 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin090.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin091.asset | 76803 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin091.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin092.asset | 67842 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin092.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin093.asset | 67841 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin093.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin094.asset | 70129 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin094.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin095.asset | 70126 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin095.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin096.asset | 75675 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin096.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin097.asset | 75672 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin097.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin098.asset | 70098 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin098.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin099.asset | 70096 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin099.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin100.asset | 71218 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin100.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin101.asset | 71216 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin101.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin102.asset | 71592 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin102.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin103.asset | 71797 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin103.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin104.asset | 78862 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin104.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin105.asset | 78862 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin105.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin106.asset | 71438 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin106.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin107.asset | 71435 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin107.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin108.asset | 72246 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin108.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin109.asset | 72243 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin109.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin110.asset | 76149 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin110.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin111.asset | 76146 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin111.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin112.asset | 94550 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin112.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin113.asset | 64342 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin113.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin114.asset | 64340 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin114.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin115.asset | 63543 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin115.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin116.asset | 63538 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin116.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin117.asset | 65203 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin117.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin118.asset | 65203 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin118.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin119.asset | 62726 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin119.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin120.asset | 62722 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin120.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin121.asset | 77229 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin121.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin122.asset | 58306 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin122.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin123.asset | 58306 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin123.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin124.asset | 63896 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin124.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin125.asset | 73719 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin125.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin126.asset | 72873 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin126.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin127.asset | 52794 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin127.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin128.asset | 52792 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin128.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin129.asset | 59638 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin129.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin130.asset | 59634 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin130.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin131.asset | 61468 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin131.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin132.asset | 61462 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin132.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin133.asset | 56998 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin133.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin134.asset | 56992 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin134.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin135.asset | 52304 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin135.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin136.asset | 52305 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin136.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin137.asset | 53678 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin137.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin138.asset | 53401 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin138.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin139.asset | 53399 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin139.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin140.asset | 54346 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin140.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin141.asset | 54342 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin141.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin142.asset | 50101 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin142.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin143.asset | 50102 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin143.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin144.asset | 50736 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin144.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin145.asset | 50737 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin145.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin146.asset | 51516 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin146.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin147.asset | 51517 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin147.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin148.asset | 46181 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin148.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin149.asset | 46178 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin149.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin150.asset | 43491 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin150.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin151.asset | 43488 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin151.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin152.asset | 46061 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin152.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin153.asset | 46059 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin153.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin154.asset | 43118 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin154.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin155.asset | 43115 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin155.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin156.asset | 43931 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin156.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin157.asset | 43926 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin157.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin158.asset | 41639 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin158.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin159.asset | 41635 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin159.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin160.asset | 40529 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin160.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin161.asset | 40525 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin161.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin162.asset | 43633 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin162.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin163.asset | 43632 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin163.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin164.asset | 40832 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin164.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin165.asset | 40828 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin165.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin166.asset | 41241 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin166.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin167.asset | 41240 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin167.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin168.asset | 34082 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin168.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin169.asset | 34081 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin169.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin170.asset | 34089 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin170.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin171.asset | 34085 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin171.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin172.asset | 33848 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin172.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin173.asset | 33845 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin173.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin174.asset | 35927 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin174.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin175.asset | 35920 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin175.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin176.asset | 35215 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin176.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin177.asset | 35213 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin177.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin178.asset | 33321 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin178.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin179.asset | 33322 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin179.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin180.asset | 33385 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin180.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin181.asset | 33384 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin181.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin182.asset | 33179 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin182.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin183.asset | 33175 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin183.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin184.asset | 35870 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin184.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin185.asset | 35870 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin185.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin186.asset | 35245 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin186.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin187.asset | 35240 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin187.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin188.asset | 32939 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin188.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin189.asset | 32937 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin189.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin190.asset | 34236 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin190.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin191.asset | 34234 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin191.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin192.asset | 31549 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin192.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin193.asset | 31543 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin193.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin194.asset | 32450 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin194.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin195.asset | 32447 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin195.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin196.asset | 31930 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin196.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin197.asset | 31933 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin197.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin198.asset | 31472 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin198.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin199.asset | 31468 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin199.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin200.asset | 31848 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin200.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin201.asset | 31844 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin201.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin202.asset | 31283 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin202.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin203.asset | 31279 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin203.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin204.asset | 31280 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin204.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin205.asset | 31274 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin205.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin206.asset | 31821 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin206.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin207.asset | 31818 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin207.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin208.asset | 31676 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin208.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin209.asset | 31674 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin209.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin210.asset | 30757 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin210.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin211.asset | 30759 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin211.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin212.asset | 31053 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin212.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin213.asset | 31052 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin213.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin214.asset | 30770 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin214.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin215.asset | 30763 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin215.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin216.asset | 30543 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin216.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin217.asset | 30538 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin217.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin218.asset | 30840 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin218.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin219.asset | 30838 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin219.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin220.asset | 30073 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin220.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin221.asset | 30072 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin221.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin222.asset | 30162 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin222.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin223.asset | 30161 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin223.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin224.asset | 30159 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin224.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin225.asset | 30156 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin225.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin226.asset | 30059 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin226.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin227.asset | 30056 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin227.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin228.asset | 30383 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin228.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin229.asset | 30382 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin229.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin230.asset | 30309 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin230.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin231.asset | 30307 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin231.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin232.asset | 30306 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin232.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin233.asset | 30305 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin233.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin234.asset | 30154 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin234.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin235.asset | 30155 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin235.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin236.asset | 45396 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin236.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin237.asset | 32327 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin237.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin238.asset | 32331 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin238.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin239.asset | 33216 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin239.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin240.asset | 33215 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin240.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin241.asset | 32255 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin241.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin242.asset | 32255 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin242.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin243.asset | 32256 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin243.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin244.asset | 32253 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin244.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin245.asset | 31921 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin245.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin246.asset | 31917 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin246.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin247.asset | 31908 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin247.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin248.asset | 31909 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin248.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin249.asset | 32126 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin249.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin250.asset | 32123 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin250.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin251.asset | 32991 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin251.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin252.asset | 32990 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin252.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin253.asset | 32793 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin253.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin254.asset | 32788 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin254.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin255.asset | 32692 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin255.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin256.asset | 32691 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin256.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin257.asset | 32491 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin257.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin258.asset | 32488 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin258.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin259.asset | 34303 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin259.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin260.asset | 34300 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin260.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin261.asset | 33967 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin261.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin262.asset | 41083 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin262.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin263.asset | 32320 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin263.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin264.asset | 30377 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin264.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin265.asset | 30377 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin265.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin266.asset | 30379 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin266.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin267.asset | 30379 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin267.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin268.asset | 30300 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin268.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin269.asset | 30301 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin269.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin270.asset | 30371 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin270.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin271.asset | 30366 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin271.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin272.asset | 30371 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin272.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin273.asset | 30369 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin273.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin274.asset | 67013 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin274.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin275.asset | 67020 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin275.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin276.asset | 30154 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin276.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin277.asset | 30151 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin277.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin278.asset | 30297 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin278.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin279.asset | 30296 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin279.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin280.asset | 30085 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin280.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin281.asset | 30082 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin281.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin282.asset | 30091 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin282.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin283.asset | 30088 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin283.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin284.asset | 30515 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin284.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin285.asset | 30515 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin285.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin286.asset | 30730 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin286.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin287.asset | 30728 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin287.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin288.asset | 31386 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin288.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin289.asset | 31384 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin289.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin290.asset | 34751 bytes
+AnseongSteel/Assets/_BossPrototype/Models/CompatibleSkins/Skin290.asset.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface.meta | 180 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/BossSurface.json | 85896 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/BossSurface.json.meta | 165 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials.meta | 180 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_JointOriginal_p63_v020.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_JointOriginal_p63_v020.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_JointOriginal_p87_v020.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_JointOriginal_p87_v020.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p10.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p10.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p100.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p100.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p103.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p103.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p105.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p105.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p106.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p106.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p108.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p108.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p111.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p111.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p114.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p114.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p115.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p115.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p118.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p118.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p119.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p119.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p120.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p120.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p122.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p122.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p125.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p125.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p127.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p127.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p128.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p128.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p131.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p131.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p133.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p133.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p135.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p135.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p137.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p137.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p139.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p139.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p141.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p141.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p143.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p143.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p145.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p145.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p147.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p147.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p152.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p152.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p153.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p153.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p155.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p155.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p156.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p156.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p157.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p157.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p162.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p162.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p163.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p163.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p166.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p166.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p167.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p167.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p168.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p168.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p169.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p169.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p17.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p17.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p172.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p172.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p173.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p173.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p174.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p174.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p175.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p175.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p177.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p177.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p181.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p181.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p183.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p183.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p184.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p184.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p186.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p186.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p188.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p188.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p189.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p189.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p19.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p19.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p190.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p190.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p191.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p191.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p192.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p192.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p193.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p193.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p197.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p197.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p198.mat | 4075 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p198.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p2.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p2.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p20.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p20.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p200.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p200.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p201.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p201.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p202.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p202.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p204.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p204.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p205.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p205.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p208.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p208.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p209.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p209.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p215.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p215.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p22.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p22.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p229.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p229.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p230.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p230.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p231.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p231.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p232.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p232.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p233.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p233.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p234.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p234.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p235.mat | 4078 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p235.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p25.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p25.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p27.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p27.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p28.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p28.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p30.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p30.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p31.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p31.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p33.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p33.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p34.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p34.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p35.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p35.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p38.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p38.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p39.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p39.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p4.mat | 4075 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p4.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p40.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p40.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p43.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p43.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p44.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p44.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p46.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p46.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p47.mat | 4074 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p47.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p5.mat | 4075 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p5.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p52.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p52.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p54.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p54.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p56.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p56.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p57.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p57.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p6.mat | 4075 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p6.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p60.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p60.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p62.mat | 4075 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p62.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p64.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p64.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p65.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p65.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p66.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p66.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p68.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p68.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p7.mat | 4075 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p7.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p70.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p70.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p71.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p71.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p72.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p72.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p74.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p74.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p75.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p75.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p77.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p77.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p8.mat | 4075 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p8.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p80.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p80.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p83.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p83.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p84.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p84.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p85.mat | 4075 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p85.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p88.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p88.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p89.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p89.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p9.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p9.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p91.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p91.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p93.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p93.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p95.mat | 4077 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p95.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p97.mat | 4076 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Armor_OriginalResolution_p97.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/RED_Emission_Floor_Only.mat | 4008 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/RED_Emission_Floor_Only.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Ring_Metal_Frame.mat | 4009 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Materials/Ring_Metal_Frame.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures.meta | 180 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-000.png | 12989 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-000.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-001.png | 12315 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-001.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-002.png | 30800 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-002.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-003.png | 26706 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-003.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-004.png | 35392 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-004.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-005.png | 10368 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-005.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-006.png | 528272 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-006.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-007.png | 42101 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-007.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-008.png | 28628 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-008.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-009.png | 12685 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-009.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-010.png | 384709 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-010.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-011.png | 31415 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-011.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-012.png | 88816 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-012.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-013.png | 12531 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-013.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-014.png | 106088 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-014.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-015.png | 112622 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-015.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-016.png | 112101 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-016.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-017.png | 140267 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-017.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-018.png | 6753 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-018.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-019.png | 6740 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-019.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-020.png | 10247 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-020.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-021.png | 11917 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-021.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-022.png | 10092 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-022.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-023.png | 23011 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-023.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-024.png | 32345 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-024.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-025.png | 8306 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-025.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-026.png | 9297 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-026.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-027.png | 2771 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-027.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-028.png | 37631 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-028.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-029.png | 34575 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-029.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-030.png | 7561 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-030.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-031.png | 96307 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-031.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-032.png | 2454 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-032.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-033.png | 7562 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-033.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-034.png | 2226 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-034.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-035.png | 45120 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-035.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-036.png | 11236 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-036.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-037.png | 7323 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-037.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-038.png | 2089 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-038.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-039.png | 87059 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-039.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-040.png | 10060 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-040.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-041.png | 2195 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-041.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-042.png | 108030 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-042.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-043.png | 12576 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-043.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-044.png | 147930 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-044.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-045.png | 28812 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-045.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-046.png | 32066 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-046.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-047.png | 8296 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-047.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-048.png | 33900 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-048.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-049.png | 8460 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-049.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-050.png | 10081 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-050.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-051.png | 29336 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-051.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-052.png | 76845 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-052.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-053.png | 103524 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-053.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-054.png | 4267 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-054.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-055.png | 32431 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-055.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-056.png | 39343 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-056.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-057.png | 63838 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-057.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-058.png | 31928 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-058.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-059.png | 31689 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-059.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-060.png | 105801 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-060.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-061.png | 73998 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-061.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-062.png | 38571 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-062.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-063.png | 94504 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-063.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-064.png | 29385 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-064.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-065.png | 29104 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-065.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-066.png | 99771 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-066.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-067.png | 88202 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-067.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-068.png | 104685 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-068.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-069.png | 128446 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-069.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-070.png | 29445 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-070.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-071.png | 71025 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-071.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-072.png | 23008 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-072.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-073.png | 37715 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-073.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-074.png | 113017 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-074.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-075.png | 30369 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-075.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-076.png | 74336 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-076.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-077.png | 90114 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-077.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-078.png | 3647 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-078.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-079.png | 78020 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-079.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-080.png | 11965 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-080.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-081.png | 3882 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-081.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-082.png | 27249 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-082.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-083.png | 615 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-083.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-084.png | 9754 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-084.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-085.png | 998 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-085.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-086.png | 10010 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-086.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-087.png | 8288 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-087.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-088.png | 450 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-088.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-089.png | 484 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-089.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-090.png | 421 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-090.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-091.png | 1167 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-091.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-092.png | 10451 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-092.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-093.png | 704 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-093.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-094.png | 606 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-094.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-095.png | 814 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-095.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-096.png | 11901 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-096.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-097.png | 28957 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-097.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-098.png | 746 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-098.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-099.png | 3369 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-099.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-100.png | 917 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-100.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-101.png | 3533 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-101.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-102.png | 1030 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-102.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-103.png | 899 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-103.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-104.png | 516 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-104.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-105.png | 3448 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-105.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-106.png | 2664 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-106.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-107.png | 3251 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-107.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-108.png | 2213 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-108.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-109.png | 3743 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-109.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-110.png | 1480 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-110.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-111.png | 738 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-111.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-112.png | 567 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-112.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-113.png | 1552 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-113.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-114.png | 663 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-114.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-115.png | 301 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-115.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-116.png | 488 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-116.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-117.png | 338 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-117.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-118.png | 1323 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-118.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-119.png | 873 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-119.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-120.png | 923 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-120.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-121.png | 550 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Surface/Textures/texture-121.png.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Sword.meta | 180 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Sword/BossGreatsword.fbx | 651136 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Sword/BossGreatsword.fbx.meta | 3411 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Sword/Greatsword_BaseColor.jpg | 3044005 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Sword/Greatsword_BaseColor.jpg.meta | 2769 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Sword/Greatsword.mat | 4053 bytes
+AnseongSteel/Assets/_BossPrototype/Models/Sword/Greatsword.mat.meta | 196 bytes
+AnseongSteel/Assets/_BossPrototype/README.md | 24989 bytes
+AnseongSteel/Assets/_BossPrototype/README.md.meta | 165 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime.meta | 180 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/BossAnimationDriver.cs | 9070 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/BossAnimationDriver.cs.meta | 62 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/BossAnimationEvents.cs | 386 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/BossAnimationEvents.cs.meta | 62 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/BossHeavyPunch.cs | 6021 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/BossHeavyPunch.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/BossMovement.cs | 6606 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/BossMovement.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/BossRotation.cs | 5846 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/BossRotation.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat.meta | 180 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossAttackDefinition.cs | 3000 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossAttackDefinition.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossChestLaser.cs | 5580 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossChestLaser.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossCombatController.cs | 16360 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossCombatController.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossCombatTarget.cs | 4203 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossCombatTarget.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossFootPoseInput.cs | 849 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossFootPoseInput.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossHandPose.cs | 6840 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossHandPose.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossMissile.cs | 1926 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossMissile.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossSwordAttachment.cs | 9011 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossSwordAttachment.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossSwordEquip.cs | 3068 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/BossSwordEquip.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns.meta | 180 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossAlternatingCombo.cs | 722 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossAlternatingCombo.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossArmLock.cs | 422 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossArmLock.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossAttackPattern.cs | 494 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossAttackPattern.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossEMP.cs | 347 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossEMP.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossFeint.cs | 749 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossFeint.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossGrab.cs | 416 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossGrab.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossHeavyPunchPattern.cs | 369 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossHeavyPunchPattern.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossLaserSweep.cs | 936 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossLaserSweep.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossMissileBarrage.cs | 556 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossMissileBarrage.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossOverheadSmash.cs | 538 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossOverheadSmash.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossSensorJam.cs | 359 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossSensorJam.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossShockwave.cs | 328 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossShockwave.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossSwordSlash.cs | 609 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossSwordSlash.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossVisionDisruption.cs | 373 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossVisionDisruption.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossWeaponBreak.cs | 485 bytes
+AnseongSteel/Assets/_BossPrototype/Runtime/Combat/Patterns/BossWeaponBreak.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Scenes.meta | 180 bytes
+AnseongSteel/Assets/_BossPrototype/Scenes/BossAttackTest.unity | 29323 bytes
+AnseongSteel/Assets/_BossPrototype/Scenes/BossAttackTest.unity.meta | 162 bytes
+AnseongSteel/Assets/_BossPrototype/Scenes/BossModelTest.unity | 503312 bytes
+AnseongSteel/Assets/_BossPrototype/Scenes/BossModelTest.unity.meta | 162 bytes
+AnseongSteel/Assets/_BossPrototype/Scenes/BossMovementTest.unity | 22356 bytes
+AnseongSteel/Assets/_BossPrototype/Scenes/BossMovementTest.unity.meta | 162 bytes
+AnseongSteel/Assets/_BossPrototype/Scenes/BossRotationTest.unity | 25196 bytes
+AnseongSteel/Assets/_BossPrototype/Scenes/BossRotationTest.unity.meta | 162 bytes
+AnseongSteel/Assets/_BossPrototype/Tests.meta | 180 bytes
+AnseongSteel/Assets/_BossPrototype/Tests/BossAttackTester.cs | 2260 bytes
+AnseongSteel/Assets/_BossPrototype/Tests/BossAttackTester.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Tests/BossCockpitView.cs | 1423 bytes
+AnseongSteel/Assets/_BossPrototype/Tests/BossCockpitView.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Tests/BossCombatTester.cs | 5384 bytes
+AnseongSteel/Assets/_BossPrototype/Tests/BossCombatTester.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Tests/BossCombatVerification.cs | 21894 bytes
+AnseongSteel/Assets/_BossPrototype/Tests/BossCombatVerification.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Tests/BossModelDemo.cs | 6029 bytes
+AnseongSteel/Assets/_BossPrototype/Tests/BossModelDemo.cs.meta | 62 bytes
+AnseongSteel/Assets/_BossPrototype/Tests/BossMovementTester.cs | 2795 bytes
+AnseongSteel/Assets/_BossPrototype/Tests/BossMovementTester.cs.meta | 60 bytes
+AnseongSteel/Assets/_BossPrototype/Tests/BossRotationTester.cs | 2388 bytes
+AnseongSteel/Assets/_BossPrototype/Tests/BossRotationTester.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/01_Scripts/01_Core/PunchTrajectoryRecognizer.cs | 11629 bytes
+AnseongSteel/Assets/_Project/01_Scripts/01_Core/PunchTrajectoryRecognizer.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor.meta | 180 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/IntegratedNetworkBuild.cs | 875 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/IntegratedNetworkBuild.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/IntegratedPlayBuilder.cs | 7555 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/IntegratedPlayBuilder.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/IntegratedPlayValidation.cs | 22342 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/IntegratedPlayValidation.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/IntegratedRulesChecks.cs | 6492 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/IntegratedRulesChecks.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/PunchAssetProbe.cs | 1471 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/PunchAssetProbe.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/PunchPhaseValidation.cs | 13805 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/PunchPhaseValidation.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotCombatChecks.cs | 5249 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotCombatChecks.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotLocalBothValidation.cs | 8119 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotLocalBothValidation.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotLocalPunchScene.cs | 1042 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotLocalPunchScene.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotPlayBuilder.cs | 10143 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotPlayBuilder.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotPlayerBuild.cs | 653 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotPlayerBuild.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotPlayValidation.cs | 6820 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Editor/RobotPlayValidation.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials.meta | 180 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Amber.mat | 3954 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Amber.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Cyan.mat | 3951 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Cyan.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Floor.mat | 3975 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Floor.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_JointOriginal_p63_v020.mat | 4011 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_JointOriginal_p63_v020.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_JointOriginal_p87_v020.mat | 4011 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_JointOriginal_p87_v020.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p10.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p10.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p100.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p100.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p103.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p103.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p105.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p105.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p106.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p106.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p108.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p108.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p111.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p111.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p114.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p114.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p115.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p115.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p118.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p118.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p119.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p119.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p120.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p120.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p122.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p122.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p125.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p125.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p127.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p127.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p128.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p128.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p131.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p131.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p133.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p133.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p135.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p135.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p137.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p137.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p139.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p139.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p141.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p141.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p143.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p143.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p145.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p145.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p147.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p147.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p152.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p152.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p153.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p153.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p155.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p155.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p156.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p156.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p157.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p157.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p162.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p162.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p163.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p163.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p166.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p166.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p167.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p167.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p168.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p168.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p169.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p169.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p17.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p17.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p172.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p172.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p173.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p173.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p174.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p174.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p175.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p175.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p177.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p177.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p181.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p181.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p183.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p183.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p184.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p184.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p186.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p186.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p188.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p188.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p189.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p189.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p19.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p19.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p190.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p190.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p191.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p191.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p192.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p192.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p193.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p193.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p197.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p197.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p198.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p198.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p2.mat | 4015 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p2.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p20.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p20.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p200.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p200.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p201.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p201.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p202.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p202.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p204.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p204.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p205.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p205.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p208.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p208.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p209.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p209.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p215.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p215.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p22.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p22.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p229.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p229.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p230.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p230.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p231.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p231.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p232.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p232.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p233.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p233.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p234.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p234.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p235.mat | 4018 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p235.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p25.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p25.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p27.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p27.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p28.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p28.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p30.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p30.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p31.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p31.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p33.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p33.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p34.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p34.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p35.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p35.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p38.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p38.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p39.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p39.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p4.mat | 4015 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p4.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p40.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p40.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p43.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p43.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p44.mat | 4015 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p44.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p46.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p46.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p47.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p47.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p5.mat | 4015 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p5.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p52.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p52.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p54.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p54.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p56.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p56.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p57.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p57.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p6.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p6.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p60.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p60.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p62.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p62.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p64.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p64.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p65.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p65.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p66.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p66.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p68.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p68.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p7.mat | 4015 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p7.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p70.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p70.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p71.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p71.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p72.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p72.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p74.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p74.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p75.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p75.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p77.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p77.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p8.mat | 4015 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p8.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p80.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p80.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p83.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p83.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p84.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p84.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p85.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p85.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p88.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p88.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p89.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p89.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p9.mat | 4015 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p9.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p91.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p91.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p93.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p93.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p95.mat | 4016 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p95.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p97.mat | 4017 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Armor_OriginalResolution_p97.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_RED_Emission_Floor_Only.mat | 4009 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_RED_Emission_Floor_Only.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Ring_Metal_Frame.mat | 4003 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/Rig_Ring_Metal_Frame.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/RobotSteel.mat | 3976 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Materials/RobotSteel.mat.meta | 196 bytes
+AnseongSteel/Assets/_Project/RobotPlay/README_KO.md | 11547 bytes
+AnseongSteel/Assets/_Project/RobotPlay/README_KO.md.meta | 165 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime.meta | 180 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedBossEncounter.cs | 3804 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedBossEncounter.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedCockpitSelector.cs | 4643 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedCockpitSelector.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedCombatHud.cs | 6878 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedCombatHud.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedFeedback.cs | 4208 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedFeedback.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedLanRules.cs | 996 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedLanRules.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedNetworkSmoke.cs | 8046 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedNetworkSmoke.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedOnlineState.cs | 9176 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedOnlineState.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedPlayFlow.cs | 6891 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedPlayFlow.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedPunchCue.cs | 6600 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedPunchCue.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/MechaVRBossContact.cs | 12952 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/MechaVRBossContact.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/MechaVRBossTarget.cs | 1255 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/MechaVRBossTarget.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotCombat.cs | 11129 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotCombat.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotFeedbackView.cs | 938 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotFeedbackView.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotNetworkSmoke.cs | 2962 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotNetworkSmoke.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotPilotInput.cs | 13182 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotPilotInput.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotPlaySession.cs | 22675 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotPlaySession.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotRigVisual.cs | 1304 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/RobotRigVisual.cs.meta | 60 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Scenes.meta | 180 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Scenes/LocalPunchTest.unity | 313735 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Scenes/LocalPunchTest.unity.meta | 159 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Scenes/RobotPlay.unity | 311283 bytes
+AnseongSteel/Assets/_Project/RobotPlay/Scenes/RobotPlay.unity.meta | 162 bytes
+
+부록 B. 사용자 결정 추적용 turn ID (공통 문서와 직접 읽은 대화의 교차근거)
+- 부스트 적중후 안내/추가입력: 01a0be83-29e6-7762-a199-240c8ff4dd39, 01a0be83-5a00-71e0-badf-d4cc3e57c706.
+- 두 사람 동일방향 회피: 01a0be7a-df9a-7b92-96a9-efa99a567491. 자동 근접접근/후퇴: 01a0be7f-8982-7f21-9d7e-b5db0d886e63, 01a0be7f-bd8e-7c90-a6f6-6e096abd2c8e.
+- 해당팔/양팔가드·피해0/한팔실패: 01a0c2aa-9475-75c1-a483-494293cfd31d, 01a0c2ab-0092-7670-9ca2-325b7d399ac4, 01a0c2b0-a4b2-7db0-ab37-ac19244bc260.
+- 공격후 기본빈틈/방어성공 연장: 01a0e756-e7e9-7e43-a1e9-3f5ffd49229c, 01a0e83a-d4a1-7361-961b-bf1df92876a0.
+- 검 손쥠/장비고정: 01a107f2-e11e-74f3-92cc-b92e6e60cef1. 막고밀치고찌르기: 01a10a06-6b34-7d80-afe1-2fc8eb64e0a4, 01a10a07-7b2b-79c3-b57a-29c01a73ca4a. 접히는 방패/손사용: 01a10a4e-c56a-7c32-873b-56423779867a.
+공통 문서상 정비시작/최종 필살기 관련 turn은 본 담당이 해당 채팅을 직접 재열람하지 않았으므로 00_DIRECTION_AND_COORDINATION.txt의 총괄확인 근거로 분류했다.
+
+최종 확인: 이 보고서만 작성. Unity 및 테스트 실행 없음. git branch/HEAD는 develop/42e05e4, 추적 소스변경 없음(미추적 Audit/). 추가 개발은 총괄 후속 배정까지 대기한다.

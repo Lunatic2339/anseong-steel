@@ -1,0 +1,114 @@
+안성제철 HUD 이미지·저장 씬 실행 검수 07
+2026-10-14 KST / 기준 develop 42e05e4
+진행 상태: 요청된 이미지 직접 육안 확인 및 환경에서 가능한 저장 씬 실행·상태 검수 완료. 신규 카메라 캡처41장, Windows 기본 빌드/실행·부스트/승리 표현 확인. 기능 실패와 미검증 항목은 아래에 유지. 게임 개발 변경은 착수하지 않음.
+격리 worktree: C:/Users/anthony/.codex/worktrees/hud-visual-verification/anseong-steel
+검증 branch: codex/hud-visual-verification
+증거: C:/Users/anthony/Desktop/Capstone/anseong-steel/Audit/2026-10-14/evidence/07_HUD
+검증 도구: evidence/07_HUD/HudAudit07.cs → 위 worktree AnseongSteel/Assets/Editor/HudAudit07/HudAudit07.cs에만 복사.
+게임 코드 변경·scene 생성/SaveScene·UpdateOwnedScene 호출은 하지 않는다. Unity의 자동 임포트/설정 변경은 실행 후 diff로 별도 기록한다. 공유 checkout의 Unity는 실행하지 않는다. 원본 old GUID를 복구한 후 검사로 바꾸지 않는다.
+
+1. 이미지별 직접 검토표
+T = C:/Users/anthony/Documents/Codex/2026-10-09/task-2
+P = C:/Users/anthony/Desktop/Capstone/anseong-steel/AnseongSteel/HudReview
+전부 이번 turn에 view_image로 개별 열었다. 해당 이미지의 제작 당시 실행 주장은 역사이고, 이미지 자체의 육안 평가만 이번 수행으로 표시한다.
+
+번호/파일 | 종류/상태 | 직접 보인 내용과 판정
+01 T/anseong-hud-concept-01.png | 초기 컨셉, 육안 확인 | 4상태 비교와 helmet/display 좌표 구분. 왼쪽 손상 패널·수치·중앙 sync 판이 크고 불투명해 후속 '작고 투명/시야 보전' 선호와 차이. 현재 채택 최우선으로 쓰지 않음.
+02 T/anseong-hud-concept-transparent.png | 후속 컨셉, 육안 확인 | 큰 손상 판 축소·투명, 작은 구석 outline. attack guide 잽/훅 구분 및 shared target 도식 존재. 배경/보스/조종사/장식 문구는 생성 시안으로 기능 증거 아님.
+03 T/anseong-combat-hud-minimal-02.png | 최소 전투 컨셉, 육안 확인 | 중앙 넓게 비움, 작은 좌하 yellow/red outline, 좌상 link 두 점, 적 근처 가는 곡선 화살표. 현재 실전 장면보다 훨씬 적은 HUD 정보와 훨씬 완성된 배경으로 밀도가 다름.
+04 T/anseong-settings-menu-02.png | 설정 컨셉, 육안 확인 | 중앙 translucent system panel, Audio/Comfort/Guide Opacity/Resume/Back, 아이콘·가로선·실제 값. 현재 코드에는 Comfort/Back 없고 HUD SIZE가 있음. 구현 약속된 필수기능으로 간주하지 않으며 동일한 기능/완성도라는 주장도 금지.
+05 T/hud-white-sheet/hud-battle-sheet-v1.png | 최근 최우선 디자인 시트, 육안 확인 | 흰 배경 위 청색 선, 좌상 얼굴·로봇 link 링, 우상 3개 icon/bar+100%, 좌하 정밀 로봇/부위색/범례, 우하 ready 파형, 하부 중앙 가는 점선 곡선/화살표. 흰 바탕은 검토 시트이지 게임의 흰 패널 아님. current simplified outline/circles/straight strip와 동일 품질이 아님.
+06 T/HudReview/01_normal_left.png | 과거 1440x1000 Unity 캡처, 육안 확인 | 작은 좌상 L/--와 좌하 단순 outline, 청색 양팔이 화면 넓게 가리고 적은 중앙. 정밀 시트 링/상태 bars는 이 버전에 없음. cockpit 기둥/프레임 영향 큼.
+07 T/HudReview/02_normal_right.png | 과거 우측, 육안 확인 | right view로 기둥 반대쪽, L/R 시점 차이 존재. 중앙 청색 두 주먹이 적의 일부를 가림. 시점 전환 캡처만으로 온라인 역할/동료 움직임 증명 불가.
+08 T/HudReview/03_damage_left.png | 과거 데모 손상, 육안 확인 | 좌하 tiny outline에 yellow arm/red leg. 누적 UI 색은 보이나 실제 적 타격 위치/피해 이벤트 증거 아님.
+09 T/HudReview/04_settings_left.png | 과거 설정, 육안 확인 | transparent 중앙 텍스트/3슬라이더/6행 버튼, backplate 없음. 글자 대비가 청색 팔 위에서 낮고 라벨/handle가 겹쳐 보임. 사진은 클릭/drag 가능 증거 아님.
+10 T/SunwooHudReview/01_normal_left.png | 과거 시트 적용, 육안 확인 | pilot rings·suit 3bar·response trace·좌하 outline이 추가됨. 실제 로봇 silhouette는 시트 대비 단순, 아이콘은 작은 circles. 우상 bars가 cockpit 상부 곡선 관과 교차. 하부 response/outline은 사람손/콘솔 영역에 있음.
+11 T/SunwooHudReview/02_normal_right.png | 과거 시트 우측, 육안 확인 | 동일 모서리 HUD와 mirrored cockpit viewpoint. left/right text R/NO XR. 우상/좌상 관 겹침 정도 다름. HUD 정보가 두 시점 모두 중앙을 비우지만 peripheral readability는 실기 필요.
+12 T/SunwooHudReview/03_damage_left.png | 과거 적용 피해, 육안 확인 | body-state bars 100/78/58, outline yellow arm/red leg, PUNCH OBSERVED. outgoing punch 문구와 incoming demo damage가 같이 있어 실제 피격으로 오인 가능. 범례/부위명은 시트보다 부족.
+13 T/SunwooHudReview/04_settings_left.png | 과거 적용 설정, 육안 확인 | 상태 HUD 숨김, 동일 중앙 settings; 장식·아이콘·숫자표시는 시안보다 간소. 반투명 배경 없음. 적/팔 위 대비/오브젝트 겹침 우려. XR pointer는 캡처에 안 보임.
+14 T/SunwooHudReview/sunwoo_HUDTest_applied.png | 과거 전달용, 육안 확인 | 12와 동일 계열 damage/PUNCH OBSERVED screen. 청색 robot arms 존재. 이 사진의 모델 존재를 current integrated scene 정상으로 확대하지 않음.
+15 T/C_SideDome_Unity_LeftEye.png | 과거 C형 콕핏 참조, 육안 확인 | 청색 도시 silhouette·crosshair가 전체 화면을 채움, 프레임/조종사가 거의 안 보임. 현재 V02 HUDTest와 다른 자산/시점. 도시와 crosshair는 임시 screen texture, 전투 runtime 증거 아님.
+16 T/C_SideDome_Unity_RightEye.png | 과거 C형 우측, 육안 확인 | 도시 모양/화면각 차이와 crosshair. 큰 panorama 표면 reference이며 새 HUD 선택이나 HMD 양안 캡처 아님.
+17 P/01_normal_left.png | 프로젝트 로컬 과거 캡처, 육안 확인 | 시트 적용 HUD 유지, T/Sunwoo와 달리 청색 플레이어 양팔 없음. cyan target dots와 가는 solid guide visible. '회귀' 원인 단정 없이 current saved scene 재현 필요.
+18 P/02_normal_right.png | 프로젝트 로컬 과거 우측, 육안 확인 | player arms 없음·right view·같은 HU 모서리 UI. 적/좌석 parallax 확인만 가능.
+19 P/03_damage_left.png | 프로젝트 과거 피해, 육안 확인 | yellow/red outline/100-78-58/PUNCH OBSERVED, cyan target dots. 이 색/수치 자체는 시안 누적 손상 목표와 맞지만 데모 입력에서 온 상태.
+20 P/04_settings_left.png | 프로젝트 과거 설정, 육안 확인 | 메뉴 텍스트가 cyan dot/적 팔과 시각 중첩. Resume 아래 설명 글자가 매우 작음. XR 선택/배경 대비 개선 필요, 사진만으로 작동/미작동 판정 안 함.
+
+2. 컨셉 선택 근거와 비교 기준
+「HUD UI 콘셉트 개발」 사용자 직접 선호: 화면 많이 안 가림/불투명한 판보다 투명. 최근 sheet가 최우선 참조라는 이번 지시 우선. 흰 background를 UI panel로 이식하지 않는다. 기존 imagegen 디자인의 100% power/shield/temperature/Comfort 등이 구현 완료/확정된 수치라고 주장하지 않는다. 현재 코드의 3bar는 head+torso/arms/legs 손상 상태라는 의미이며 아이콘이 시트와 같은 의미를 자동 가지지 않는다.
+「구글독스 내용 확인 가능 여부」 탑승한 나와 로봇 분리/같은 공간 동료/외부 카메라 screen이라는 목표를 준수. 이미지의 멋진 외부 도시/완성된 동료 장치가 실제 씬에 있다고 오인하지 않는다. current build/hud rendering 기능과 최종 체감 품질은 다르다.
+공통 문서 00_DIRECTION_AND_COORDINATION 기준: 적중후 slow+추가부스트, 일반 해당팔/강공격양팔/정상가드0/한팔실패, 두명 동일방향 접근·회피·후퇴 확정. current HUD 오른팔 고정/left부터 안내/직선 guide는 이 기준과 대조. 오른손 시작 선호가 왼손 금지로 확대되지 않음.
+
+3. 실행 검증 설계·증거 구분
+검증 도구는 saved sunwoo_HUDTest와 sunwoo_IntegratedPlay를 OpenScene만 하고 Play한다. builder/repair/save 호출 안 함. 캡처는 URP SingleCameraRequest로 실제 feed3개와 cockpit camera를 렌더한 1440x1000 PNG다. 이것은 게임 카메라 콘텐츠이며 screen-coordinate OnGUI는 포함하지 않음. desktop/Editor render이고 실제 Quest/HMD 양안/멀미/FPS 통과가 아니다.
+HUD scene: 원본 no XR normal 좌우, public UseTutorialDemo hook guide(강제 API 명시), 실제 InputSystem synthetic ESC, Damage Demo/Reset/Resume/Guide toggle/Reset Settings의 ExecuteEvents pointerClick, Slider value events를 검증한다. pointerClick 직접 전달은 ray hit-test/물리 마우스/XR ray 검증과 구분한다.
+Integrated scene: saved no XR 부팅→synthetic XRController neutral release/동작/Grip/Trigger→현재 RobotPilotInput→combat contact→HUD. 실제 저장 입력 source를 유지한다. 실제 자연 boss warning/impact·누적 damage·raised hands guard를 기다리고 상태 로그를 남긴다. 부스트는 실제 contact opportunity를 관찰해서 trigger edge를 공급, 성공하지 않으면 결과 그대로 기록한다. saved 모델 missing을 복구하지 않는다.
+online waiting은 실제 host transport를 public StartNetwork(true)로 실행하고 peer 없는 RequestStart 거절을 검사한다. host GUI 버튼 클릭으로 실행한 것과 구분한다. host/client 실제 두기기 전체 동선은 별도 파트/실기 기준이다.
+기본 startup은 EditorBuildSettings 첫 enabled 씬을 saved 상태로 Play. build는 default enabled scene 배열을 그대로 BuildPipeline에 공급하여 Windows Development 빌드·실제 exe 시작을 검증했다(8절). 통합 단일씬을 override하는 기존 검사 builder는 사용하지 않았다.
+
+4. 신규 실행 결과
+Unity 6000.3.24f1 / Windows Editor batchmode + 실제 GPU D3D12 Intel Graphics. -nographics는 사용하지 않음. synthetic input/URP capture이며 HMD가 연결되지 않은 OpenXR 예외 로그가 존재한다. 그 상태에서 생성된 desktop renderer 결과만 평가한다. 게임 소스/저장 씬 복구 없이 새로 실행했다.
+첫 Hud-unity.log 시도는 최초 자산 임포트(로그 projectLoad 약825초)와 도구 컴파일 갱신이 겹쳐 검사 시작 전 timeout. timeout.txt 보존. Hud-unity2.log가 정상 완료한 최신 HUD 시도다. 최초 임포트 길이를 플레이 FPS/로딩 시간으로 환산하지 않는다.
+로그는 UTC ISO이며 아래 실제 실행 시각은 2026-10-14 KST: HUD 01:40:18~01:40:28, Integrated 01:42:44~01:43:17. TIME/frame별 상태가 각각 Hud-runtime.txt/Integrated-runtime.txt에 있다. 'END'는 harness 종료이지 모든 게임 요구 통과 표식이 아니다.
+
+상태/재현 | 기대 | 실제/판정 | 근거(모두 evidence/07_HUD 기준)
+HUD saved normal L/R, no devices | HUD/bootstrap와 좌우 cockpit 존재 | 실행 확인. L/NO XR, R/NO XR·3bar100%·outline blue. 플레이어 청색 로봇팔은 새 캡처에도 없음. 과거 T/HudReview blue arms와 다른 current saved state | Hud-normal-left/right.png, Hud-runtime.txt:1-10.
+HUD 합성 HMD/손 중립+RequestCalibration | tracking/link·준비, actual recognizer 사용 | calibration=True/tracking=True. 합성 잽으로 ObservedPunchCount delta1/PUNCH OBSERVED 확인 | Hud-runtime.txt:11-14, Hud-synthetic-jab-left/right.png.
+HUD 합성 훅 | actual recognizer→guide hook | 이번 시도 delta0, 훅으로 도달 미확인. 직전 Pair가 조종사를 전환하며 보정/인식 상태를 변경했고, 재보정/neutral dwell을 따로 기다리지 않은 fixture 제한이 있다. 이것을 게임 훅 전체 실패로 확정하지 않는다 | Hud-runtime.txt:15, Hud-synthetic-hook-left/right.png(파일명은 입력 시도이며 성공 표식 아님).
+HUD public UseTutorialDemo(true) | hook suggestion 표시 capability | 강제 API 실행 확인. 곡선은 나오지만 굵은 solid line·원형 target이며 시트의 점선/가느다란 화살표·부위 target과 다름. 양쪽에서 같은 전장 경로. 실제 훅 성공과 구분 | Hud-hook-guide-api-left/right.png.
+HUD synthetic ESC | menu open/상태·guide hide | 실행 확인 opened=True, settings 좌우 캡처. 투명 central text가 오른쪽 시점의 밝은 보스 표면에 겹쳐 대비 저하 | Hud-runtime.txt:27, Hud-settings-left/right.png.
+HUD Damage Demo/Resume synthetic Mouse | screen point→raycaster→UI module→button | 실제 UI 경로 실행 확인. GameView640x480, hits=DAMAGE DEMO / RESET 및 RESUME. parts LeftArm.45/RightLeg.85, menu false. fallback direct click은 이 두 버튼에서 필요하지 않았음 | Hud-runtime.txt:30-61, Hud-damage-demo-left/right.png.
+HUD damage 유지/reset | 시간이 지나도 유지, 명시 reset으로 0 | .3초 후 retained=True, 다시 menu+direct event reset으로 all0. outline yellow arm/red leg, bars100/78/58. UI 텍스트는 LateUpdate 후 갱신하므로 즉시 reset 로그·같은 프레임 yaw 캡처에 bars가 직전값인 것은 fixture sampling 한계로 분류 | Hud-runtime.txt:61-72, Hud-head-yaw-api.png.
+HUD Audio/Guide Opacity/HUD SIZE/Guide toggle/Reset Settings | 값 변경/guide off/default reset | Slider.value/onValueChanged 및 ExecuteEvents 직접 경로 확인. audio.5/opacity.5/scale.95, guideFalse→reset audio1/scale1/opacity.25. drag/hover/nav 키·XR ray는 미검증 | Hud-runtime.txt:73-79.
+HUD forced head yaw25° | helmet widget은 head relative, target은 robot feed 기준 | target UV delta0, helmet parent Cockpit HMD Camera, world/관은 시점에 따라 움직이고 corner UI는 동일. yaw 강제 API이며 실제 센서 체감 검사 아님 | Hud-runtime.txt:86-88, Hud-head-yaw-api.png.
+Integrated saved no XR L/R | ready state·visual references | 실행 확인 Calibrating HP160/100. robotRoot 활성 renderer0, Missing Prefab6bac GUID2개 실제 로그. 보스 머리/상체가 상부 관에 가리고 하부 HUD는 사람 손과 겹침 | Integrated-runtime.txt:1-12, Integrated-unity.log:395/1232, Integrated-as-saved-no-xr-left/right.png.
+Integrated synthetic neutral release | saved input source2→Battle | 실행 확인 Battle, local/two hands. openingGrace4 등 원본값 유지 | Integrated-runtime.txt:13-23, Integrated-ready-battle-left/right.png.
+Integrated 오른잽→왼잽 | real input/contact→shared combo2/nextR | 실행 확인 boss160→152→144, hits2/combo2/next1. 화면에는 COMBO2/2만 있고 다음 R 담당 명시 없음. 텍스트는 CURVED HOOK인데 guide는 계속 left origin 3point strip | Integrated-runtime.txt:24-43, Integrated-combo-two-left/right.png.
+Integrated 마지막 오른훅+trigger 기회 탐지 | combo finishing contact/boost UI | 자연 encounter 시도에서는 warning/닫힌 공격창 진입, combo0/hits2/reactions0. 부스트기회 없어서 trigger edge 보내지 않음. 파일명 combo-boost는 시도후 screen으로 boost 성공 아님. capture/좌우 전환 시간도 포함돼 기본 encounter의 모든 정상 시도를 실패로 단정하지 않음 | Integrated-runtime.txt:44-54, Integrated-combo-boost-left/right.png.
+Integrated 자연 boss normal/heavy impact | authored animation event→damage→parts | 신규 실행 확인 HP100→88→68, DamageCount2/ImpactCount2, RightArm.12/Torso.20, bars90/94/100. outgoing recognizer 강제피해 주입 아님. 실제 맞은 해부학 부위 검증도 아님(시험 매핑) | Integrated-runtime.txt:55-85, Integrated-impact-1.png, Integrated-incoming-damage-left/right.png.
+Integrated synthetic raised both arms, 자연 attack | guard feedback/HP unchanged on blocked impact | ordinary right guard 실행 확인 guards1/impact4/damage3/HP52. 중간 unblockable은 손 올려도 피해16. heavy 양팔 성공까지 이 자연 종료조건에서는 기다리지 않았으므로 별도 미검증 | Integrated-runtime.txt:86-96, Integrated-guard-left/right.png.
+Integrated warning-Heavy observer | 경고 text와 motion capture | label은 Phase Warning에서 observer가 찍었으나 그 프레임의 HUD LateUpdate 이전이라 화면은 RECOVERY/COUNTER. 따라서 이 단일파일은 정상 Heavy warning 문구의 긍정 증거 아님. 추가 controlled warning 검증 대상 | Integrated-warning-Heavy.png 및 loop sampling순서.
+Integrated ESC/settings during Battle | menu open·restart enabled | menu true/flowBattle, 적 motion 계속. 상단 objective와 corner warning 모두 사라져 위험 안내가 메뉴에 남지 않음. 좌우 밝은 보스 표면 위 청색 텍스트/handles 대비 저하 | Integrated-runtime.txt:97-109, Integrated-settings-combat-left/right.png.
+Integrated Restart synthetic Mouse | 실제 UI→Retry/reset | GameViewray hit GameObject명은 옛 DAMAGE DEMO / RESET이지만 Text는 RESTART RUN. 실제 마우스 경로로 HP160/100/hits0/combo0/parts0/menuFalse/Calibrating 확인 | Integrated-runtime.txt:110-128.
+Integrated actual StartNetwork(true), peer없음 | host waiting 및 start refusal | 실제 transport/NGO 실행 확인 Waiting, LAN/LEFT/Connected 표시는 host자체 연결 상태, 두명 paired 완료가 아님. RequestStart rejectedControls delta1. API요청이며 OnGUI click test 아님 | Integrated-runtime.txt:142-160, Integrated-connection-wait-left.png.
+Integrated disconnect | disconnected authority 상태와 복구 안내 | session.StopNetwork 후 .5초에서도 flowWaiting/WAITFORBOTH 안내 유지. offline로 자동 전환 완료라고 주장하지 않는다. UseOfflineTest/재접속까지 후속 network 동선은 미검증 | Integrated-runtime.txt:152-160.
+
+HUD 생성·조건 표시·desktop 메뉴 자체는 실행하지만 최근 시트 품질 및 2인 HMD 전체 조작의 완료는 아니다. 새 렌더41장(HUD13/Integrated17/Focus10/Boot1)을 모두 개별 view_image로 열어 확인했다. image pixel 자체에 clip/FOV/강제API 상태가 반영돼 있으므로 상태 로그와 함께 읽어야 한다.
+
+5. 육안 판정과 보강 우선순위
+P0 player 모델: source scene를 새로 열었어도 Missing Prefab와 robot renderers0 재현. collider/HP/콤보가 작동해도 자신의 거대한 팔은 안 보임. 아트 담당 복구 후 동일 saved-state renderer/좌우 actual arm 검수 반복 필요. 과거 blue-arm 캡처를 current model 성공으로 사용하지 않는다.
+P0 시작·XR 동선: 이번 메뉴 실행은 synthetic desktop input. 모듈은 InputSystemUIInputModule 하나, controller ray/input navigation 성공 증거 없음. LAN controls는 screen OnGUI, helmet capture에서 안 보임. 최종 operator 시작 방식 vs HMD 내부 방식에 따른 구현/acceptance 필요. default BuildSettings 첫 scene SampleScene은 실제 exe의 startup 기록과 별도 Editor 렌더로 확인했다(8절).
+P1 info/가독성: 1440x1000 새 렌더에서 upper bars 글자/left outline/response가 매우 작다. upper 관에 text/링 겹침, lower 사람손/난간에 outline·HP/콤보 겹침을 양시점에서 확인. transparent를 유지하되 읽을 수 있는 위치/크기/대비/의미 필요. 바로 불투명 큰 패널로 되돌리는 요구는 아님. HMD legibility는 실제 양안으로 따로 확인.
+P1 guide: HU API hook은 curved capability, 통합은 항상 left start solid 3점 strip. 시트처럼 가는 점선/arrow/end marker·다음 담당 R/남은입력기회/중립복귀/실패 원인이 안 보임. guide와 helmet 정보를 같은 좌표로 합치지 않는 기존 구조는 유지.
+P1 threat/menu: menu가 Battle status·objective·guide를 숨겨도 battle 계속. incoming threat 구분(일반 해당팔/강공격양팔/회피)을 menu에서도 놓치지 않거나 승인된 안전 상태정책 필요. 글로벌 timeScale pause를 임의 추가하면 network clock/두명 경험에 영향.
+P1 damage meaning: 누적 상태와 demo/시험부위 mapping을 분명하게 표시. current outline six parts/3 grouped percentages는 sheet의 forearm/shin 상세/범례와 다름. groups를 실시간 power/shield/temp로 오인시키지 않음. 장식 trace/rings를 실제 biosignal/latency라고 주장하지 않음.
+P1 controls: DamageDemo/Resume/Restart 마우스 hit 및 이벤트로 실행됨. 아직 hover 색, slider 실제 drag, focus loss, keyboard navigation, XR ray/IP typing/host GUI buttons는 미검증이다. 사진에 보인 버튼을 모두 '작동함'으로 세지 않는다.
+P2 전용음향·glyph/detail·지속반복 quality: 실제 audio/haptic device청감은 미검증. 이번 그림과 상태 변화를 구조정상/최종상용품질과 구분. 시트 정밀선/icon/범례를 원본 게임 data와 연결해 표현해야 한다.
+
+6. 환경·수행한계와 재현
+재현 실행은 증거 HudAudit07.cs를 전용 worktree Assets/Editor에 넣고 Unity6000.3.24f1 -batchmode -projectPath 해당worktree/AnseongSteel -executeMethod HudAudit07.Run --audit07-mode Hud 또는 Integrated. 환경변수 HUD_AUDIT07_OUTPUT은 위 evidence절대경로. runtime-only fixture/캡처/observer이며 scene save 없음. 신체 센서 대신 IntegrationTestController/XRHMD/Keyboard/Mouse 생성, InputSystem temporary IgnoreFocus설정은 종료 때 복원.
+Known fixture limits: stage sideview/캡처시간은 combo clocks를 소비한다. render snapshot은 Coroutine이 LateUpdate보다 먼저 호출될 수 있어 state와 Text가 한 프레임 다를 수 있다. Hud 훅 실패와 integrated warning screenshot은 이 영향과 원래 combatwindow를 분리해 추가 확인해야 함. head yaw/API damage는 정상 사용자 버튼 성공으로 확대하지 않는다.
+Unity 로그에는 no-HMD OpenXR 예외와 UnityEditor.Search.SearchDatabase IndexationOnStartup ArgumentOutOfRangeException이 나타났다. 후자는 스택이 Editor 검색 코드이며 이후 HUD/scene 검증은 계속 실행됐고 gameplay exception으로 분류하지 않는다. 임포트 지형 shader warning을 HUDshader 실패로 합치지 않는다.
+Unity가 worktree OpenXR Android features fileID3개를 자동 교체하고 XRSimulationRuntimeSettings/Preferences 및meta를 재생성했다. 종료 후 실제 내용 diff는 OpenXR Settings, ProjectSettings(preloadedAssets2개→빈배열), template Video_Material_Unlit(_BaseColor alpha0→1) 3개였다. 일부 asset/settings는 git status상 M이지만 내용 diff는 없고 줄바꿈 정규화가 섞인다. XRSimulation재생성은 중간시점 관찰이며 최종diff와 구분한다. 전체diff worktree-all-tracked.diff.txt와 설정중간증거 worktree-automatic-settings.diff.txt를 보존했다.
+sunwoo_HUDTest와 sunwoo_IntegratedPlay는 shared원본과 SHA256 byte equality=True. SampleScene은 raw hash가 LF/CRLF 때문에 다르지만 normalized line-ending content equality=True 및 git scene diff 없음. tracked game C# diff도 없다(source-scene-after.txt). 모든 자동 변경은 격리 worktree에만 발생했고 shared checkout git은 develop/??Audit만 유지. 정확한 HEAD설정 그대로 빌드됐다는 뜻은 아니며 source42e05e4+관찰 도구+자동settings정규화 상태의 검증이다. 임의로 자동변경을 main에 반영하거나 원복하지 않았다.
+실제 HMD 양안·멀미·Quest frame budget/Android build·설치·발열/네트워크 실제2PC/외골격 동작은 미검증. 이번 desktop render는 이 항목들의 통과가 아니다.
+
+7. 부스트·승리·누적 색의 분리 재현 (2026-10-14 02:01 KST)
+Focus mode는 저장된 통합 씬을 처음에는 그대로 읽고 noXR/ready L/R를 캡처했다(Focus-as-saved-no-xr-left/right.png, Focus-ready-battle-left/right.png). 이후 boss.Stop(), trainingWindow=true, SetBossWindow(true,1,false)를 runtime에서만 호출해 boss auto attack을 멈추고 타격창을 유지했다. 모델/피해수치/콤보규칙을 고치거나 scene을 저장하지 않았다. 원본 자연 encounter와 다른 fixture라는 사실을 로그:24에 명시.
+실제 InputSystem controller→RobotPilotInput→contact→RobotCombat 경로의 R jab/L jab/R hook 후 cue.Side1 기회를 관찰하고 R trigger edge를 보냄. HP160→152→144→124→104, hits3, AcceptedReactions1. Focus-runtime.txt:52의 cue1/strength등은 명중후 기회가 생겼음을 보여준다. trigger를 즉시 입력한 fixture여서 버튼 prompt의 지속 가독성·일반 사용자 반응시간은 확인하지 못했다. 이 짧은창 도중 동기 캡처를 피해서 prompt live screenshot도 없으며 'FINAL HOOK 버튼 안내까지 시각 검증 완료'로 확대하지 않는다.
+Focus-boost-confirmed-fixture-left/right.png에서 보스가 화면상 뒤로 밀리고 자세가 달라짐, HUD Response Boost Right/BOSS104, camera pose unchanged. RenderApplications56은 여러카메라/프레임의 렌더 적용 횟수이며 이벤트56개가 아니다. 물리 전투 거리/실물 모터 밀기 구현 증거 아님. 사람 손/플레이어 로봇팔은 source missing/미연결 상태를 보존.
+같은 고정 공격창에서 실제 합성 right hook을 반복해 bossHP0/hits9/flowWon. Focus-terminal-input-fixture-left/right.png의 VICTORY/B OR R RESTART와 Defeated Right를 확인. natural boss 난이도/체험시간 완결 통과가 아니라 종료 presentation의 실제 입력 도달 능력이다. synthetic R로 HP160/100/hits0/combo0/reaction0으로 재시작, .5초 내 neutral이 다시준비돼 Battle 재진입(Focus-runtime.txt:145). 게임 실패 Lost화면/online client terminal restart 거절 UI는 이번 미검증.
+그 후 hud.Damage.AddDamage LeftArm.4+.05/RightLeg.85 직접 API 주입으로 source display를 검증. Focus-region-colors-api-left/right.png에서 yellow left arm/red right leg/100-78-58을 확인. HP100과 API부위손상이 같이 있으므로 이 캡처는 실제 incoming damage통계가 아니라 명시된 display fixture이며 신체/괴수 해부학 타격 판정 아님. natural incoming damage는 4절 별도 row의12/20 피해 로그로 입증.
+
+8. 실제 빌드·기본 시작·운영 동선 (2026-10-14 02:00~02:03 KST)
+HudAudit07.Build가 기존 EditorBuildSettings의 enabled scenes [SampleScene, RobotPlay, sunwoo_IntegratedPlay]를 그대로 BuildPipeline.StandaloneWindows64+Development에 넣었다. IntegratedNetworkBuild/UpdateOwnedScene은 사용하지 않았다. source scene불변, runtime opt-in observer HudAudit07PlayerCapture 포함. observer는 --audit07-player-capture 플래그에서만 bootstrap·startup기록·스크린샷 시도·quit한다. 최종 배포 release artifact가 아니다.
+build-Default-result.txt = Succeeded, errors=8, totalSize483635046 bytes, elapsed00:13:27.7989576. Build-Default-unity.log:19426 Build Finished Result Success. errors8을 누락하지 않는다. RobotPlay/IntegratedPlay 각 scene open 문제+MissingPrefab GUID6bac를 build처리와 CompositionLayers analytics postprocess scene open에서 반복 보고한 로그8건에 대응한다(:4882/4894/4957/4969/13096/13116/13149/13169). 이 성공은 player model 참조 정상 또는 clean build를 뜻하지 않는다.
+DefaultPlayer/AnseongSteel.exe를 실제 Windows에서 숨김 실행했다. DefaultLaunch/player-startup.txt는 scene Assets/Scenes/SampleScene.unity, WindowsPlayer/Unity6000.3.24f1/Intel Graphics를 기록. componentes는 template SessionManager/OfflineMenu/AuthenticationManager/XRUIInputModule/TrackedDeviceGraphicRaycaster이며 자체 RobotPlaySession 시작과 다름. first scene source selection을 정적으로만 판단한 것이 아니라 실제 exe로 확인했다.
+실행은 HMD없음으로 OpenXR XR_ERROR_FORM_FACTOR_UNAVAILABLE/Display init failure. screenshot은 Failed to capture screen shot(DefaultLaunch-player.log:550), PNG없음. quit 때 template NGO NetworkManager OnApplicationQuit/OnDestroy NullReference도 기록(:551/:575). 이 환경에서 template 시작 동선·XR shutdown 안정성이 통과했다고 할 수 없고 실제 HMD로 재확인 필요. 오류를 막기 위해 원본XR설정을 끄거나 mockruntime강제 정상으로 바꾸지 않았다.
+보조증거로 Editor에서 BuildSettings 첫 scene saved 그대로 Play한 Boot-runtime.txt는 Assets/Scenes/SampleScene.unity/sessionFalse. Boot-default-first-scene.png를 직접 열어 템플릿 lobby/sign-in·Default Input Controls 비디오·Microphone Permissions Granted 화면을 확인했다. 이 PNG는 실패한 exe screenshot의 대체 성공이라고 주장하지 않으며 별도의 Editor camera render다. 마이크 문구는 게임 템플릿 UI관찰이고 실제 음성 송수신 검증 아님.
+운영 동선 판정: HUDTest menu와 Integrated offline restart/host-alone waiting은 실행된다. 기본 exe는 자체게임으로 바로 시작하지 않는다. SampleScene→자체전투 진입, HMD HOST/JOIN/IP/START, 두명Ready→실전완결→다음사용자재보정/네트워크복구의 전체 기본빌드 동선은 이번 통과가 아니다. 그래서 기본 첫 scene와운영 controls가 P0이다. 검증에서 씬을 직접 Open/호스트 API/고정 training fixture로 연결한 것을 완성된게임동선으로 세지 않는다.
+
+9. 산출물·보존 상태와 후속 범위
+기존 참조 이미지20장 + 10/13 current-integrated-view.png도 이번 직접 열어 비교(추가이미지: READY와 BOSS136 동시표시/굵은 strip/팔누락/손 위HUD 관찰). 기존 이미지 목록의 hash는 viewed-image-inventory.txt. 새로운 PNG41장·runtime/Unity로그·first실패log·build결과·시작메타·scenehash/diff·두검증도구를 evidence/07_HUD에 보존했다. output manifest는 evidence-manifest.txt.
+공유 checkout에 게임 수정없음. 전용worktree는 검증재현을 위해 유지, commit/push/merge 없음. 도구/자동정규화 설정을 게임개발 PR로 제출하지 않았다. 생성된 executable도 검증 전용이며 공개배포하지 않았다. 검증 프로세스는 모두 종료됐다.
+후속 우선작업: 원본 모델참조 복구후 동일상태 재검수, 기본게임시작/운영·XR input 연결, 읽을수있는 corner배치와next담당/위협/입력기회 안내, hook/right세계guide→좌표원칙을 유지한 시트품질 보강. 실제 HMD/두PC/Android/음향·진동·시간예산은 환경에서 별도검수. 외골격 장치 IO 구현은 하지 않았다.

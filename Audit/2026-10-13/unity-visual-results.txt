@@ -1,0 +1,16 @@
+RUNTIME initialFlow=Calibrating
+AVATAR Left station - Pilot V04 local=True active=True
+AVATAR Right station - Pilot V04 local=False active=True
+RUNTIME renderers=310 materialSlots=357
+RENDER ROOT Tutorial path - robot world feed only renderers=1 slots=1
+RENDER ROOT Cockpit_V02(Clone) renderers=8 slots=34
+RENDER ROOT Replaceable Enemy Target renderers=295 slots=303
+RENDER ROOT Arena floor renderers=1 slots=1
+RENDER ROOT Right station - Pilot V04 renderers=2 slots=7
+RENDER ROOT Boss - red - same model and scale renderers=1 slots=4
+RENDER ROOT Left station - Pilot V04 renderers=2 slots=7
+RUNTIME raycasters=GraphicRaycaster
+RUNTIME active cameras=Cockpit HMD Camera,Robot right panorama sector,Robot left panorama sector,Robot optical mount - independent of pilot HMD
+REPRO calibration-only-left: flow=Calibrating bossHealth=136 hits=3
+REPRO avatar input owner: ArmMotionInput enabled=False avatarLeftTarget=(-1.31, 1.46, 0.32) robotLeftInput=(0.00, 0.01, 0.21)
+REPRO stationary-x-0.6 actual-body-contact: damage=0 dodgeCount=1 movementInput=zero

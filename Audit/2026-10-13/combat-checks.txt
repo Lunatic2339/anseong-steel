@@ -1,0 +1,27 @@
+PASS: individual jab damages
+PASS: one stroke cannot damage twice
+PASS: return motion cannot attack
+PASS: final hook permits fresh boost press
+PASS: L R L boosted combo damage and reset
+PASS: R L R regular combo
+PASS: standalone hook cannot boost or damage by default
+PASS: same side cannot supply second cooperative jab
+PASS: combo expires
+PASS: closed attack window consumes attempt without damage
+PASS: raised left arm blocks left attack
+PASS: wrong arm does not guard opposite attack
+PASS: single guard does not block dual attack
+PASS: two raised arms block dual attack
+PASS: tracking loss invalidates guard and rearm
+PASS: expired miss cannot hit on recovery
+PASS: nonfinite input rejected
+PASS: network sender must own requested pilot side
+PASS: hook windup stays a hook at sample interval 0.016 | Hook Outward preparation + curved inward sweep arc=1.047713
+PASS: hook windup stays a hook at sample interval 0.022 | Hook Outward preparation + curved inward sweep arc=1.033534
+PASS: hook windup stays a hook at sample interval 0.033 | Hook Outward preparation + curved inward sweep arc=1.074478
+PASS: hook windup stays a hook at sample interval 0.05 | Hook Outward preparation + curved inward sweep arc=1.077955
+PASS: hook windup stays a hook at sample interval 0.08 | Hook Outward preparation + curved inward sweep arc=1.068279
+PASS: recognized trajectory alone never deals damage
+PASS: confirmed standalone hook damages in local punch mode
+PASS: confirmed hook contact is consumed once
+PASS: ambiguous diagonal contact does not damage

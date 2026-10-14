@@ -1,0 +1,106 @@
+안성제철 전투 직접 구동 검증 — 2026-10-14 Asia/Seoul
+검증 대상: 원본 develop 42e05e4 및 codex/combat-state-gates의 비전투 gate 수정본
+상태: 실제 구동·원본 비교·종료 상태 LAN·증거·cleanup 완료. 이번 gate 변경만 구현했으며 나머지 확인된 결함은 수정하지 않았다.
+
+1. 실행 환경과 증거 위치
+Unity 6000.3.24f1, Windows Editor/Windows 개발 Player. Quest/HMD/두 실제 PC/외골격 없음.
+원본: C:/Users/anthony/.codex/worktrees/combat-runtime-baseline/anseong-steel (codex/combat-runtime-baseline, 42e05e4, Runtime 무수정)
+수정본: C:/Users/anthony/.codex/worktrees/combat-state-gates/anseong-steel (codex/combat-state-gates, 42e05e4 + gate diff)
+evidence = C:/Users/anthony/Desktop/Capstone/anseong-steel/Audit/2026-10-14/evidence/02_combat
+공유 원본에서 Unity를 실행하거나 소스/씬을 변경하지 않았다. 모든 아래 씬은 저장된 상태로 열었으며 Build/UpdateOwnedScene/설치/Save로 보정하지 않았다. 씬 SHA256 불변을 확인했다.
+
+경로 구분
+INPUT: 실제 InputSystem의 합성 XR device→RobotPilotInput→Submit/RPC→trajectory→Pose/contact→combat.
+AUTO: 입력 자세를 유지하며 실제 IntegratedBossEncounter 순환·driver.TryPunch·FBX animation event·Physics 후보로 판정.
+DEBUG: 상태/위치 preset, ReceiveAttack/Impact/Begin 등의 직접 호출. 자연 플레이 도달과 동일하게 세지 않는다.
+MEMORY: 렌더/씬 없이 순수 규칙 및 주입한 NGO 역할 플래그. 실제 네트워크와 별개.
+LAN: 새 실행 파일의 실제 같은 PC host/client/extra 프로세스·UTP/RPC. 추적 입력은 smoke가 공급하는 합성 pose, HMD/실제 2PC와 별개.
+논리 fixture는 Runtime 카메라만 임시 중단하고 게임 delta .02 고정. PNG는 capture 시 원래 전장 feed/카메라로 렌더했다. 성능·HMD 품질 수치로 사용하지 않는다.
+
+2. 원본 vs 수정본 대상별 결과
+대상 | 재현/기대 | 원본 실제 | 수정본 실제 | 구분/한계/증거
+Calibrating 준비 | 한 팔 valid jab+grip, 반대팔 guard; 강제 Calibrating 유지. 기대 HP160/hit0/combo0/feedback0 | HP152/hit1/combo1/event1/rawcontact1 | HP160/hit0/combo0/event0/rawcontact1 | INPUT+DEBUG 상태 고정; raw contact는 포즈/접촉 작동 증거, 전투 hit와 별개
+Waiting | 같은 valid input, Waiting 강제 유지 | HP152/hit1/combo1/event1 | HP160/hit0/combo0/event0 | offline 경계 계약; 실제 LAN Waiting/Calibrating는 별도
+Won/Lost 상태 계약 | 생존 HP로 종료 상태 강제 후 유효 contact. 상태 경계를 HP 검사와 별도로 확인 | 각각 HP152/hit1/combo1/event1 | 각각 HP160/hit0/combo0/event0 | DEBUG 종료 상태, 자연 종료와 구분. 자연 HP0 종료는 아래 실제 입력/타격으로 별도 검사
+늦은 impact | 4 비전투 상태, robotRoot의 실제 CapsuleCollider를 callback 후보로 직접 공급 | 각각 damage16/feedback1 | 각각 damage0/feedback0 | DEBUG 실제 collider 후보 / 새 gate 보호 확인
+교정·Ready | 중립 release pose 유지 | 양팔 Ready | 양팔 Ready | INPUT
+Battle 진입 | Retry 후 양팔 중립/Ready 유지 | 자연 Battle | 자연 Battle | INPUT+정상 Flow.LateUpdate, 상태 강제 아님
+오른손 시작 연계 | R jab→L jab→R hook 실제 contact | HP152/h1/c1→HP144/h2/c2→HP124/h3/c0 | 동일 | INPUT. 현재 왼손 시작 금지 변경 없음
+적중후 추가 부스트 | 마지막 훅 명중 후 grip 유지+fresh trigger | 기존 구현 존재. 동일 raw 정책 | gate Play에서 HP104/h3/boost1, LAN에서 양쪽 승인반응1 | 수정본 실제 INPUT/LAN. 원본을 이번에 같은 boost-success gate harness로 실행한 결과로 세지 않음
+단독 훅+trigger | right hook 후 추가 trigger, 콤보 없음 | HP140/h1/boost0 | 동일 | INPUT. 단독 훅 추가부스트 없음
+부스트 실패 | RLR final hook 일반damage 후 창 만료 뒤 trigger | HP124/boost0 | 동일 | INPUT. 실패 시 기존 훅 피해 유지
+왼쪽 일반 가드 | 실제 XR 왼팔 높이 자세, side0 일반 공격 직접 수신 | blocked/damage0 | 동일 | INPUT posture + DEBUG ReceiveAttack. 통합 자동 보스에는 왼쪽 일반공격이 없다
+반대팔 가드 실패 | 왼팔만 guard, side1 수신 | blockedFalse/damage12 | 동일 | INPUT posture + DEBUG ReceiveAttack
+오른쪽 일반 가드 | 오른팔 guard, side1 수신 | blocked/damage0 | 동일 | 직접 수신 및 AUTO 실제 정상공격에서 touchedTrue/damage0 확인
+양팔 강공격 가드 | 양팔 guard, 실제 Heavy animation impact | touchedTrue/damage0 | 동일 | AUTO. 직접 ReceiveAttack도 따로0 확인
+강공격 한팔 실패 | right만 guard, 실제 Heavy impact | touchedTrue/damage20 | 동일 | AUTO. 임시 피해20, 정책은 완전 실패/경감 없음
+회피 정지 편법 | Warning 전 debug로 x=.6 preset, sticks0 유지; 실제 unguardable clip impact | touchedTrue/movement0/damage0/Dodge증가 | 동일 FAIL | AUTO physics + DEBUG preset. 이번에 직접 재현했으며 gate scope 밖으로 남김
+실제 협동 이동 | Warning/Punch 사이 양쪽 XR stick right | body x0→.7, movement .7, touchedFalse/damage0 | 동일 | INPUT+AUTO. 성공 이동은 작동하지만 정지 편법을 배제하는 시간기반 규칙은 없음
+세 공격 모션 | 자동 Normal/Heavy/Unguardable 2순환, impact clip 기록/캡처 | 모두 clip Punch | 동일 | AUTO. 이름/가드/피해만3종, 모션3종 완료 아님
+통합의14패턴 연결 | 위6 실제 impact 뒤 controller 상태/target/module 관찰 | modules14/targetnull/Health500/Idle | 동일 | OBSERVED. RobotCombat HP와 lab HP의 미연결 확인. 보스14개 호출 완료로 세지 않음
+승리 | 협동 없이 actual right standalone hook8회 | Won/HP0/LessonJab/hit8 | 동일 | INPUT+정상 Flow. 학습 완료 이전 solo승리 실제 재현, gate scope 밖
+승리후 XR retry | right secondary button | HP160/100/hit0, Battle 재진입 | 동일 | INPUT, PC R키나 직접 Retry가 아닌 실제 bound action
+패배 | 직접 fatal ReceiveAttack 후 정상 flow 검사 | Lost/robotHP0 | 동일 | DEBUG fatal damage + 정상 Flow. AUTO/LAN 실제 보스타격 누적패배는 추가 검사
+패배후 XR retry | right secondary button | HP160/100/hit0/combo0 | 동일 | INPUT
+재시작 직전 pending boost | 실제 RLR hook 기회 직후 Retry, retained trigger/contact | 비교용 동일 원본 harness 미실행 | HP160/100/hit0/combo0/boost/event0 | 수정본 gate Play15 INPUT+DEBUG Retry. Role memory와 실제 LAN restart도 별도
+추적 유실 | closed 상태 LoseTracking | 이 raw scenario 원본 전용 실행 미포함 | fresh false/guard false 즉시, 재보정 유지 | gate Play. LAN remote RPC/재획득 별도 성공
+
+근거 파일
+baseline-integrated/scenarios.txt: 20 PASS / 9 FAIL / 24 OBSERVED.
+patched-integrated/scenarios.txt: 28 PASS / 1 FAIL / 24 OBSERVED.
+8 FAIL 개선 = 비전투4상태의 실제 contact + 늦은 callback. 남은1 FAIL = 정지 회피.
+각 폴더 standalone-hook.png, automatic-0-Normal.png ~ automatic-5-Unguardable.png, victory-before-learning.png, defeat.png.
+같은 kind마다 Punch pose·clip 사용을 캡처와 로그로 확인. PNG의 camera framing/HUD/누락 팔은 현재 저장 씬 상태이며 새 완성 시각으로 미화하지 않았다.
+
+3. 독립 보스 실험실14패턴 실제 구동
+저장 BossModelTest.unity를 기존 BossCombatVerificationRunner/Verification으로 실행. target pose/거리, guard/parry/counter 등은 실험 코드가 직접 세팅하며 플레이어 INPUT이 아니다. 각 패턴은 TryAttack·Animator·실제 Physics·target receiver를 사용한다. 원본/수정본 모두 PATTERN PASS14 및 전체 suite PASS. 각 폴더 patterns.txt/boss-lab.log/PNG, Library/BossCombatVerification.txt에 근거.
+패턴 | 실제 실행 clip/VFX | 결과 | 통합 자동 선택
+HeavyPunch | Punch(legacy event) | 원본/수정본 PASS | driver Punch만 사용, 이 module 선택 아님
+SwordSlash | SwordSlash | 양쪽 PASS | 없음
+OverheadSmash | OverheadSmash(검) | 양쪽 PASS | 없음, 맨손 내려찍기로 바뀐 것이 아님
+AlternatingCombo | AlternatingCombo, 좌우2strike | 양쪽 PASS | 없음
+MissileBarrage | Idle+생성 projectile6 | 양쪽 PASS | 없음
+Grab | Grab+잡기/반대팔 해제 | 양쪽 PASS | 없음
+Feint | Feint | 양쪽 PASS | 없음
+Shockwave | GroundCast+ring query | 양쪽 PASS | 없음
+LaserSweep | Idle+ChestLaser ray/sweep | 양쪽 PASS | 없음
+EMP | PowerUp+HudDisabled | 양쪽 PASS | 없음
+SensorJam | PowerUp+LeftSensorHidden | 양쪽 PASS | 없음
+VisionDisruption | PowerUp+RightVisionDistorted | 양쪽 PASS | 없음
+ArmLock | Grab+LeftArmDisabled | 양쪽 PASS | 없음
+WeaponBreak | SwordSlash+WeaponsDisabled | 양쪽 PASS | 없음
+공유 clip/VFX이므로14개의 별도 모션 확보를 뜻하지 않는다. lab target HP300/blocked10%/parry와 통합 robot HP100/guard0의 정책이 다르다. 신규 adapter 없이 통합 완료로 세면 안 된다.
+
+4. 기존 독립 RobotPlay/LocalPunchTest 저장 씬
+원본/수정본 모두 생성 없이 그대로 열어 합성 XR로 Ready→left jab→right jab→left hook을 실제 접촉시켰다. 각 씬 no integrated flow/Ready/jab/교대combo/final hook은 PASS, 파일SHA 불변. 결과는 각각 12 PASS + 2 OBSERVED(전체14행)이다.
+candidate-driven legacy in-flight trigger 시도는 두 씬 모두 양쪽 HP124(일반 훅)였다. 이를 boost104 성공 PASS로 바꾸지 않았다. 이전 timed .37 시도도 양쪽 같은 일반 훅이었다. 이 입력 시도의 구형 추가부스트 실사용 성공은 확인하지 못했지만 동일 원본 비교에서 gate 회귀는 발견되지 않았다. 순수 구형 boosted combo 규칙은 이번 27 checks에서 PASS.
+baseline-saved-legacy-checks.txt 및 patched-state-gates/saved-legacy-checks.txt.
+
+5. 실제 Windows Player 로컬 LAN
+UpdateOwnedScene 없이 원본 S 파일 그대로 새 Windows Development 빌드. resultSucceeded/sceneUnchangedTrue. BuildReport totalErrors6 및 missing prefab 경고가 있다. 플레이어 팔 visual 정상성 또는 배포 무경고 완료로 표현하지 않는다.
+실제 host/client/extra 프로세스의 UTP/RPC를 실행했다. 기존106 checks(ACK 포함) 모두 PASS:
+비전투 host jab/client hook/client trigger→HP160/100/hit0/combo0/boostReaction0; 양쪽 중립 Ready 유지; host start; unauthorized control/반대팔/tracking-loss RPC·fakefeedback·fakeboost 거절; 실제 contact/학습/보스impact·guard·post-hit boost와 중복억제; host retry·client retry 거절; 이탈/재접속/transport restart·fresh sequence·공유chain interruption·same-stick movement. 명령은 opt-in smoke이고 UI를 사람이 직접 조작한 결과는 아니다.
+HMD/두 실제 PC/Quest standalone 미검증. 동일 PC 실제 loopback 프로세스와 역할 메모리 fixture를 구분한다.
+추가 terminal LAN 66 checks(ACK 포함) 전부 PASS. 실제 client right hook8회로 양쪽 Won/HP0/hit8, 이후 host jab/client hook/trigger에도 HP0/hit8/combo0/boostReaction0. host retry→Ready→Battle 후 actual authored normal impact9회로 robotHP 100→88→76→64→52→40→28→16→4→0, 양쪽 Lost 확인. 이후 contact/trigger에도 bossHP160/robotHP0/hit0/combo0/boostReaction0, host retry 후 HP160/100/hit0/combo0 동기화. bossattack 시작 명령은 debug smoke지만 손상은 HP setter가 아니라 실제 driver/clip/event/Physics/ReceiveAttack/RPC 결과다.
+최초 추가 시도는 Won/입력차단/retry까지 성공했으나, 이전 Punch 회복 전에 debug Begin을 겹쳐 두 번째 패턴이 Heavy20으로 바뀌어 '모두 Normal12' 기대가 틀렸다(HP68 실제 vs76 기대). gate 결함으로 단정하지 않았으며 클립 회복을 기다리는 올바른 준비 순서로 재실행했다. 실패 로그는 failed-harness-attempts/terminal-overlapping-Begin.txt, 최종은 lan-terminal-final/online-checks.txt. 전체106은 lan-full/online-checks.txt.
+
+6. 검사 실패·제한 및 후속 필요
+- -nographics URP native render crash: 그래픽 배치로 재시도. source/camera 구현은 변경하지 않음.
+- recenter 첫 fixture 샘플에 기존 right guard가 남아 baseline을 잘못 잡던 문제: 중립 샘플을 먼저 보내는 검사 수정. Ready/Battle 정상 진입을 이후 실제로 확인.
+- memory NGO inherited private setter 및 음수 EditMode 합성 시각 준비 오류를 수정하고 최종78PASS. 실패한 준비는 최종 PASS 수에 합산하지 않음.
+- 최종 캡처는 runtime disabled feed를 다시 렌더해 화면이 초기 Idle RT로 남는 문제를 제거했다. 실제 Punch pose PNG를 직접 열어 확인.
+- 반복 시연 시간/실기 체감/실제 두 HMD·2PC/모터 저항 또는 해제 출력은 수행하지 않았다. gate 패치가 그 기능을 완료했다고 주장하지 않는다.
+- 현재 왼쪽 일반 자동공격은 없고, 과거14 lab 패턴은 실제 통합 주기에서 호출되지 않는다. 회피 타이밍/교육·승리/모션/모델 문제는 재현 보고만 하고 이번 gate 범위 외 기능을 고치지 않았다.
+- 소스·씬·프로토타입 자산과 작업 진행을 되돌리지 않았다. 자동 OpenXR/RT/URP/Graphics/ProjectSettings 등 차이를 자기 worktree 증거 diff로 분리하고 HEAD 값으로 복원 완료. 최종 수정본은 Runtime4 + 신규 Editor2/새 meta2만 남았고, 기준 worktree는 신규 진단 Editor/meta만 남았다. 원본 반영/commit/push/PR/merge 없음. 공유 develop42e05e4는 ?? Audit/만 확인.
+
+7. 최종 manifest/실행 진입점
+CombatStateGateChecks.Run: 순수27+27 및 memory78.
+CombatStateGatePlayChecks.Run: 저장 통합 씬 gate15.
+CombatRuntimeProbe.RunBaseline/RunPatched: 동일21-stage 시나리오 및 capture, known FAIL 보존.
+CombatRuntimeProbe.RunLab: 저장 독립14패턴 기존 suite+pattern PNG.
+CombatSavedLegacyChecks.Run: 기존 두 저장 씬 no builder.
+CombatRuntimeProbe.BuildPlayerUnmodified: S를 생성/저장 없이 Windows 빌드.
+evidence manifest의 런타임4파일 SHA/scene SHA/Player exe SHA와 native logs를 사용한다. 소프트웨어 구동, 통합 호출, 실기 체험 완료는 별개다.
+
+최종 전달 기준
+비전투 gate scope는 memory/저장 scene/실제 로컬 LAN에서 검증을 완료했다. 기존 독립 씬 valid jab/combo/hook 경로는 원본과 동일했다. 남은 확인된 게임 결함은 정지 회피, 일반 오른팔 고정/동일 Punch3종, 협동학습 전 solo승리, lab14패턴 미연결/두HP, 누락 prefab/시각팔·아바타이며 이 작업으로 완료 처리하지 않는다. 후속 회피·모션·진행·아트·실기기의 별도 배정이 필요하다.
