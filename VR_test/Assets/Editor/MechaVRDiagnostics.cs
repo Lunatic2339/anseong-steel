@@ -41,7 +41,7 @@ public static class MechaVRDiagnostics
         EditorApplication.delayCall += WriteReport;
     }
 
-    private static MechaVRHandTarget[] Drivers() => UnityEngine.Object.FindObjectsByType<MechaVRHandTarget>(FindObjectsInactive.Include)
+    private static MechaVRHandTarget[] Drivers() => UnityEngine.Object.FindObjectsByType<MechaVRHandTarget>(FindObjectsInactive.Include, FindObjectsSortMode.None)
         .Where(d => d.gameObject.scene.IsValid()).ToArray();
 
     private static void Tick()
@@ -105,7 +105,7 @@ public static class MechaVRDiagnostics
             sb.AppendLine("keyboard=" + (Keyboard.current != null) + " result=" + lastResult);
             sb.AppendLine("Input devices=" + string.Join("; ", InputSystem.devices.Select(d => d.layout + ":" + d.displayName + ":enabled=" + d.enabled)));
             MechaVRBossSetup.AppendReport(sb);
-            foreach (var body in UnityEngine.Object.FindObjectsByType<MechaVRBodyFollower>(FindObjectsInactive.Include))
+            foreach (var body in UnityEngine.Object.FindObjectsByType<MechaVRBodyFollower>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 sb.AppendLine("BODY " + Pose(body.transform) + " enabled=" + body.isActiveAndEnabled);
                 sb.AppendLine("  head=" + Pose(body.head));
@@ -296,7 +296,7 @@ public static class MechaVRDiagnostics
     private static void TestBodyFollow()
     {
         if (!EditorApplication.isPlaying) { lastResult = "Body follow test requires Play mode"; return; }
-        var body = UnityEngine.Object.FindObjectsByType<MechaVRBodyFollower>(FindObjectsInactive.Exclude).FirstOrDefault();
+        var body = UnityEngine.Object.FindObjectsByType<MechaVRBodyFollower>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).FirstOrDefault();
         if (!body || !body.head || !body.bodyTrackingSpace || !body.mechaHeadSpace) { lastResult = "Body follower not configured"; return; }
         Transform realHead = body.head;
         bool bodyEnabled = body.enabled;

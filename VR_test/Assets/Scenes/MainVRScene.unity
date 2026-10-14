@@ -1116,6 +1116,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 572784255}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1539084370
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1539084371}
+  m_Layer: 0
+  m_Name: RightSwordGrip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1539084371
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1539084370}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.39230365, y: 0.32850146, z: 0.5763225, w: 0.63721037}
+  m_LocalPosition: {x: 0.029436652, y: 0.072430186, z: 0.017113458}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2077282362}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1602106931
 GameObject:
   m_ObjectHideFlags: 0
@@ -1163,6 +1194,7 @@ GameObject:
   - component: {fileID: 1704615211}
   - component: {fileID: 1704615212}
   - component: {fileID: 1704615213}
+  - component: {fileID: 1704615214}
   m_Layer: 0
   m_Name: MechaRoot
   m_TagString: Untagged
@@ -1238,6 +1270,24 @@ MonoBehaviour:
   contactRefinements: 10
   minimumHitSpeed: 0.2
   hitCooldown: 0.12
+--- !u!114 &1704615214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1704615210}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36d052135d3969c4888080aee54e1677, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MechaVRSwordEquip
+  rightHandGrip: {fileID: 1539084371}
+  swordPrefab: {fileID: 2573873004076146356, guid: bac147a4b8406534991f64b2fe365202, type: 3}
+  swordGripPoint: {x: 0, y: 0.16, z: 0}
+  localPositionOffset: {x: 0, y: 0, z: 0}
+  localEulerOffset: {x: 0, y: 0, z: 0}
+  swordScale: 1
 --- !u!1 &1960746170
 GameObject:
   m_ObjectHideFlags: 0
@@ -1371,6 +1421,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 948646018626166555, guid: ee79e16db66a8c14190987c55942c56e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 292792642}
+    - targetCorrespondingSourceObject: {fileID: 948646018626166555, guid: ee79e16db66a8c14190987c55942c56e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1539084371}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ee79e16db66a8c14190987c55942c56e, type: 3}
       insertIndex: -1

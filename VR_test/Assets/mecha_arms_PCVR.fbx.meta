@@ -3,7 +3,17 @@ guid: ee79e16db66a8c14190987c55942c56e
 ModelImporter:
   serializedVersion: 24600
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Mecha_PCVR_L
+    second: {fileID: 2100000, guid: 9baf0c1e6af2ab44b8ce5475c62ca365, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Mecha_PCVR_R
+    second: {fileID: 2100000, guid: 90146d40dc6ebbd4daa9f4ef8069ff67, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
