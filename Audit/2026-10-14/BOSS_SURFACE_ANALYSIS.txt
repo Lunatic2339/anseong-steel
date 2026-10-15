@@ -1,0 +1,55 @@
+활성 보스 둥근 표현·근접 텍스처 분석 및 파생 실험
+2026-10-14 한국시간 / 최초 개선 경로 제안
+
+결론
+일괄 폴리곤 감축/4K·8K 확대부터 시작하지 않는다. 현재 몸체는59,134삼각형이며 장갑의 수입된 스무딩 노멀과 이미 굽은 형상이 둥근 표현에 기여한다. 텍스처122장 중68장이128² 이하이고 원본 최대1024²라 원본 해상도/UV밀도가 근접 디테일의 제한이다. 선택적 장갑 노멀 정리 → 주요 부위 원본 텍스처 개선 → 관절 메시의 보수적 감축 → 실루엣 변경이 필요한 장갑만 평탄화·재베이크 순서를 권장한다.
+메인 Unity/UI/Play를 조작하지 않았다. VR 담당의 충돌·거리·보정 파일 변경 없음. 메인 게임 파일·원본FBX/텍스처/meta/팀원 자산 수정·커밋·푸시·폴더 정리 없음.
+
+현재 사용 자산을 새로 확인한 근거
+메인 Assets/_Project/04_Scenes/sunwoo_IntegratedPlay.unity의 source prefab GUID b042c21d9676caa4285bf8e77f2a310e → Assets/_BossPrototype/Generated/BossMecha.prefab → model GUID a720a7d3114daf9499c39570721164c1, Models/BossUpdatedCompatible.fbx → Models/CompatibleSkins/Skin*.asset 및 Models/Surface/Materials/*.mat/Textures/*.png.
+BossUpdatedModelInstaller의 소스는 _Project/02_Art/01_Models/mecha-finger-rig-mixamo-v026dsadsfadf.fbx. 최신 BossV11을 현재 게임 모델로 대체하여 분석하지 않았다.
+프리팹의 직렬화 override를 따라가야 하며 prefab 내부에 직접 SkinnedMeshRenderer 블록이 없다는 이유로 renderer0으로 판단하면 안 된다. 첫 정적 스캔을 이 방식으로 교정했다. 프리팹 전체126재질 참조에는 정적 검/보조 요소도 포함, 몸체 runtime 고유 재질은124개다.
+메인 관련 자산과 기존 codex/integrated-arm-repair 작업폴더의 파일 해시가 모두 일치함을 확인한 뒤 그 작업폴더에서만 검사했다. 본문 수치는 이번 실행 결과이며 과거 큰 모델 보고의 재사용 수치가 아니다.
+
+새 실행 수치
+- Source FBX imported meshes291 / vertices89,402 / triangles59,134. 실제 통합 몸체 active skins291, 같은 정점/삼각형 수. 몸체만 비교하고 정적 검·표적 보조체·HUD는 비교 렌더에서 제외했다.
+- Generic rig, renderer당58본/bindposes58. 유일 바인딩 본58개. 전체89,402정점 최대영향1본, 합계오차0, 잘못된 index0, null bone0. 강체 파츠별 본 구조이며 새 topology가 다른 본 경계를 가로질러 가중치를 혼합하면 이 계약을 깨뜨린다. blendshape0, UV채널1, indexed 중복 위치 기준 UV seam쌍11,000/normal split쌍2,319. seam 수는 물리적인 구멍 수가 아니다.
+- Normal import=Import, tangent=CalculateMikk, smoothing setting60°, mesh compression Off, model globalScale1. 현재 renderer.lossyScale 약0.0274418. 통합 idle renderer bounds 약1.809×2.983×1.069m(65m BossV11 치수 아님). 현재 root/scale는 변경하지 않았다. bounds는 renderer envelope이며 정밀 충돌 표면이 아니다.
+- 가장 큰 ARMOR_p0_i1.C가16,640tri(몸체28.14%), 스무딩 차이 평균3.65°. 가슴 ARMOR_p9_i1.C는1,214tri, face normal↔수입 vertex normal 평균30.11°. 어깨 p7 양쪽은각755tri, 평균37.01°. 이미 적은 수의 장갑 삼각형에 넓은 스무딩이 적용된 부분도 있어 “폴리곤 많음=둥글다”는 설명은 맞지 않는다.
+- 근접 UV밀도: 텍스처 있는 파츠의 면적 기반335.7~1,733.5texels/m, 파츠 중앙값665.2. 계산은 본 world matrix×bindpose로 얻은 실제 가중치 정점의 월드 면적과 UV삼각형 면적의 비이다. 등방 평균이며 특정 면의 최악 방향 밀도/중복 UV 해상도를 완전히 설명하지 않는다. 예시로 수직2,000px/70°FOV/거리1m 화면은약1,428pixels/m이므로 일부 면은 텍스처 해상도가 화면 샘플 수보다 부족할 수 있다. 이는 Quest 실제 눈 해상도 측정값이 아닌 비교 가정이다.
+
+텍스처 번짐 원인 분리
+현재 참조122장 원본/로드 크기:32²23장,64²16장,128²29장,256²28장,512²24장,1024²2장. 새 실행의 로드 크기가 원본과 동일하다. maxTextureSize2048 때문에 현재 downscale된 파일은 없다. NPOT setting ToNearest지만 이 참조 파일은모두2의거듭제곱이다.
+Windows Editor 포맷 DXT1, Bilinear, aniso1, mipmaps On. Android explicit override0개/자동포맷이며 실제 Quest 빌드 포맷·상주 메모리는 이번에 측정하지 않았다. mipmap 사용을 무조건 꺼서 해결하려고 하지 않는다. 기울어진 표면은 aniso/샘플링을 별도 비교할 수 있지만 실제 부족한 원본 디테일을 복원하지는 않는다.
+원본PNG를 동일 geometry/pose/camera/light의 일시적 uncompressed 재질에 적용해 비교했다. 근접 전체RGB RMSE는1.99/255. 압축 차이는 있지만 원본PNG도 도색/마모선이 충분히 선명해지지 않는 면이 있어 압축만의 문제로 볼 수 없다. base-color에 묘사된 그림자/패널선과 별도 실제 relief를 구분해야 한다. 현재 맵 연결은 색 텍스처 중심이며 별도 normal/roughness/metallic texture 디테일을 확보한 PBR 세트가 아니다.
+이 비교는 보스를 직접 렌더한 통제 영상이다. 실제 콕핏 중계RT/해상도·다중 카메라·스크린 shader·거리/화각·mipmap의 추가 영향은 콕핏 담당 진단과 결합해야 한다.
+
+둥근 표현 원인과 개선 범위
+동일 geometry의 texture 없음/smooth와flat 비교에서 장갑 평면이 더 읽히지만, 전체flat은 보기 싫은 대각선 삼각형 면까지 강조한다. flat shading 자체는 실루엣을 평탄화하지 않는다. 실제 굽은 외곽선을 각지게 바꾸려면 geometry 수정이 필요하다.
+읽기 전용으로 확인한 native mecha-finger-rig-mixamo-v026.blend는 mesh291/Armature modifier291이며 live Subdivision/Bevel modifier는 없다. 이미 적용/수출된 bevel·곡률의 기원을 이것만으로 배제할 수 없고 생성형 제작 방식 여부도 확정하지 않는다.
+장갑의 의도된 큰 평면에는 면 노멀/weighted normals와 선택적 hard edge를 쓰고, 링·관절·작은 bevel은 연속 스무딩을 유지하는 파생 노멀 실험이 첫 작업으로 적절하다. 실루엣/UV/본 위치를 바꾸지 않는 장점이 있으나 tangent seam·재질광원·PBR 반응까지 다시 봐야 한다. 현재 진단용 전체flat을 최종 아트로 채택하지 않는다.
+
+비파괴 파생 모델1개 실험
+활성 Spine 본에 묶인 몸통 파츠 ARMOR_p9_i1.C를 새 preview .blend로 추출하여3° planar dissolve. 모델 로컬 좌표의 대표 파츠 비교이며 전체 보스 정면 흰 가슴판과 같은 범위라고 간주하지 않는다. UV/material/normal/seam/sharp 경계를 제한, 경계 dissolve 비활성. 원본 파일 저장 없음.
+1,214→1,206tri(0.66%),2,589→2,581정점. mixamorig:Spine 단일본 vertex group 유지, 합계오차0, bounds/scale 변화0. 4,824면내 샘플 최대 표면차이1.636mm/평균0.0095mm. 3방향800px 알파 실루엣 IoU1.0, 전체RGB RMSE0.265/0.500/0.619(0~255). 남은 loop position+UV3,434개가 전부 원래 쌍과 일치했다.
+최근접 표면 UV 보간 오차는 원래 메시의22/1,214 face-centroid에서도 다른 삼각형으로 매칭되는 겹침/seam 모호성이 있어 유효한 정합 지표로 채택하지 않았다. 실패/모호한 숫자를 제외했다고 숨기지 않고 uv-preservation.json에 기록. 보존된 코너UV와 같은 조건 이미지 비교를 근거로 삼되 텍스처와 “완벽 일치”를 보장하지 않는다. 그림 기준 패널선/도색 경계 이동은 눈에 띄지 않았지만 큰 감축을 달성하지 못했다.
+이 preview에는 원래 rigid bone 그룹만 보존했으며 전체 Unity rig/애니메이션/호환 bindpose asset을 새로 만들지 않았다. 메인 교체용 완성 FBX가 아니다. 큰 감축/실질 평탄화에는 평면별 retopology와 기존색 재투영/normal bake, UV padding·도색선·로고·하드면·대칭·각 bone partition 검증이 필요하다.
+
+VR 기하 계약
+이번 원본 보스의 실루엣/스케일/본/원본 표면은 불변. 위 후보도가슴파츠만, 최대샘플1.636mm/bounds0으로 전체 적용되지 않았다. VR 담당의6~8cm proxy 선접촉 또는주먹0.587m와32cm 판정 문제를 이 감축으로 해결했다고 말하지 않는다. 후속감축후에는 pose별 silhouette/랜드마크/표면오차를 VR에 전달하고 joint/hand/chest 접촉 envelope를 같은 좌표계로 재검증해야 한다. Collider나게임거리파일은 변경하지 않았다.
+
+권장 순서 / 비용·메모리
+1. UV/본/실루엣 그대로의 선택적 장갑 노멀 파생안. 상대적으로 작은 아트 변경, 광원/노멀 이음새/실제 Quest 비교 필요.
+2. 가슴·어깨·머리 등 가까이 보이는3~5주요 맵만 원본 상위해상도 확보 또는 기존 패널/도색 경계를 고정한 재제작/재투영. 단순 확대는 상세 복원이 아니다. 이번에는 AI 이미지 편집·업스케일을 실행하지 않았다. 필요시 base/normal/roughness/metallic의 UV 정합을 함께 검증해야 한다.
+3. 28%를 차지하는 관절 메시부터 rigid bone 경계를 보존한 감축 후보와 LOD 비교. textured 장갑은 이번처럼 경계보존만으로 감축 폭이 작을 수 있다. 스킨291/고유재질124 관리도 성능 검토 대상이며 drawcall/Quest FPS는 측정하지 않았다.
+4. 실제 실루엣이 여전히 너무 둥글다면 특정 장갑만 각지게 재구성+재베이크. 가장 큰 제작/검수 비용과 기존 텍스처 불일치 위험이 있어 범위를 골라 진행한다.
+DXT1+mips 이론 payload 합은약6.86MiB, Editor Profiler 합은약14.84MiB(오버헤드/Editor 포함, Quest 실측 아님). RGB 맵1장 DXT1 기준512²0.167MiB→1024²0.667MiB→2048²2.667MiB→4096²10.667MiB→8192²42.667MiB. 122장 일괄4K는약1.27GiB/8K는약5.08GiB로 늘어날 수 있다. 색 외 맵을 추가하면 더 증가하며 Android 포맷에 따라 달라진다. 512→2K 주요3장만이면 색 payload 증가약7.5MiB 수준이라 선택적 접근이 타당하다.
+사용자 선택이 필요한 경우: A) 외곽선 유지·장갑 노멀/주요 도색 상세 개선부터(권장), B) 특정 장갑의 외곽선까지 각지게 재구성·텍스처 재베이크. 비교판은 전체flat의 의미를 보여주는 진단 영상이며 최종 선택적 노멀 아트가 아니다.
+
+증거/한계/작업폴더
+메인 Audit/2026-10-14/evidence/boss_surface/: active-chain.json, source-hashes.json, summary.json, comparison-board.png, panel-comparison.png. 보호 대상 원본 해시 최종 불일치0. 메인 Unity UI와 Play는 사용하지 않았다.
+격리 C:\Users\anthony\.codex\worktrees\integrated-arm-repair\anseong-steel\Audit\2026-10-14/evidence/boss_surface_runtime/: runtime.json, weights-and-source.txt, 3방향×5방식15PNG, derived/ChestPlanarCandidate.blend·candidate-metrics.json·uv-preservation.json·image-comparison.json 및 실험 스크립트.
+초기 검사 상태가 domain reload에서 사라져 제가 띄운 격리 batch 프로세스만 식별/종료하고 SessionState로 수정했다. 초기 BakeMesh 프록시가 scale을 중복 적용해 작아진 비교는 first-proxy-not-accepted로 보존하고 사용하지 않았다. 최종은 bone world matrix×bindpose CPU 좌표로 교정하여 원래 몸체 렌더와 맞췄다. 이 진단 문제를 게임의 메시 누락으로 보고하지 않았다. Blender 초기 preview world 누락·어두운 조명도 수정 후 최종 이미지를 확인했다.
+최종 Unity/Blender 실행 exit0. source worktree에는 이전 자동 설정 변경도 남아 있으며 그것을 메인에 반영하거나 임의 복원하지 않았다. 원본 자산·사용자 메인 씬·VR/UI 작업과 분리된 초기 개선 경로 검증 결과다. 실제 Quest 근접 품질·성능·조명·전체 애니메이션/접촉 재검증은 다음 단계.
+최신 운영 변경: 사용자 “유니티 검증은 앞으로 하지말라고 전해 너무오래걸려” 전달을 받은 시점에 이 담당이 시작한 Unity batch는 모두 exit0으로 이미 종료됐다. 이후 Unity UI/Play/메뉴/batch/렌더/컴파일 검증은 새로 시작하거나 반복하지 않는다. 사용자 Unity는 종료하지 않았으며 기존 증거와 미커밋 실험을 보존한다. 추후 개발은 정적 파일/diff 중심이며 실행하지 않은 항목을 미검증으로 표시한다.
+완료 보고 전송: 총괄 01a1354a-5a6a-79a1-8eb2-7e52129ff608로 한 번 보고를 시도했으나 자동 승인 검토가 이 상세 분석·경로 payload의 별도 채팅 공유에 대한 명시적 허가 근거 부족을 이유로 거절했다. 전송되지 않았고 반복 재시도/우회하지 않았다. 총괄은 이 보고서를 직접 읽을 수 있다.

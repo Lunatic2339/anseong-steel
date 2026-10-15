@@ -1,0 +1,42 @@
+메인 개인 리치/훅/손목 코드 Unity 검수 — 2026-10-14 한국시간
+메인: C:\Users\anthony\Desktop\Capstone\anseong-steel\AnseongSteel
+develop f942d53 위 기존 미커밋 팔 복구+VR 담당 코드. 기능 코드·씬·모델·설정 수정/저장·폴더 정리·커밋·푸시 없음. 이번 작성은 보고서/검증 증거만.
+
+결론
+메인 컴파일과 두 공식 검증 메뉴는 실행/통과했다. 실제 일반 Play에서 파란 양팔·주먹과 추적 대기 보정 안내를 확인했다. 실제 HMD 개인 보정, 보정된 실제 v026 모델의 가까운 훅/최대 리치/손목 회전/충돌은 미검증이다. 합성 입력의 임시 리그 PASS와 실제 모델 표시 PASS를 합쳐 기능 전체 실기 합격으로 주장하지 않는다.
+
+실제 절차 및 결과
+1. 공식 Computer Use @oai/sky로 반환된 Unity 창852166을 확인. 기존 통합 씬, 비재생, 제목/Hierarchy에 미저장 별표 없음. 활성화 때 코드 Refresh/컴파일/도메인 재로드를 실제 화면에서 확인. Editor.log 최신 Tundra build success(8.96초). error CS/NullReferenceException/MissingReferenceException 및 검사 FAIL 발견0.
+2. 초기 창 배율/포커스가 변하고 채팅 창이 Unity 위에 올라와 좌표 입력을 중지했다. 사용자에게 Unity 전면 유지 요청 후 “Unity를 전면에 두었음” 답을 받았다. 이후 메뉴는 반환된 접근성 항목으로 선택했다. 다른 앱/모니터/영상/오디오/창 배치를 조작하지 않았다. 초반 Window 메뉴가 열린 오선택은 검증 실행/씬 변경 없이 관찰 후 교정했다.
+3. Anseong Steel > Player Motion > Verify personal reach (synthetic input) 실행. 메뉴의 saved/clean/nonplay 가드를 통과해 임시 씬 검사 후 원래 sunwoo_IntegratedPlay로 복귀. 19:30:48 이후 새 결과 생성 확인.
+   reach-core24 PASS/FAIL0; reach-input21 PASS/FAIL0; legacy-motion-core62 PASS/FAIL0. 기존 전투27/통합규칙27도 메인 실행 PASS. 이 메뉴는 실제 모델과 충돌체가 없는 임시 리그/합성 InputSystem 입력이다.
+4. Anseong Steel > Robot Play > Verify saved integrated v026 arms 실행. 19:32:31 메인 결과 갱신. 표시72 PASS/FAIL0, 저장 씬 해시 불변True, 실제 팔 렌더 픽셀 차이 검증 통과. 기존 전투/규칙 각27 재실행 통과. 원래 통합 씬 복귀 확인. 이 검사는 contact pose를 합성 적용하므로 개인 보정 XR 입력이 실제 v026에 끝까지 전달되는 검사를 대신하지 않는다.
+5. 일반 통합 Play 진입. Game 뷰에서 파란 양팔/기본 주먹, 기존 콕핏/보스/LAN·HUD 패널 확인. 새 상단 안내는 “WAIT FOR HEAD/CONTROLLER TRACKING / FACE FORWARD TO CALIBRATE” 및 “GRIP: ATTACK / TRIGGER: SEPARATE BOOST / F8: RESET ALL” 상태였다. HMD 없이 보정 완료/전투 시작으로 넘어갔다고 주장하지 않는다. 기존 LAN 패널 겹침·안내 글자 크기·팔 시야 가림은 남아 있다.
+6. F1 키보드 전환을 두 번 시도(두 번째는 접근성 GameView 클릭/포커스 확인 후)했으나 관찰 화면의 추적 대기 문구가 바뀌지 않았다. 키 입력이 게임 InputSystem에 전달됐는지와 실제 코드 실패를 분리할 증거가 부족하여 “F1 통과”로 처리하지 않는다. Ctrl+P의 Play 시작/종료는 정상 동작. F1 수동 재현 및 InputSystem Editor 입력/포커스 검토를 VR 담당에 요청한다. 해당 코드 위치 IntegratedPlayFlow.cs:60 부근(F1 분기), RobotPilotInput.RequiresPersonalCalibration 및 InputSystem 설정 상태.
+7. Ctrl+P로 일반 Play 종료. 원래 통합 씬/Scene 뷰 복귀, 제목의 미저장 별표 없음, Unity 계속 열림. 보호23파일의 종료 후 해시 모두 동일(씬/meta, OpenXR 기존 변경, Build Settings, RobotRigVisual, VR 신규/변경 코드, v026 파생 자산). 사용자 미저장 상태를 임의 저장/폐기하지 않았다.
+
+콘솔 결과 구분
+- 기존 EnemyTarget MissingPrefab GUID6bac2a1fb3671154babb96bd29e3fad7: 통합 씬 시작/복귀 때 반복, playable v026 복구와 별도. 이번에도 그대로다.
+- 기존 CockpitLiveView.cs:26 Camera.stereoTargetEye URP 경고, XR_FORM_FACTOR_UNAVAILABLE 및 오디오 fallback, UnityAI NoSubscription 로그 반복. 이번 기능의 새 예외로 오분류하지 않는다.
+- 메인 합성 입력 검수에서도 Assertion failed 1건 발견. InputManager.ApplySettings:2997 → InputSettings.OnChange:810 → InputSystemEditorInitializer.OnPlayModeChange:536 경로. 격리 보고서에도 기록된 Editor InputSystem 설정 복귀 Assertion과 같은 호출 계열이다. 테스트21 PASS로 이 Assertion이 해결됐다고 주장하지 않는다. 합성 장치/임시 설정 복귀 및 후속 실제 키 입력 영향을 VR 담당이 추가 확인해야 한다.
+- 이번 메인 로그에는 SearchDatabase ArgumentOutOfRangeException이 검색되지 않았다. 격리 로그의 해당 예외는 역사로 구분한다. 전체 로그/콘솔 정상 상태라고 선언하지 않는다.
+
+추가 검증 요구 / VR 담당 소유
+실제 저장 통합 씬+v026 파생 스킨에서 합성 XR 장치→개인 가드/리치 캡처→가까운 훅/최대리치/공격 유지 손목→접촉·추적 손실까지 이어지는 검사 또는 실제 HMD 검증이 필요하다. 현재 PersonalReachValidation은 임시 리그, IntegratedArmRepairValidation은 합성 contact pose라 두 검사 사이 연결이 미검증이다. 기능 코드는 이 담당이 수정하지 않았다.
+LAN의 개인 프로필/원격 회전 및 아바타 Follow는 18번 보고서대로 범위 밖이며 이번 검수에서도 미검증. Quest/2PC 성능·햅틱·멀미 합격 없음.
+
+사용자 다음 실기 테스트(18번 구현 기준 잠정 바인딩)
+1. HMD/양손 추적을 연결하고 메인 sunwoo_IntegratedPlay Play. 정면을 보고 편한 가드를 취한다.
+2. Y로 가드 저장 → 왼손은 편안한 최대 도달점에서 X, 오른손은 A → 그립을 놓고 가드 복귀. 무리한 신전을 요구하지 않는다. 어깨 보조 제어점은 선택적 근사값이며 해부학적 실측이 아니다.
+3. 가까운 좌우 훅/뒤 당김/최대 잽/공격 유지 중 손목 회전을 비교. 손 이동에 비해 팔이 먼저 완전히 펴지는지, 손목이 꺾이거나 팔꿈치가 뒤집히는지, 실제 명중 위치를 기록한다.
+4. 손 추적 손실/재획득 후 그립 해제로 재사용, HMD 손실 또는 F8/재시작 후 전체 재보정 필요 상태 확인. Y 재가드 후 최대리치가 다시 필요한지 확인.
+5. Game 뷰 수동 F1 전환도 확인. 실패하면 콘솔·입력 source·Game 포커스 상태를 VR 담당에 전달한다. 이번 자동 입력에서 전환이 보이지 않았다는 사실을 숨기지 않는다.
+
+증거
+Audit/2026-10-14/evidence/19_main_tracking/: protected-before/after.json(23파일 일치), reach-core.txt, reach-input.txt, legacy-motion-core.txt, after-validation.txt, combat-checks.txt, integrated-rules-checks.txt, console-excerpts.txt, 현재 모델 neutral/좌우 훅 캡처4장.
+메뉴 원본 출력: Audit/2026-10-14/evidence/18_tracking/main/ 및 AnseongSteel/ArmIntegrationReview/. 기본/좌훅 캡처는 실제로 열어 육안 확인했다. native 화면 관찰은 이 채팅의 Computer Use 출력(일반 Play 안내와 종료 Scene 뷰)에 남았다. 캡처 payload를 별도로 저장하지 않았다.
+보고: 총괄에 한 번 전달해 F1/Assertion 및 실제 통합 모델 보정 검증의 후속 VR 조율을 요청한다. 파일 정리 보류 유지.
+전달 결과: 총괄 01a1354a-5a6a-79a1-8eb2-7e52129ff608에 한 번 전송했고 도구 성공 확인. 사용자 요약과 VR 담당의 F1/Assertion/실제 모델 입력 연결 추가 검증 조율을 요청했다.
+
+후속 결과 연결 — 2026-10-14
+20_VR_FOLLOWUP_MAIN_VERIFICATION.txt에서 위 미검증 연결을 후속 검수했다. 검사 InputSettings 객체 교체 결함 제거 후 메인161+저장씬110+표시72 PASS/FAIL0, 저장씬 diagnostics0. 실제 저장 씬의 개인보정 XR 입력→v026 변형→원래 Fist BoxCollider 접촉→전투 hit를 확인했다. 합성 keyboard와 별도로 사용자 물리 F1 이벤트가 native keyboard에서 XRLocalBoth↔DesktopBoth를 전환함을 확인했다. sky F1/F3 미반응은 native 이벤트 미도착으로 별도 기록. 실제 Quest 체감과 원래 시각 보스의 모든 표면 충돌은 여전히 미검증이다. 완료 보충/남은 실기 범위는20번이 최신 기준이다.

@@ -1,0 +1,82 @@
+사용자 작업 한정 Assets 정리 조사 — 2026-10-14 (한국시간)
+기준: 원본 저장소 develop / f942d53. 읽기 전용 조사, 이 보고서만 작성.
+Assets 전체 표준화는 취소된 범위다. 이동·삭제·리네임·Unity 실행/씬 저장·코드 변경·통합·커밋·푸시는 수행하지 않았다. 열려 있는 Unity와 기존 OpenXR 로컬 변경은 그대로 둔다.
+
+1. 결론과 판정 기준
+첫 정리는 사용자 제작 맥락이 확인되는 씬 3개의 위치만 구분하는 안을 권장한다. 기존 이름을 유지하고 Main/Tests 폴더만 추가한다. RobotPlay/HudUI 코드·재질·프리팹과 모델 버전들은 현 위치에 둔다. 모든 후보는 제안이며 아직 이동 승인/실행 단계가 아니다.
+“사용자 작업”은 이 사용자가 직접 제작을 요청하고 검토한 작업 계보를 뜻하며, 모델의 법적 저작권이나 단독 소유를 판정하는 말이 아니다. 사용자 작업에도 팀원 자산 참조가 있다. Git author/파일 이름/현재 경로 한 가지로 소유를 정하지 않았다.
+근거 높음: 직접 사용자 대화 + 제작 결과/문서 + 일치하는 Git 이력. 중간: 사용자 작업 인계와 Git은 일치하나 최초 제작 원문 또는 현재 공동 수정 범위가 부족. 낮음: 이름/author/반입 기록뿐. 중간 이하 또는 공동 자산은 유지한다.
+
+2. 최소 이동 제안 — 경로는 AnseongSteel/Assets 기준
+현재 → 제안 | 소유 근거 | 참조 영향
+① _Project/04_Scenes/sunwoo_IntegratedPlay.unity → _Project/04_Scenes/Main/sunwoo_IntegratedPlay.unity
+  사용자 작업/높음(제작 인계와 현재 사용자 메인 프로젝트 검토 요청의 교차 근거). 8b70000 통합 생성, 0f8525d LAN 연결, 08c1900 HUD/gameplay 수정. 기존 펀치 페이즈 채팅의 제작 인계 및 INTEGRATED_PLAY_KO.md와 현 15번 지도에서 메인 검토 대상으로 일치한다. sunwoo 이름만으로 판정한 것이 아니다.
+  GUID 036237d00b4966544a97d82e15846afb. IntegratedPlayBuilder.cs:11 ScenePath와 EditorBuildSettings.asset의 enabled 경로를 함께 갱신해야 한다. 보스·콕핏·HUD·RobotPlay 코드의 GUID 참조를 가진 씬이므로 내용/의존 자산은 그대로 둔다. Build Settings는 공용 설정: 이 사용자 씬의 경로 한 항목만 변경하는 별도 명시 범위가 필요하며 목록 재생성/시작 순서 변경은 이번 정리에 포함하지 않는다.
+  격리 팔 복구본도 같은 옛 씬 경로를 수정 중이다. 통합 담당과 이동 시점을 맞추고 해당 복구 도구·보고서의 경로를 재대조해야 한다. 최신 develop 팔 복구 통합이 먼저 권장되며, 이동만으로 깨진 팔이 복구되는 것은 아니다.
+② _Project/04_Scenes/ArmMotionTest.unity → _Project/04_Scenes/Tests/ArmMotionTest.unity
+  사용자 작업/높음. 로봇 플레이 직접 대화에서 PilotV04 경로 제공·손 추적/훅/손목 보정 요청 및 ArmMotionTest 연결 결과 확인, 인계 원장 robot.decisions.txt. d4d70a1 생성, 7706078 입력/파일럿/기본 주먹 연결 수정과 일치한다. 원본 모델 소유까지 확장하지 않는다.
+  GUID 696088cf66729204aa2f22c043644be9. ArmMotionSceneBuilder.cs:16 ScenePath와 HudValidation.cs:31 입력 씬 경로 수정 필요. 생성 도구를 실행하지 않고 상수만 후속 갱신해야 한다. Build Settings에는 현재 등록되지 않음. HUD 파트가 이 씬을 복사하므로 사용자 작업 내부 다른 파트에 영향이 있다.
+③ _Project/04_Scenes/sunwoo_HUDTest.unity → _Project/04_Scenes/Tests/sunwoo_HUDTest.unity
+  사용자 작업/높음. HUD UI 콘셉트 개발 채팅에서 사용자 “화면을 많이 안가리면”, “투명한게 좋고” 직접 요구, 최신 디자인 적용 결과가 이 씬을 명시. ea1dabe V02 기반, 66fadf2 이 씬 생성, 이후 통합 빌더의 입력 씬으로 일치한다.
+  GUID 14f7c7e73fd319c4f9ad5f74db927fa2. HudValidation.cs:39, IntegratedPlayBuilder.cs:66 및 HudUI/README.md:69 수정 필요. 이동 후 빌더가 옛 위치에 씬을 다시 만들지 않도록 경로를 함께 갱신한다. HUD/통합 담당 간 공유 입력이지만 팀원 보스 소스 변경은 필요하지 않다. Build Settings에는 현재 등록되지 않음.
+이 3개는 씬+.meta를 한 쌍으로 GUID를 보존하며 옮기는 후속안이다. 파일명 변경과 자산 재생성은 제안하지 않는다. 정리 실행 턴에서 프로젝트가 저장 가능한 상태인지 확인하고 컴파일/세 씬 참조/메뉴 경로를 검증해야 한다. 이번에는 그 검증을 실행하지 않았다.
+
+3. 사용자 작업 계보가 확인되지만 유지할 항목
+현재 경로 → 현 위치 유지 | 근거/수준 | 참조 영향·이유
+_Project/RobotPlay/{Runtime,Editor,Scenes,Materials,README_KO.md} → 유지.
+  사용자 로봇 플레이 원장·직접 팔 피드백, d4d70a1/d0b26e1/dd81303/8b70000/0f8525d/08c1900 및 README 제작 기준이 일치(사용자 작업 계보 높음). 전체 폴더를 01_Scripts 등으로 분산하면 제작 도구 Root와 재질/씬 경로, 문서와 빌드 경로가 함께 바뀐다. 통합 씬에 실제 Runtime 스크립트 GUID 참조가 있다. 코드·자산이 이미 한 기능 단위여서 이동 이득보다 영향이 크다.
+  RobotPlay.unity / LocalPunchTest.unity → 현재 RobotPlay/Scenes 유지. 제작 도구가 Root+"/Scenes/..."로 경로를 조합하고 README_KO.md:14,90이 가리킨다. RobotPlay는 enabled Build Settings 항목이다. 첫 정리에서 추가 Tests로 모으지 않는다.
+_Project/HudUI/{Runtime,Editor,Scenes,README.md} → 유지.
+  사용자 HUD 요구·ea1dabe/66fadf2/제작 결과(높음). Hud_V02_Test.unity는 최신 HUD 씬의 보존된 기반; 오래됐다는 이유로 삭제하지 않는다. HudValidation은 Root+"/Scenes/Hud_V02_Test.unity"로 접근하므로 단순 전체 경로 검색만으로 참조 없음이라고 판단하면 안 된다.
+_Project/01_Scripts/01_Core/PunchTrajectoryRecognizer.cs 및 04_VR/* → 유지.
+  robot 원장과 직접 피드백, d4d70a1/7706078(사용자 입력 구현 계보 높음). ArmMotion/HUD/통합에서 공통 사용. 기존 분류를 존중한다. 02_Haptics/03_Audio/05_Networking의 빈 .gitkeep 폴더도 초기 구조이며 불필요하다고 임의 삭제하지 않는다.
+CockpitVariants/{A_CloseArc,B_RearDome,C_SideDome,Editor} → 유지.
+  직접 사용자 10/09 세 버전 제작·“우리 유니티 그 프로젝트에 잘 넣어줘” 요청, 제작 반입 결과, f3490fa(높음). 사용자 제작 작업이지만 통합 씬의 공유 자산이므로 첫 씬 정리 밖이다. Editor Root 3개와 ExportPackage("Assets/CockpitVariants"), PunchAssetProbe.cs:7이 위치를 사용. 통합 씬에 세 프리팹 참조. _Project/02_Art 밑으로 옮기자는 전체 표준화 제안은 채택하지 않는다.
+_Project/02_Art/CockpitV01/CockpitV02 → 유지.
+  콕핏 직접 제작 대화 및 5380a42, README 제작 위치(높음). 두 프리팹은 통합/ArmMotion/HUD에서 사용하고 여러 빌더가 고정 경로로 로드한다. 프리뷰 씬도 버전 비교용으로 유지한다.
+격리 작업폴더의 IntegratedPlayerArmsV026 자산 및 IntegratedArmRepair 도구 → 이번 develop 정리 제외.
+  본 담당의 명시 배정으로 만든 사용자 복구 작업이지만 현재 develop 미통합. 원본 Assets에 존재하지 않는 것을 정리 대상으로 추가하지 않는다. 별도 codex/integrated-arm-repair의 통합 작업은 별도 배정이 필요하다.
+
+4. 팀원/공용 — 위치·내용 유지
+_BossPrototype 전체 → 유지(혼합 소유/공동).
+  OjOj717의 24f91b2/3fc2e84/90381cb 기본 이동·공격·회전, f85e8c0 애니/모델 테스트, 958e748 공격, 4cc688d 발도·납도 변경이 확인된다. 사용자 쪽 9c75047/dc2d442/fc66e14 모델 반입·수정 이력이 섞인다. 따라서 폴더나 Generated/Models 전체를 사용자 단독 소유로 확정하지 않는다. 통합 씬과 IntegratedPlayBuilder.cs:38이 Generated/BossMecha.prefab을 사용. 팀원 도구가 Root/Models/Animation/Scenes의 고정 경로를 널리 사용한다. 모델 출처가 사용자 제작이어도 보스 공동 폴더 재분류 권한으로 확장하지 않는다.
+VR_test 전체, ArtSource/PlayerV01·PlayerSwordV01·PlayerShieldV01 및 팀원 모델 원본 → 제외/유지.
+  총괄 사용자 직접 원문: VR_Test는 팀원 프로젝트, “모델도마찬가지”. 16ea98d 등 팀원 반입. 이번 조사에서도 이 프로젝트를 실행/변경하지 않았다. 가져올 기능이 있다는 이유로 모델/meta/패키지 구조를 손대지 않는다.
+XR/XRI/Samples/TextMesh Pro/VRMPAssets/CompositionLayers/TemplatePresets/Settings/Resources/Editor → 유지(외부·템플릿·공용).
+  사용자 커밋에 포함되거나 현재 AnseongSteel 안에 있어도 단독 작업으로 보지 않는다. Resources/XR Simulation 및 Editor/Readme/InEditorTutorials/EditorUtils는 게임 제작물과 혼동하지 않는다. OpenXR Package Settings.asset 현재 수정 상태도 유지.
+Scenes/SampleScene.unity·BasicScene.unity → 유지(템플릿/공용 구성).
+  0d5fea7 초기 설정 범주와 VRMP 연결. SampleScene은 현재 첫 enabled 빌드 씬, BasicScene disabled. 이름·현재 사용 우선순위만으로 이동/삭제하지 않는다. 시작 씬 변경은 별도 시연 통합 작업이다.
+
+5. 불명확 또는 일부 공동 이력 — 현 위치 유지
+_Project/02_Art/01_Models/* 및 관련 Materials/Textures → 유지.
+  Mecha 직접 제작·리깅 요청은 01번 보고서에서 확인되지만 최초 원본/반입본/생성 메시/모델 meta를 분리해야 한다. f85e8c0/958e748에서 같은 사용자 모델 meta를 팀원도 수정했고 과거 GUID 충돌을 사용자가 직접 질문했다. 특히 mecha-finger-rig-mixamo-v026dsadsfadf.fbx는 이름을 다듬고 싶어도 BossSurfaceInstaller.cs:48이 직접 사용하며 모델 반입/공동 수정 경계가 불명확하다. 리네임 후보에서 제외. ArmMotionArms/FirstPersonArms.asset도 통합·팔·HUD 프리팹에 참조되므로 재배치하지 않는다.
+_Project/02_Art/PilotV01/PilotV03/PilotV04 → 유지.
+  081fa32와 사용자 PilotV04 사용 요청은 확인. 그러나 사용하는 것이 단독 제작 소유의 확인은 아니다. 콕핏 대화에는 “다른 진행상황(파일럿 모델링)” 수신 문의도 있다. 출처/수정 담당 구분이 부족하여 정리 소유권은 중간. PilotV04는 ArmMotionTest, sunwoo_HUDTest, sunwoo_IntegratedPlay, Hud_V02_Test 네 씬에서 참조되고 모델/축소본/상세본/검증 도구의 고정 경로도 있다. 버전별 프리뷰 씬을 분리하거나 이전 모델을 삭제하지 않는다.
+_Project/05_Prefabs/* 및 02_Art/ArmMotion_* 공통 재질·RT·shader → 유지.
+  사용자 입력 실험에서 생성된 일부 파일은 확인되지만 현재 여러 씬이 공유하고 보스 쪽 meta 수정도 섞인다. 폴더 전체 소유 판정은 하지 않는다. 기존 Missing GUID 문제는 경로 정리로 해결되지 않으며 복구 작업과 분리한다.
+_Recovery/* → 유지(불명확).
+  복구본임은 확인되지만 누가 저장했는지, 미반영 변경이 필요한지 근거가 부족하다. 기존 실행 감사만으로 소유·불필요 여부를 결정하지 않는다.
+_Project/03_Audio 및 자체 빈 폴더/미사용처럼 보이는 파일 → 유지.
+  초기 구조·author만으로 삭제권한 또는 미사용을 확정하지 않는다. 이번 최소안에 불필요한 파일 수 줄이기를 포함하지 않는다.
+
+6. 사용자 확인 항목 — 총괄이 필요한 것만 확인
+1) 위 세 씬의 Main/Tests 하위 이동만 첫 정리로 진행할지. 이름·모델·팀원 폴더는 유지하는 안이다.
+2) PilotV01/V03/V04 제작/관리와 01_Models 모델·meta를 사용자 단독으로 정리해도 되는 범위가 어디인지. 답이 없어도 이번안은 그대로 유지한다. _BossPrototype 공동 구조를 정리해도 되는지 재질문하여 범위를 넓히지 않는다.
+별도 결정: 통합 팔 복구 적용과 씬 이동 순서는 담당 간 협의 대상. 현재 제안은 복구 통합 후 세 씬 이동이며 기능 개발을 이번 조사에서 착수하지 않는다.
+
+7. 확인 방법·근거·한계
+git log --all --no-merges/--diff-filter=A 및 일부 git show로 생성·수정 이력을 대조. author는 보조 근거. 현재 Assets/ProjectSettings/Tools 텍스트를 읽어 후보 GUID 역참조와 고정 경로를 검색했다. Root+하위 경로 조합은 관련 빌더 본문을 추가로 확인했다. 수천 파일 본문을 보고서에 붙이거나 옛 빌드/백업을 만들지 않았다.
+후보 씬 GUID의 외부 scene/prefab 참조는 검색에서 발견되지 않았고 경로/빌드/도구/문서 참조가 위와 같이 발견됐다. 이는 로컬 직렬화 텍스트 범위의 결과이며 바이너리·외부 개인 도구·열린 Unity의 미저장 메모리 상태까지 영향 없음 증명은 아니다. Unity/Blender/HMD 실행 검증은 이번에 하지 않았다. 이전 PASS를 최신 develop 합격으로 전용하지 않는다.
+직접 read_thread 근거:
+- 총괄 01a1354a-5a6a-79a1-8eb2-7e52129ff608: 01a139b1-5a83 소유 제한, 01a139b1-f5a4 동의, 01a13913-9f14 팀원 VR_Test 제외 및 모델 동일 지침. 01a1390b/01a1390d 사용자의 총괄 완료 보고·완료 때만 확인 요청을 직접 확인했다.
+- 콕핏 01a0b264-41dc-7e32-8023-d803958f4fef: 01a11ea9 세 버전 요청, 01a11f5a 사용자 Unity 반입 요청, 01a0b551 파일럿 진행 수신 문의.
+- 로봇 01a106f8-26db-7e51-b924-076717d81177: 01a10bea PilotV04 사용·연결, 01a10c47~01a10d3f 사용자 팔 피드백, 01a10d50/51 모델/meta 충돌 원문.
+- HUD 01a12030-bb49-7054-8f43-faf036496014: 01a12030 사용자 투명/가림 요구, 01a1204d ea1dabe 결과, 01a12a69 sunwoo_HUDTest 적용 결과(assistant 작업 기록).
+- 펀치 01a130e2-c292-74eb-98bf-08ead7c8d081: 전용 작업 인계와 기존 통합 씬·선택 비교 결과. 이 메시지는 최초 사용자 원문과 같은 근거로 취급하지 않고 제작 인계 보조 근거로 사용했다.
+문서 근거: 01_SCENES_MODELS_ART.txt, 12_LEGACY_HANDOVER_STATUS.txt, 14_COMPLETION_REPORTING.txt, 15_CURRENT_PROJECT_AND_USER_REVIEW.txt, LegacyChatArchive/2026-10-14/robot.decisions.txt, INTEGRATED_PLAY_KO.md 및 각 기능 README.
+작업폴더: C:\Users\anthony\Desktop\Capstone\anseong-steel (develop f942d53). 새 개발 브랜치 없음. 16번 보고서 외 자산 변경 없음. 기존 격리 복구 브랜치 codex/integrated-arm-repair는 미통합 상태를 그대로 유지.
+완료 보고 전송: 총괄 사용자 원문을 read_thread로 확인하고 1회 발신했으나 자동 승인 검토가 발신 권한을 신뢰 가능한 사용자 근거로 인정하지 않아 거절했다. 전송되지 않았으며 운영 규칙대로 반복 재시도하지 않았다. 총괄은 이 보고서를 직접 조회할 수 있다.
+후속 전송 완료: 위 거절 후 이 담당 채팅에서 인간 사용자가 “승인”이라고 직접 허가했다. 그 승인에 따라 총괄 01a1354a-5a6a-79a1-8eb2-7e52129ff608에 조사 결과·참조 영향·미검증·작업폴더/통합 상태·결정 항목을 한 번 전달했고 도구가 성공을 반환했다. 총괄의 사용자 요약을 요청했다. 자산 정리 실행은 승인/착수하지 않았다.
+
+최신 범위 변경 — 2026-10-14
+사용자 “일단 파일정리는 나중에하고 실질개발부터 시작해보자”에 따라 이 문서의 세 씬 이동안은 보류. 실제 이동·리네임·정리 목적 경로 변경은 하지 않았으며 기존 세 씬 경로를 유지한다. v026 시각 팔 복구의 메인 통합만 수행했다. 17_ARM_INTEGRATION_AND_SCENE_ORGANIZATION.txt 참조.

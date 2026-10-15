@@ -1,0 +1,81 @@
+전투 거리·좌표계 최소 조율 검토 — 2026-10-14 Asia/Seoul
+상태: 읽기 전용 검토 완료. 메인 develop/f942d53 + 현재 미커밋 파일을 직접 읽음.
+게임 코드·씬·프리팹·모델 수정, Unity UI/Play/batchmode/컴파일/렌더 실행 없음.
+최신 사용자 Unity 검증 중단 지시 적용. 아래 실행 회귀는 필요한 합격 조건이며 지금 실행하거나 새 Unity 검증을 배정하는 지시가 아니다.
+
+결론
+원래 근접 접촉에서 팔이 굽은 채 멈추는 것은 자유공간 신전 결함과 다르다. 정확한 주먹·표면에 닿은 뒤 강제로 팔을 펴면 관통한다. VR 3도 후보는 자유공간 자세 개선이며 전투 거리 해결을 대신하지 않는다.
+한 가지 고정 거리에서 '3도까지 펴진 주먹의 끝 접촉'과 '기존 Punch 타격구가 Shared Robot Body에 닿음'을 모두 충족한다고 볼 근거가 없다. 현재 정면 기준 증거에서는 서로 겹치지 않는다. 적 전역 +.87m 이동/타격 반경 확대는 채택하지 않는다.
+최소 권장 순서: (1) 현재 clip의 실제 Recovery 자세에서 잽 접촉 여유가 있는지 기존 자료로 확인 (2) 안 되면 공격 거리와 반격 거리를 분리하는 작은 타임라인 어댑터를 후보로 삼음. 전체 AI/14패턴/새 페이즈 확장 불필요. 정해진 공동 접근·후퇴·회피의 입력과 권한은 보존한다. 이 보고는 구현 승인 또는 해결 완료가 아니다.
+
+1. 최신 메인 참조와 좌표계
+메인 루트 C:/Users/anthony/Desktop/Capstone/anseong-steel.
+씬: AnseongSteel/Assets/_Project/04_Scenes/sunwoo_IntegratedPlay.unity.
+RobotPlaySession(component560419632): target=2002046135, robotRoot=1473419226, contact=1473419225, externalBossTimeline=1, movementSpeed=.6, cooperativeMovement=1.
+Target GO2002046134 'Replaceable Enemy Target', Transform2002046137: 월드(0,0,1.85), identity, scale1, 부모 없음. MechaVRBossTarget은 자신의 모든 자식 Collider 캐시와 플레이어 onHit를 소유. Target Box2002046136: center(0,1.45,0), size(1.8,1.4,.4), 비trigger. 정지 씬 표면 앞면 world z=1.65.
+BossMecha prefab instance1812169572는 Target 자식. 원본 AnseongSteel/Assets/_BossPrototype/Generated/BossMecha.prefab GUID b042c21d9676caa4285bf8e77f2a310e. 씬 override가 prefab root1604084969430991654의 local position을0, yaw180으로 변경. 따라서 최종 visual world root(0,0,1.85), visual forward=-Z. prefab 원래(-1.2,0,-3)/yaw-25만 읽으면 오판한다.
+Driver scene1812169574→prefab1042649548478607112. hitPoint5013466775106371609는 주먹 계층의 Transform, local(.0051705,.06096949,-.0121561615), parent2329506187193533448. world 타격점은 boss root의 단순 상수 offset이 아니며 Animator 본 자세/부모변환에 따라 바뀐다. 씬 override hitRadius=.75(원본 Driver/HeavyPunch=.22). Awake의 ConfigureAnimationAttack이 최종 Driver .75를 HeavyPunch에 전달한다. .22를 통합 최종값으로 쓰면 안 된다.
+Shared Robot Body GO1473419224, root1473419226: 월드0, identity, scale1, 부모 없음. Capsule1473419227은 비trigger, center(0,1.1,0), radius .5, height2.2, Y축. 캡슐 중심선 끝 y=.5~1.7, 전체 y=0~2.2. 팔 query Box는 trigger로 설정되어 보스의 QueryTriggerInteraction.Ignore에 잡히지 않는다. 따라서 팔 가드가 실제 막는 Collider인 것이 아니라 body 후보 접촉 후 RobotCombat의 가드 상태로 피해0을 결정한다.
+Session.contact는 씬 disabled이며 Awake에서도 disabled. 그러나 Session.LateUpdate가 contact.ConstrainPose를 직접 호출하므로 disabled=접촉 없음이라고 해석하면 안 된다. RobotRigVisual.Synchronize는 contact 요청/제한 후 팔 위치를 복제하며 gameplay 거리 소유자가 아니다.
+MechaVRBossContact.RecoverOverlap은 보스가 팔로 들어온 경우 contact.transform(SharedBody 루트)을 밀어내기도 한다. 보스 접근 후보에서 이 복구가 플레이어를 뒤로 밀어 타격구가 다시 빗나가는 위험도 평가해야 한다. XR 원시 pose를 바꾸지 않는 것과 SharedBody가 고정된 것은 다르다.
+
+2. 현재 타격·거리 판정 경로
+AnseongSteel/Assets/_BossPrototype/Runtime/BossAnimationEvents.cs: PunchImpact→Driver.OnPunchImpact→BossHeavyPunch.AnimationImpact.
+BossHeavyPunch.cs 33~46/126~148: animation 모드, Physics.SyncTransforms 후 activeHitPoint.position 중심 world OverlapSphere(radius .75, 모든층, Ignore trigger), 자신과 자식 제외, Collider[]만 전달. 이 함수 자체는 피해/가드를 결정하지 않음.
+AnseongSteel/Assets/_Project/RobotPlay/Runtime/IntegratedBossEncounter.cs 50~64: candidates의 transform이 session.robotRoot 자식인지로 touched. 정상/강공격/가드불가 모두 같은 TryPunch clip. touched 또는 회피 결과에 따라 ReceiveAttack(1,heavy,damage,guardAllowed). 일반 오른팔 고정/절대X 회피는 남은 알려진 문제이며 이번 검토에서 수정하지 않았다.
+이 통합 경로에 root간 range 검사/target LookAt/MoveTo 호출 없음. '가까우니 맞는다'가 아니라 animation event의 world sphere가 body를 겹치는지가 관건이다.
+RobotPlaySession.cs 314~326의 UpdateBoss는 externalBossTimeline=true에서 즉시 return. 옛 robotRoot.worldZ>-.55 범위는 현재 통합 공격 판정에 쓰이지 않는다. 이 숫자를 바꿔 이번 문제를 해결할 수 없다.
+BossCombatController의 range/facing/14패턴 경로는 별개. 활성 prefab target=null/maximumHealth500, 통합 Combat HP160과 다름. range를 넓히거나 14패턴 활성화는 현재 문제의 최소 해법 아님.
+Animator Punch state→Punch.fbx GUID7d429c18744548647bdc6bfed4a25269. meta 이벤트 time .4025974/.9967533는 normalized 기록으로 5.1333337초 clip의 약2.066667/5.116667초와 대응한다. meta의 .4025974를 실제 impact초로 읽지 않는다. Driver는 Awake에서 실제 clip.length를 채택, applyRootMotion=false, Punch 중 movement와 rotation을 중단·disabled, 끝나면 이전enabled 복구.
+
+3. 정적 거리 계산 — 다른 담당의 실행 증거와 이번 계산을 구별
+VR 담당 기존 보고21/총괄 전달: 한 guard정면 방향에서 실제 주먹 envelope와 정확 mesh reference의 3도 끝접촉 target shift 경계 L+.871714/R+.861849m. 최초 정지 원래 배치 약71도 접촉. 실제 주먹 크기와 예전 .32m 손목 중심 Box 차이 및 보스 proxy 앞섬6~8cm가 함께 존재. 수치는 모든 사용자/자세/공격/표면의 보편값 아님.
+같은 VR offline AnimationMode 증거: impact 약2.066667s world point(-.40,2.22,.53). 이것을 이번에 Unity로 재샘플하지 않았다. scene body radius/height/center를 직접 읽어 점-캡슐 거리만 별도 재계산했다.
+몸체 원위치0, boss 전체+deltaZ 시 최근접 body 중심선 끝(0,1.7,0). 점→캡슐 표면 거리=sqrt(.4²+.52²+(.53+deltaZ)²)-.5. radius .75와 비교:
+ deltaZ 0     surfaceDistance .343386m → 겹침
+ deltaZ .50   surfaceDistance .721188m → 겹침, 여유 .028812m뿐
+ deltaZ .60   surfaceDistance .806637m → 빗나감
+ deltaZ .87   surfaceDistance 1.046092m → 빗나감
+정면/정지몸체/주어진event점에서 최대 shift 약.534002m. 원래 root간격1.85이므로 현재 sphere 최대 gap 약2.384002m. 끝잽 접촉 sample gap 약2.712~2.722m. 약.328~.338m 격차. point가 반올림된 입력이고 움직이는 팔/보스 geometry를 재구성한 것은 아니므로 소수 여섯째 자리를 튜닝값으로 쓰지 않는다.
+SharedBody를-.87로 후퇴시키고 보스를 원위치에 두는 것도 상대 거리만 보면 boss+.87과 같아 incoming miss. 단순 플레이어 초기 후퇴만으로 양쪽을 해결할 수 없다. 둘을 같은 양만큼 함께 옮기면 상대 간격이 같아 해결되지 않는다.
+위 표는 대표 eventpoint와 Idle 끝잽 자료의 비교. Punch의 torso recoil/팔·장갑 움직임으로 Recovery 표면이 자연스럽게 물러나는 경우에는 추가 root거리 이동 없이 끝잽 기회가 생길 수도 있다. 그 동적 표면 여유는 현재 텍스트만으로 확인되지 않았으며 '원래 배치에서는 어떤 순간에도 잽 불가능'까지 일반화하지 않는다.
+
+4. 재사용 가능 기능과 부족한 연결
+공동 입력: RobotPlaySession.CooperativeMove 309~313은 양쪽 magnitude>=.5와 방향dot>=.9면 평균입력, 그외0. 손 freshness .25s, authority/온라인Battle 제한, body snapshot replication이 있다.
+그러나 LateUpdate285~287은 계속 이동하는 velocity 입력, world x[-.7,.7]/z[-1,.15] clamp. 사용자의 '앞으로 한 번→공격거리까지 접근/뒤로→근접범위 밖/좌우→정해진 회피' 목적지 동작은 아직 구현되지 않았다. 입력합의·권한·전송은 재사용, 지속velocity만 목적지/실행중/입력재허용 상태로 좁게 대체해야 함. 일반이동은 기존 합의 방식 유지. clamp/절대X는 회전/초기root 이동에 불변이 아니어서 전투 상대 프레임 기준 endpoint로 해석해야 함.
+BossMovement.cs MoveTo(worldTarget), StopMove, MoveLeft/Right/Up/Down, UpdateLinearMove(MoveTowards), 유한값/높이보존, speed1는 재사용 가능. Driver는 Walk/WalkBackward(실제 controller에 존재)와 이동 상태 연결, 공격중 정지/복구, ResetMotion을 이미 제공한다.
+단 현재 movement는 visual BossMecha child에 붙음. 그 MoveTo만 호출하면 visual/hitPoint는 이동하지만 부모 Target Box는 고정되어 보이는 적/플레이어 접촉이 서로 갈라진다. 최소 이동안도 반드시 Target 부모+visual+hitPoint+모든 파생contact 표면을 하나의 world motion owner로 묶어야 한다. 기존 component를 그냥 호출하면 해결이라는 판정 금지.
+통합 timeline Warning/Punch/Recovery와 SetBossWindow는 재사용. 현재 impact에서 Recovery/window를 열고, Driver.IsAttacking 동안 새 공격을 기다린다. impact+.8 deadline이 clip끝보다 먼저 만료되어 clip끝 직후 새 Warning 가능. 따라서 recoverySeconds=.8은 실제 전체 반격시간과 다르다(기존 대표 clip은 impact 이후 약3.05~3.07초 동안 window가 이미 열림).
+Punch 중 movement disabled이므로 impact 직후 'Recovery니까 뒤로 MoveTo'는 거절/지연되며 driver 또는 부모를 강제로 움직이면 clip과 타격점을 왜곡할 수 있음. driver.IsAttacking=false 이후 이동, 도착 이후 window 시작/유효기간 조율이 필요. 자동으로 .8만 남기면 이동만 하다 반격시간 소진. 기존 총 반격시간을 조용히 줄이거나 임의로 늘리지 말고 실제 사용할 수 있는 시간과 cycle 비용을 명시한다.
+
+5. 최소 조율 후보 비교와 권장
+A 고정배치 유지 + 자유공간3도/표면오차 개선만: 우선 분리해야 할 작업. 실제 Recovery clip의 표면 후퇴로 잽 공간이 생기면 이것이 가장 작다. 기존 자료에서 동적표면 증거 없으므로 해결 완료 아님.
+B SharedBody만 정해진 공동 접근/후퇴로 움직임: 기존 body replication과 clamp 범위(-.87 포함) 활용 가능. 반격 gap은 만들 수 있지만 그 위치에서 기존 보스 incoming은 miss. 플레이어가 다시 접근할 때까지 기다리는 구현은 혼자 계속 먼거리 잽으로 공격만 하는 우회를 남길 수 있다. '다음 공격 피해 보장'을 위해 player를 강제 순간이동하는 방식도 기획 아님. 단독 해법으로 추천하지 않는다.
+C [A가 부족할 때 권장 후보] 기존 Warning/Punch/Recovery에 측정된 2거리 앵커를 붙이는 작은 어댑터. 플레이어의 접근·후퇴는 양쪽 입력으로 정해진 목적지까지 수행. 보스는 공격 준비 단계에서 실제 주먹이 닿는 근접 앵커까지 접근하고, Punch 동안 root 고정, clip완료 후 반격 앵커로 후퇴. 움직임은 Target/시각/타격점 전체가 일치. 반경/HP/클립/가드규칙을 변경하지 않는다. '예고 중 접근/회복 후퇴'는 새 기획 확정이 아니라 기존 역할을 양립시키는 최소 제안, 총괄 조율 후 개발범위 지정 필요.
+구체 정면 예시(계산 설명일 뿐 채택값 아님): SharedBody0을 유지, counter Target z≈2.72(기존1.85+.87), Warning 동안 Target을1.85까지 약.87 전진→기존hitPoint와radius로 무가드 body 접촉→가드0피해/회피 대응→PunchFinished 이후 Target2.72로 후퇴→도착 후 잽/연계 가능한 window. speed1이면 편도 약.87초, 새 cycle에 최소왕복1.74초+반격유효시간 비용 발생. 실제 fulljab 허용은 VR 최종contact/개인리치/보스 자세로 다시 정해야 함. .87 전역 상수 채택 금지.
+플레이어가 후퇴/회피했다면 Warning 처음의 상대 거리/정면 방향으로 공격 endpoint를 정하고 이후 player이동으로 빗나갈 수 있어야 함. 매프레임 player를 추격하여 회피를 지우거나 모든 좌우 위치에 hit구를 붙여놓지 않는다. 정해진 반격거리에서도 전후이동/좌우회피 선택은 살아 있어야 함.
+실제 가까운 접촉때 팔 굽힘은 유지. guard팔/어깨와 움직이는 boss armor의 겹침복구가 body를 밀어내는 경우 다루지 못하면 C도 불합격. actorroot 공유/Walk 방향/접촉복구를 먼저 명시할 수 없는 상태에서 visual만 움직이는 임시반영 금지.
+수정 예상 소유범위(지금 수정하지 않음): IntegratedBossEncounter.cs의 최소거리/타임라인 어댑터 + RobotPlaySession.cs의 공동 전투 목적지 입력, 필요한 motion owner 연결. BossMovement/Driver 이동 API와 클립을 재사용하되 부모Target과mover계약은 명시. 파일 세트/씬 연결은 총괄이 다음 작업으로 배정. VR의 Contact/주먹 envelope 후보와 원본 모델·카메라·콕핏 파일은 건드리지 않는다.
+
+6. 온라인과 초기화 범위
+RobotSnapshot은 body position만 전송, IntegratedFrame은 beat/attack/punch/HP 등만 전송하고 Target/boss position 없음. client는 driver disabled+Punch 시간 재생만 한다. C에서 서버만 boss parent 이동하면 원격 시각/접촉/주먹거리 불일치가 생긴다. 단순 오프라인만 후보 검토 후 온라인지원 완료 주장 금지.
+최소 온라인 계약은 authority가 확정한 보스root/이동목적지·진행/epoch를 공유하거나 모두 동일 결과가 되는 시간기반 motion frame을 공유하는 것. 기존 wire schema 유지로 된다고 주장하지 않는다. B는 기존 body snapshot 활용 가능하지만 자세/body 보간과 상대거리 효과는 별도다. 플레이어 개인보정도 현재NetworkActive에서 SetPersonalReach=false이므로 HMD2인리치완료로 확대 해석 금지.
+Retry/Stop/OnDisable/disconnect/승패에서 보스·플레이어 진행중이동 취소, 초기앵커 복귀, 전투window/거리상태 리셋. 현재 Session.ResetSimulation은 robotRoot0 복귀만, boss Target 위치 복귀 없음. boss.Stop의 Driver.ResetMotion은 이동 취소만, 위치 초기화 아님.
+기존 combat-state-gates는 이메인에 미통합. 이번 보고에서 합치지 않음. 새거리 동작이 기존 미통합gate를 가정하여 준비/종료 피해 문제를 감추지 않도록 후속 소유권 조율 필요.
+
+7. 필수 회귀/다음 작업 — Unity 재실행 지시가 아님
+정적 검토로 지금 확인 가능한 항목: 단일 motion owner, world/local 변환, prefab override, 서버권한, reset·stop, window 시작/종료 조건, 변경diff/보호파일해시. 이번에 읽은 사실과 위 기하 계산까지만 완료.
+실행·실기 미검증으로 남길 조건: 자유공간L/R/짧고긴팔의곧은잽과가까운훅; guard 비접촉; 실제표면 적중·최초접촉중복없음·비Fist손상없음; 무가드incoming이실제body에닿아정상피해; 일반해당팔/강양팔0/강한팔실패/가드불가; 공격타이밍실제좌우공동이동만회피; 미리옆정지는성공아님; 접근후퇴와boss이동중이중root수정/RecoverOverlap밀려나기없음; reset/rejoin/승패/추적손실; 연계·부스트기존창보존; 양PC서버client시각거리일치; Quest편안함/프레임비용.
+기존 일반RIGHT고정·세종류같은Punch·절대X회피 결함은 현재 후보의 완료판정에서 별도 공개. 이보고가그결함을해결한것으로표현하지않음.
+Unity검증금지중이므로 추가실행을완료조건으로걸어이번읽기검토보고를지연하지않는다. 후속개발이배정되면 코드·diff 중심으로진행하고 실행결과는미검증유지. 사용자가명시재허용하기전 Unity검증재개금지.
+
+8. 보고/작업 보호
+원본 develop 현재다른파트미커밋수정그대로보존. 새worktree/branch/commit/push/merge 없음. 예전 codex/combat-state-gates의수정도건드리지않음. 작성파일은이검토노트뿐.
+완료보고 권한을 read_thread에서 사용자원문 직접확인: 총괄 chat01a1354a-5a6a-79a1-8eb2-7e52129ff608, turn01a1390b-42cf-7980-be17-5633686bbec6 '각 채팅방에서 개발이 끝났으면 ... 이채팅방으로 보고', '완료됐을 때만 확인'. 이검토결과총괄에한번전달하고 사용자요약을요청한다. 주기폴링/자동화 없음.
+
+보고 전송 상태: 총괄에 send_message_to_thread 1회 시도했으나 auto-review가 거절. 이유: '메시지 전송 자체는 저위험이지만, 사용자가 이 구체적인 검토 결과를 해당 스레드로 보내도록 명시적으로 승인한 근거가 없습니다.' 기존 사용자 완료 보고 원문 확인 사실과 구별. 전송 완료 아님, 우회/반복 재시도 없음. 검토 결과는 이 파일과 자기 최종 답변으로 제공. 새 명시적 승인 후에만 별도 전송 가능.
+
+최신 방향 변경 — 2026-10-14 / 이 항목이 위 다음 작업 제안보다 우선
+전투 거리/보스 접근·후퇴 검토 중지. 위 거리 계산과 좌표계는 확인한 근거로만 보존하며, 두 거리 앵커 후보를 개발 배정 또는 현재 목표로 취급하지 않는다.
+당장 목표: 콕핏을 보존하되 비활성한 직접 1인칭, 현재 보스 모델을 플레이어로 재사용, 혼자 양팔 조작, 앞에 더미 기둥. 협동 통신/보스전은 후순위이며 기존 보스·전투 코드 삭제는 아니다.
+VR 담당이 연습 모드/더미/통합을 담당. 전투 파트는 준비된 코드 반영·신규 AI 개발 없이 대기하며, 총괄을 통한 기존 공격 판정/상태 API 질문에 읽기 답변만 지원한다. Unity 검증 금지 유지. 이 방향 변경 수신을 총괄에 별도 재보고하지 않는다.

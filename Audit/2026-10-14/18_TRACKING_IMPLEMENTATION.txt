@@ -1,0 +1,55 @@
+개인 리치 / 훅 / 공격 유지 손목 구현 — 2026-10-14
+
+현재 상태
+최신 f942d5351f943c168bb48aab5b3158b5a19c7d7e 기반 격리 codex/personal-reach-calibration에서 구현·Unity 검증 후 메인 develop에 코드만 반영했다. 커밋/푸시 없음. 메인 실제 Unity Refresh/컴파일·화면 검증은 담당 채팅 화면 도구 오류로 미완료. 실제 Quest/2PC 검증도 미완료이며 전체 과제 완료로 처리하지 않는다.
+
+반영 파일
+Assets/_Project/01_Scripts/04_VR/ArmReachCalibration.cs 및 meta 신규
+Assets/_Project/01_Scripts/04_VR/ControllerArmFollower.cs 수정
+Assets/_Project/RobotPlay/Runtime/RobotPilotInput.cs 수정
+Assets/_Project/RobotPlay/Runtime/RobotPlaySession.cs 수정
+Assets/_Project/RobotPlay/Runtime/IntegratedPlayFlow.cs 수정
+Assets/_Project/RobotPlay/Editor/PersonalReachValidation.cs 및 meta 신규
+위 경로는 AnseongSteel 프로젝트 기준. 기존 4파일이 HEAD에서 미변경인지 먼저 확인했다. 메인 씬, OpenXR 설정, EditorBuildSettings, RobotRigVisual, v026 파생 모델/재질을 보호 해시로 전후 확인했다. 씬·모델·프로젝트 설정을 격리본에서 복사하지 않았다. 팀원 VR_test는 읽기만 했고 SDK/모델을 가져오지 않았다.
+
+구현
+오프라인 XR 입력에서 명시적 가드와 좌우별 최대 도달 지점으로 유효 제어점 리치를 저장한다. 어깨는 HMD 상대 추정값 또는 반대 컨트롤러로 얻는 보조 제어점 근사값이다. 해부학적 팔뼈 길이 실측으로 표현하지 않는다. 사용자 가드와 로봇 가드를 연결하고 개인 리치 비율에 따라 연속적인 반경/방향을 매핑한다. 최대 도달점은 로봇 팔 길이96%, 그 이상은99%로 완만하게 제한한다. 가까운 횡방향·뒤쪽 동작도 연속 이동과 팔꿈치 굽힘을 유지한다.
+공격 유지 상태는 분류/접촉 판정과 별도로 팔 정렬에 적용한다. 유지 중 추적 회전을 identity로 버리던 코드를 제거해 회전의 팔꿈치 단서를 유지한다. 부스트 입력은 분리했다. 기존 강체 손목/전완 제약은 비공격 상태에도 남아 있으므로 비공격 손목 자유도 전체 해결로 주장하지 않는다.
+HMD 기준 yaw를 최초 보정 프레임으로 고정하고 머리 평행이동을 보상한다. HMD 추적 손실은 보정 전체를 폐기한다. 손만 추적 손실하면 측정 프로필은 유지하고 입력을 중단하며 그립 해제 후 재사용한다. 가드 재캡처는 이전 최대리치를 폐기하고 재시작/F8은 전체 프로필을 초기화한다. 통합 흐름은 보정 완료 및 그립 해제 전 진행을 막으며 보정 안내를 표시한다.
+
+사용 절차 — 실제 컨트롤러 버튼 검증 전 잠정 바인딩
+1. HMD와 양손 추적 상태에서 정면을 보고 편안한 가드를 취한다.
+2. 선택적으로 반대 컨트롤러 제어점을 해당 어깨 근처에 두고 대상 손 스틱 클릭으로 어깨 근사 기준을 저장한다. 그 다음 가드를 다시 저장한다.
+3. Y로 소유한 손의 가드를 저장한다. XRLocalBoth이면 양손 가드를 저장한다.
+4. 왼손을 편안한 최대 도달점으로 뻗고 X, 오른손은 A로 각각 저장한다.
+5. 그립을 놓고 가드로 돌아온 뒤 조작한다. 그립은 공격 유지, 트리거는 별도 부스트다.
+6. Y 재저장 시 최대리치도 다시 저장한다. F8/재시작 또는 HMD 추적 손실 후 전체 보정이 필요하다.
+버튼과 어깨/제어점 오프셋은 편집 가능하다. 어깨 기준은 근사값이며 사용자에게 무리한 신전을 요구하지 않는다.
+
+검증 결과
+격리 Unity 6000.3.24f1 batch 실제 Play/InputSystem 합성 XR 경로 검증:
+리치 기하24 PASS, 합성 입력21 PASS, 기존 모션62 PASS, 전투27 PASS, 통합 규칙27 PASS.
+짧은/긴 리치(.42/.95m) 상대 매핑, 가드 앵커·연속 도함수·횡방향·뒤 당김, 실제 입력 경로 훅/공격유지 회전·손실/재획득·머리 yaw·보조 어깨 기준·재가드·초기화 확인.
+검증 장면은 임시 합성 리그로 콜라이더가 없으며 실제 주먹 충돌·모델 외형·아바타 Follow·기기 성능 검증은 아니다. 검증 메뉴는 저장된 깨끗한 비재생 씬에서만 임시 씬 테스트 후 원래 씬으로 복귀하며 대화식 Unity를 종료하지 않는다.
+새 runtime 변경의 git diff --check 통과. 메인 보호 파일 해시 일치.
+첫 추가 어깨 테스트는 Editor tick에서 직접 API를 호출하여 실패했다. 실제 스틱클릭 및 Y 입력 경로로 바꾼 최종 재검증에서21 PASS. 실패 로그를 포함한 이전 증거는 보존했다.
+최종 격리 로그에 UnityEditor.Search.SearchDatabase의 ArgumentOutOfRangeException 및 InputSystem ApplySettings Assertion 기록이 남아 있다. error CS/NullReferenceException/MissingReferenceException 일치0. 해당 Editor 환경 오류까지 해결한 것으로 보고하지 않는다.
+
+화면 도구 차단 및 인계
+사용자 '다시 화면조작시작해'에 따라 재연결했으나 node_repl 실행 자체가 'failed to write kernel assets: 지정된 경로를 찾을 수 없습니다. (os error 3)'로 실패했다. 총괄이 별도 채팅에서는 연결 성공을 확인한 뒤, 이 채팅에서 한 차례 js_reset → nodeRepl.write 기본 검사로 분리 진단했으며 기본 검사부터 동일 실패했다. 따라서 import/list_windows/스크린샷/클릭 미실행. 기기 전체 실패가 아닌 담당 채팅 세션 문제로 기록한다. helper 검색/직접실행/커스텀 OS 자동화 우회 없음. 사용자 Unity를 종료하지 않았다.
+정상 화면 도구가 있는 총괄 또는 담당자가 현재 메인 Unity에서 Refresh/컴파일 확인 후 깨끗한 저장 씬인지 확인하고 아래 메뉴를 실행할 수 있다:
+Anseong Steel/Player Motion/Verify personal reach (synthetic input)
+Anseong Steel/Robot Play/Verify saved integrated v026 arms
+앞 메뉴는 임시 테스트 씬으로 전환한다. 현재 씬이 dirty/unsaved/Play 상태이면 실행을 거절한다. 사용자 변경을 임의 저장하지 않는다. 표시 검증과 합성입력 검증 후 실제 HMD 보정/훅/좌우 입력 확인이 남는다.
+
+잔존 범위
+LAN은 기존 입력 경로 유지: 개인 프로필/원격 회전 전송 미구현. 아바타 Follow 누락도 이번 범위에 포함되지 않는다. 보스/무기/방패/피해 차단 규칙 변경 없음. 실제 사용자 어깨 위치·신체 추정 SDK·2Quest/2PC·프레임·편안함 미검증.
+
+증거
+Audit/2026-10-14/evidence/18_tracking/isolated-final/: reach-core.txt, reach-input.txt, legacy-motion-core.txt, combat-checks.txt, integrated-rules-checks.txt
+Audit/2026-10-14/evidence/18_tracking/isolated-final.log
+같은18_tracking 폴더 main-protected-before.json, main-integrated-files.json
+격리 작업 경로 C:/Users/anthony/.codex/worktrees/personal-reach-calibration/anseong-steel
+
+후속 메인 검수 갱신 — 2026-10-14
+교체 VR 담당이 설정 객체 교체/파괴를 제거한 검사 도구 및 SavedSceneReachValidation을 메인에 반영했다. 실제 Unity 메뉴에서 기존161 PASS, 저장 씬 입력/표시/접촉/전투/다음Play복구110 PASS, 표시72 PASS/FAIL0. 이번 저장 씬 diagnostics0, 기존 native keyboard 보존. 사용자 물리 F1 양방향 전환도 source 값과 실제 이벤트로 확인했다. 초기 구현 런타임 추가 수정/씬 저장/기존 자산 덮어쓰기 없음. 상세 조건/키입력 구분/잔존 한계와 최종 정리는20_VR_FOLLOWUP_MAIN_VERIFICATION.txt 및 evidence/20_vr_followup 참조. 이 갱신은 Quest 착용 실기 합격을 의미하지 않는다.

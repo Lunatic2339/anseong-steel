@@ -1,0 +1,47 @@
+콕핏 중계 A/B 메인 반영 및 종료 인계 — 2026-10-14 KST
+
+현재 우선 지시
+사용자가 Unity 검증은 앞으로 하지 말라고 지시했다. 이 지시는 이전 검증 요청보다 우선한다. 새 UI/Play/검사 메뉴/batchmode/렌더/컴파일 확인 실행을 시작하거나 반복하지 않는다. 다음 개발은 정적 코드·파일·diff 검토 중심이며 사용자가 명시적으로 다시 요청하기 전 Unity 검증을 재개하지 않는다. 본 보고서 작성에는 Unity 도구를 사용하지 않았다.
+
+반영된 개발 파일(세 개만)
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/CockpitLiveView.cs
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/Editor/CockpitFeedValidation.cs
+AnseongSteel/Assets/_Project/01_Scripts/04_VR/Editor/CockpitFeedValidation.cs.meta
+기존 CockpitLiveView.cs.meta와 Editor.meta 보존. 옛 격리 snapshot 전체를 복사하지 않았다. 메인의 최신 VR HUD/추적/팔 소스·씬·모델·원본 RT·설정을 변경하지 않았다. 로컬 develop 미커밋 반영이며 commit/push/merge 없음.
+
+동작과 전환 부담
+기본 모드는 B / FullResolutionSingleSample: 원래 2048² 해상도·FOV·투영·적/로봇 크기를 유지하는 런타임 MSAA1이다. A / AuthoredTextures는 원래 RT MSAA4를 사용한다.
+같은 활성 구간에서는 런타임 RT 세 장을 재사용한다. SetSampling은 target과 화면 텍스처 바인딩만 바꾸며 OnDisable/OnEnable을 반복 호출하지 않는다. 비활성화 때 캐시된 RT 모두 Release/Destroy하고 원본 target/depth/URP XR flag/propertyblock/공개 RT 참조를 복원한다. 원본 RT 자산을 Release하거나 수정하지 않았다.
+초기 콕핏 선택기는 활성화/재바인딩을 한 번 더 하므로 인스턴스 누적 생성 수는6이었다. 이후64회 A/B 왕복 중 생성 수6→6, 활성 세 장의 객체 동일성 유지. 첫 main 검사에서 누적 생성 수가 반드시3이어야 한다는 부정확한 검사 조건이 실패했고, 전환 전후 증가0/활성 세 장 재사용 조건으로 고쳐 통과했다. 게임 누수가 확인됐다는 뜻이 아니다.
+원본 RT 참조와 GPU allocation은 계속 남을 수 있다. 양 모드를 한번씩 사용한 짧은 A/B에서는 원본4x와 런타임1x가 함께 resident일 수 있어 메모리 절약 또는4배 성능 개선을 주장하지 않는다. 첫 전환의 allocation/워밍업 프레임은 성능 비교에서 제외해야 한다.
+
+이미 끝난 검증(검증 중단 지시 이전 결과)
+격리: 실제 Unity6000.3.24f1/URP 렌더51 PASS/0 FAIL. 매frame 픽셀 갱신/자동 feed 순서/64회 전환 재사용/disable GPU target 해제와 저장 씬 보존. 원래48 검사에 전환 캐시 관련 검사를 추가한 결과다.
+메인: 실제 기존 Unity 창852166의 Anseong Steel > Cockpit > Verify saved feed A-B (no settings changes) 실행. 설정 변경·픽셀 readback 없이 현재 저장 통합씬에서12 PASS/0 FAIL. 기본1x, 실제 세 feed4x/1x, 같은 frame 자동 receiver,64회 재사용, saved scene byte 불변, Play 종료 후 runtime RT 이름을 가진 객체0 확인. 원래 Scene/Play 정지로 복귀.
+메인 컴파일은 당시 Tundra 성공을 확인했다. 일반 Play에서 Inspector 버튼을 직접 누르고 실제 화면/HUD/팔을 비교하는 마지막 수동 확인은 사용자 Esc 중단으로 미완료다. 자동 main 검사와 수동 UI 버튼 확인을 합쳐 완료로 표시하지 않는다.
+화면 조작 중단 후 Unity 입력/관찰을 더 수행하지 않았다. 마지막 관찰 상태는 sunwoo_IntegratedPlay/Scene/Play 정지/미저장 별표 없음. 이후 화면 상태를 새로 확인했다고 주장하지 않는다. 사용자 대화형 Unity 앱을 종료하거나 씬을 저장/폐기하지 않았다.
+보호125파일은 반영 전/후 정적 hash 모두 동일. protected-before/after.json 참조. 이 최종 비교는 파일 읽기이며 Unity 검증을 재개한 것이 아니다.
+
+A/B 조작 설명(후일 사용자가 직접 시험을 요청할 때 참고; 현재 실행 요청 아님)
+새 F키/XR 버튼/메뉴 hotkey 없음. PC 운영자용 Custom Inspector가 검사 Editor 파일에 포함돼 있다.
+Play 중 Hierarchy의 Existing Cockpit V02 - live display 선택 → Cockpit Live View 컴포넌트의 A / authored 4x 또는 B / runtime 1x 클릭. Actual sector 0/1/2에 모두2048 x2048 / MSAA4 또는1인지 확인. Requested sampling만으로 적용 성공을 판단하지 않는다. RT 생성 실패로 authored fallback이 발생하면 실제 표시가 요청값과 다를 수 있다.
+PC 운영자가 현재 모드를 확인하고 착용자에게 알려주는 절차다. HMD 안에 새 모드 표시나 XR ray UI를 넣지 않았다. 사용자 Quest 개선/편안함 판단은 미검증이며 전환 버튼의 직접 클릭도 미검증이다.
+Inspector 클릭은 Game focus를 바꿀 수 있다. 향후 테스트를 할 경우 전환 후 Game 뷰 포커스로 복귀하고 입력/보정 상태가 유지되는지 확인한 다음 안정 구간을 비교해야 한다. 이를 해결하려고 입력/프로젝트 설정을 임의 변경하지 않았다.
+측정 구간에는 검사 메뉴/픽셀 ReadPixels를 실행하지 않고 Collect Timing도 기본false로 둔다. 필요할 때만 callback 계측을 켜며 CPU submission 시간을 GPU/HMD 지연으로 읽지 않는다.
+
+GPU/frame/reprojection 측정 가능 범위
+현 ProjectSettings.enableFrameTimingStats=0. 설정을 바꾸지 않았다. GPU timing·실제 refresh rate·dropped/reprojected frames·motion-to-photon·Quest GPU resident memory는 모두 미측정이다. 지원 여부 확인 없이0ms/0 dropped로 표시하면 안 된다.
+향후 사용자가 측정을 요청하면 연결된 XR runtime/Profiler가 실제 제공하는 GPU/CPU frame 및 dropped/reprojection 수치만 사용하고, unsupported/데이터 부재는 미측정으로 남긴다. Editor/Game의 FPS나 CPU callback 간격을 Quest 출력 FPS로 대체하지 않는다. 이번에는 런타임 성능 HUD나 외부 앱 설정을 조작하지 않았다.
+기존 설치 OpenXRStatisticsTest는 제공자에 등록된 통계 조회 경로의 검사이며 해당 runtime이 모든 GPU/reprojection 통계를 제공한다는 보증이 아니다.
+
+남은 조건과 반환 상태
+Quest의 바깥 영상 끊김 개선은 미확정. 진단상 의도적 저빈도 갱신/한 frame 출력 순서 오류 증거는 없고,3개 고해상도 RT 비용과 재투영된 실내 대비 콘텐츠 갱신 차이는 후보로 남는다. head pose Update-only 문제는 VR 담당 소유이며 수정하지 않았다.
+직접 가슴/얼굴 시야·3인칭 비교 기획은21번에 보존. 이번에 prototype/최종 시점 교체/원본 머리·가슴 삭제 없음.
+검증용 UI 소유권은 사용자 최신 지시로 해제한다. 추가 Unity 검증 없이 총괄이 다음 코드 작업을 조율할 수 있다. 현재 수행 중인 콕핏 검사나 임시 UI 검증 입력은 없다.
+
+근거
+Audit/2026-10-14/evidence/cockpit-feed/main-validation.txt (최종12 PASS)
+Audit/2026-10-14/evidence/22_cockpit_main/initial-main-validation.txt (누적 생성 수 조건 실패)
+Audit/2026-10-14/evidence/22_cockpit_main/protected-before.json, protected-after.json
+C:/Users/anthony/.codex/worktrees/cockpit-feed-timing/anseong-steel/Audit/2026-10-14/21_COCKPIT_FEED_TIMING.txt
+같은 worktree evidence/cockpit-feed/ab-preparation.log, validation.txt (당시51 PASS)

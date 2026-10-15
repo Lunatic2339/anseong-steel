@@ -1,0 +1,41 @@
+개인 리치 검사 수명 수정 및 메인 저장 씬 연결 회귀 — 2026-10-14 한국시간
+
+반영 범위
+기존 VR 담당의 후속 구현을 승계하여 메인 AnseongSteel에 검사 도구만 반영했다.
+- PersonalReachValidation.cs 수정: InputSettings 복제/교체/파괴 제거, 재생 스코프 사용, 조기 Play 종료 정리, 다중 씬 거절.
+- SavedSceneReachValidation.cs 및 meta 신규: 저장된 sunwoo_IntegratedPlay에서 정상 입력/IK/표시/접촉/전투 경로 검사. GUID850dcb72bf313cb46b0ef9bb8e569162.
+- 기존 PersonalReachValidation.cs.meta GUID와 내용 보존. 런타임 기능 코드 추가 변경 없음.
+메인 씬/모델/설정 복사, 빌더/repair/씬 저장, 폴더 정리, 커밋/푸시 없음. VR_test와 팀원 모델 원본은 변경하지 않았다.
+원본 worktree는 채팅 보관/복원 snapshot으로 detached HEAD5e635b5 상태다. 이를 새 기능 커밋으로 만들거나 브랜치를 전환하지 않았다. 검증 보존 소스와 실제 후속 코드의 내용이 같은 것을 확인하고3파일만 반영했다.
+
+Assertion 원인과 수정
+설치된 InputManager.settings setter는 기존 설정이 HideAndDontSave일 때 교체 시 파괴한다. 옛 검사는 그 설정을 복제본으로 교체하여 원래 참조를 잃고 종료 때 현재 복제본도 파괴했다. InputManager.ApplySettings의 m_Settings != null Assertion과 부합한다.
+새 도구는 설정 객체/값을 교체하지 않고 설치된 패키지의 내부 StartEditorEventPassthrough/StopEditorEventPassthrough를 작은 reflection 어댑터에서 균형 호출한다. 기존 카운터 복구를 검사한다. 패키지 내부 API 변경 시 어댑터 재검토가 필요하다. 패키지 소스는 수정하지 않았다.
+
+직접 실행한 메인 Unity 검사
+Unity6000.3.24f1의 기존 창852166, sunwoo_IntegratedPlay 저장 단일 씬/비재생/미저장 별표 없음 확인 후 메뉴 실행. 초기 활성화 timeout은 실제 컴파일 중이었고 반환 창을 재탐색하여 컴파일/도메인 재로드 완료를 확인했다. Tundra build success3.76초.
+1. Verify personal reach (synthetic input): reach-core24, reach-input21, legacy-motion-core62, combat27, integrated-rules27 PASS/FAIL0. 최종 소스의 조기종료 콜백/다중씬가드 포함 빌드로 정상 완료하고 원래 씬 복귀.
+2. Verify saved scene XR reach and keyboard:110 PASS/FAIL0. 양손 가드/최대리치, 가까운 훅/뒤 당김, 공격 유지 회전, v026 BakeMesh 변형과 contact pose 일치, 손/머리 추적 손실, 재보정, 원래 Fist BoxCollider 접촉 callback 및 전투 hit 전달 확인.
+   contact 관측: requested(-.03187484,1.613414,1.654322), accepted(-.206368,1.472918,1.347641), blocked=True/Fist, queries48, bossHP152, hit1, 표시 오차 약1.03e-6m.
+   검사 동안 타깃 Play 인스턴스만 자유공간 검사 시4m 앞으로 옮겼다가 같은 BoxCollider를 궤적 앞으로 배치한다. 시작 유예1000초/접촉 준비 때 Animator 정지는 런타임 fixture 조건이며 저장하지 않는다. 보스 모든 메시 표면이나 원래 거리의 체감 합격은 아니다.
+   종료/다음 Play: 설정JSON·자산경로 보존, 합성 장치 제거, 기존 current Keyboard 복구, 저장 씬 bytes 불변, F1/Retry 합성 이벤트 복구 PASS. 이번 메인의 recovery keyboard는 id1/native=True/createdOnlyForBatch=False. diagnostics.txt 길이0, Assertion/Exception 기록0.
+3. Verify saved integrated v026 arms:72 PASS/FAIL0. 실제 렌더 픽셀 기여, 여섯 자세/양쪽 좌석, 씬 hash 불변. 전투27/통합규칙27 재실행 통과.
+검사 결과는 evidence/20_vr_followup/legacy, saved-scene, visual에 이번 실행 출력으로 별도 보존했다.
+
+일반 Play의 실제 키 입력 구분
+Game 뷰를 실제 클릭하고 접근성 GameView 포커스를 확인했으나 sky.press_key F1/F3에는 화면 전환이 관찰되지 않았다. 이후 설정/입력을 변경하지 않는 임시 passive 관찰 도구로 실제 네이티브 Keyboard id1/enabled=True/current=True를 확인했다.
+사용자가 직접 물리 F1을 눌러 가운데 문구 변화가 있다고 답했다. 같은 시각 native=True 키보드에서 Dynamic update, focus=True, view=GameView의 F1 down/up을 기록했고 XRLocalBoth→DesktopBoth 및 역방향 전환을 실제 source 값으로 확인했다. 물리 F1 양방향 기능은 통과다. 자동화 F1 미도착을 런타임 F1 코드 실패로 분류하지 않는다.
+물리 R Retry도 사용자가 이 채팅과 총괄에서 재시작됨을 확인했다. 20:32:52 native keyboard id1의 R down/up, Dynamic update/focus=True/GameView/source=DesktopBoth 이벤트가 기록됐다. F1 양방향은 실제 source 전환 기록, R 재시작 결과는 사용자 화면 관찰과 native 이벤트 수신을 근거로 구분해 확인했다. observer는 R 후 elapsed/state를 별도로 계측하지 않았으며 그 자동 상태 검사는 위110 PASS에 포함된다.
+
+남은 실기 범위
+Quest 실제 개인 가드/리치 캡처와 훅 편안함/충돌 체감, HMD 성능·멀미, Quest2대/PC2대 검증은 미완료다. 유효 제어점 리치 보정을 해부학적 팔 길이 실측으로 표현하지 않는다. LAN 프로필/원격 회전/Avatar Follow/전투 확장/콕핏 수정은 이번 범위 밖이다.
+기존 MissingPrefab6bac2a1fb3671154babb96bd29e3fad7, URP stereoTargetEye, XR 미연결 초기화 및 UnityAI NoSubscription 메시지는 별개다. 기존 격리 verified.log SearchDatabase 예외2건은 과거 증거이며 이번 저장 씬 diagnostics는0이다. 전체 프로젝트 오류0을 선언하지 않는다.
+
+완료 보충
+- 사용자 물리 Escape 중단 신호 후 즉시 조작을 멈췄고, 총괄이 명시적으로 정리 재개를 전달한 다음에만 재개했다. 재관찰 당시 Unity는 이미 비재생 Scene 상태여서 Play 토글을 추가로 누르지 않았다. 창 이동/최대화/다른 앱·모니터·영상·오디오 조작 없음.
+- 임시 NativeKeyboardObservation.cs 및 자동 생성 meta를 제거했다. 관찰 소스는 실행되지 않는 evidence/20_vr_followup/NativeKeyboardObservation.cs.txt, meta.txt로 증거 보존했다. 실제 Assets에는 남지 않는다.
+- 제거 후 Refresh에서 컴파일/도메인 재로드에 따라 press_key timeout이 있었으나 입력을 재전송하지 않고 창을 재탐색·관찰했다. 최종 Tundra build success3.18초. final-compile.log/summary에 error CS0, Assertion0, NullReference/MissingReference0 및 관찰 소스/meta 부재를 기록했다. 기능 변경 없이 제거한 수동 관찰 도구이므로 이미 완료한 전체 검사를 불필요하게 반복하지 않았다.
+- 최종 보호22파일 hash 모두 일치(protected-before/after.json). 메인 v026 자산/씬/meta/기존 런타임/OpenXR/BuildSettings 보존. PersonalReachValidation.cs.meta 원래 GUID/내용 보존. 반영 파일 해시는 integrated-files.json.
+- Unity 기존 창852166, sunwoo_IntegratedPlay, 비재생, 원래 Scene 탭, 제목/Hierarchy 미저장 별표 없음 확인. 사용자 씬 저장/폐기 없음. 커밋/푸시 없음.
+- 최종 메인 기능 반영은 검사 도구3파일만이다. 보고서는20번 및18/19의 후속 링크, CURRENT_HANDOFF의 최신 상태를 갱신했다. evidence/20_vr_followup에 이번 검사 원문/좌표 샘플/키 입력 기록/보호 확인을 남겼다.
+- 총괄01a1354a-5a6a-79a1-8eb2-7e52129ff608에 실제 완료 요약을 한 번 전송했고 도구 성공을 확인했다. 사용자 원문의 파트 완료 보고 요청(01a1390b turn)을 read_thread로 확인했다. 앞선 사용자 실기 협조 요청 보고와 최종 완료 보고는 서로 구분한다.

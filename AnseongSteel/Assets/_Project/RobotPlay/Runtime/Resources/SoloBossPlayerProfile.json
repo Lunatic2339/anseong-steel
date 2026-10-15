@@ -1,0 +1,672 @@
+{
+  "head": "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:Head",
+  "left": {
+    "upper": "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm",
+    "forearm": "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm",
+    "hand": "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand",
+    "volumes": [
+      {
+        "role": "upper",
+        "bone": "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm",
+        "center": {
+          "x": -0.05075564497796346,
+          "y": 0.03073468982515687,
+          "z": -0.0004652337886190336
+        },
+        "size": {
+          "x": 0.15947273583144708,
+          "y": 0.29379800475862894,
+          "z": 0.16139251368686108
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 1.0
+        }
+      },
+      {
+        "role": "forearm",
+        "bone": "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm",
+        "center": {
+          "x": -0.00034491942843578594,
+          "y": 0.07818409449252792,
+          "z": -0.0003789078394067953
+        },
+        "size": {
+          "x": 0.1280312290692608,
+          "y": 0.21421580538708368,
+          "z": 0.10942626370028763
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 1.0
+        }
+      },
+      {
+        "role": "fist",
+        "bone": "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand",
+        "center": {
+          "x": -0.014478201550167824,
+          "y": 0.060873311255396134,
+          "z": -0.019351134356660984
+        },
+        "size": {
+          "x": 0.09483037053509746,
+          "y": 0.16270695872825092,
+          "z": 0.12341628093033849
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 1.0
+        }
+      }
+    ],
+    "fingers": [
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/mixamorig:LeftHandIndex1",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/mixamorig:LeftHandIndex1/mixamorig:LeftHandIndex2",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/mixamorig:LeftHandIndex1/mixamorig:LeftHandIndex2/mixamorig:LeftHandIndex3",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/mixamorig:LeftHandMiddle1",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/mixamorig:LeftHandMiddle1/mixamorig:LeftHandMiddle2",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/mixamorig:LeftHandMiddle1/mixamorig:LeftHandMiddle2/mixamorig:LeftHandMiddle3",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/mixamorig:LeftHandRing1",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/mixamorig:LeftHandRing1/mixamorig:LeftHandRing2",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/mixamorig:LeftHandRing1/mixamorig:LeftHandRing2/mixamorig:LeftHandRing3",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/mixamorig:LeftHandPinky1",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/mixamorig:LeftHandPinky1/mixamorig:LeftHandPinky2",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/mixamorig:LeftHandPinky1/mixamorig:LeftHandPinky2/mixamorig:LeftHandPinky3",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/mixamorig:LeftHandThumb1",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/mixamorig:LeftHandThumb1/mixamorig:LeftHandThumb2",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/mixamorig:LeftHandThumb1/mixamorig:LeftHandThumb2/mixamorig:LeftHandThumb3"
+    ],
+    "rotations": [
+      {
+        "x": 0.6600687,
+        "y": 0.40234548,
+        "z": -0.34047228,
+        "w": 0.53526264
+      },
+      {
+        "x": 0.7563286,
+        "y": -0.09049662,
+        "z": 0.26497346,
+        "w": 0.5912415
+      },
+      {
+        "x": 0.7045454357158887,
+        "y": -3.904221002049013E-08,
+        "z": 2.641423274216247E-09,
+        "w": 0.7096588821482521
+      },
+      {
+        "x": 0.63886344,
+        "y": 0.41417852,
+        "z": -0.3384284,
+        "w": 0.5529702
+      },
+      {
+        "x": 0.7387844,
+        "y": -0.043636557,
+        "z": 0.18992692,
+        "w": 0.6451521
+      },
+      {
+        "x": -0.8097991320262877,
+        "y": -1.0153571983195775E-08,
+        "z": -3.615623517317509E-08,
+        "w": 0.5867072232122845
+      },
+      {
+        "x": 0.6147601,
+        "y": 0.43353915,
+        "z": -0.42109075,
+        "w": 0.5067508
+      },
+      {
+        "x": 0.75551224,
+        "y": -0.016524257,
+        "z": 0.22604947,
+        "w": 0.6146787
+      },
+      {
+        "x": 0.017682120387847323,
+        "y": -3.710058460448806E-08,
+        "z": -2.461410461383029E-08,
+        "w": 0.9998436590880534
+      },
+      {
+        "x": 0.5988956,
+        "y": 0.45145702,
+        "z": -0.39189824,
+        "w": 0.53284746
+      },
+      {
+        "x": 0.70685565,
+        "y": -0.055731792,
+        "z": 0.21400106,
+        "w": 0.6719023
+      },
+      {
+        "x": -0.701824223692332,
+        "y": 7.990363815046919E-09,
+        "z": -7.669334677828843E-09,
+        "w": 0.7123501660269725
+      },
+      {
+        "x": -0.05536858,
+        "y": -0.4985883,
+        "z": -0.5901822,
+        "w": 0.6324785
+      },
+      {
+        "x": 0.43745688,
+        "y": 0.02118796,
+        "z": -0.15445866,
+        "w": 0.8856213
+      },
+      {
+        "x": -0.026931983733412025,
+        "y": 2.8721744982362907E-08,
+        "z": 1.5170872986063277E-08,
+        "w": 0.9996372683389622
+      }
+    ],
+    "palmForward": {
+      "x": -0.017561656347563785,
+      "y": 0.9927145702341995,
+      "z": -0.11920328315159637
+    },
+    "palmInward": {
+      "x": 0.9984629645153115,
+      "y": 0.023680209007207475,
+      "z": 0.050109285543176854
+    }
+  },
+  "right": {
+    "upper": "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm",
+    "forearm": "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm",
+    "hand": "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand",
+    "volumes": [
+      {
+        "role": "upper",
+        "bone": "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm",
+        "center": {
+          "x": 0.05075535281096988,
+          "y": 0.030734547789019462,
+          "z": -0.00046527513820585065
+        },
+        "size": {
+          "x": 0.15947273647011934,
+          "y": 0.2937980041658549,
+          "z": 0.1613925128548292
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 1.0
+        }
+      },
+      {
+        "role": "forearm",
+        "bone": "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm",
+        "center": {
+          "x": 0.00034467075249766665,
+          "y": 0.07818409449252792,
+          "z": -0.00037894371673059465
+        },
+        "size": {
+          "x": 0.12803124760096518,
+          "y": 0.21421580538708368,
+          "z": 0.10942625617097856
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 1.0
+        }
+      },
+      {
+        "role": "fist",
+        "bone": "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand",
+        "center": {
+          "x": 0.015454422693499559,
+          "y": 0.06160598499756695,
+          "z": -0.02406097399673352
+        },
+        "size": {
+          "x": 0.0952222821906118,
+          "y": 0.16417230621259254,
+          "z": 0.13662048298929652
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 1.0
+        }
+      }
+    ],
+    "fingers": [
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/mixamorig:RightHandIndex1",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/mixamorig:RightHandIndex1/mixamorig:RightHandIndex2",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/mixamorig:RightHandIndex1/mixamorig:RightHandIndex2/mixamorig:RightHandIndex3",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/mixamorig:RightHandMiddle1",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/mixamorig:RightHandMiddle1/mixamorig:RightHandMiddle2",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/mixamorig:RightHandMiddle1/mixamorig:RightHandMiddle2/mixamorig:RightHandMiddle3",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/mixamorig:RightHandRing1",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/mixamorig:RightHandRing1/mixamorig:RightHandRing2",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/mixamorig:RightHandRing1/mixamorig:RightHandRing2/mixamorig:RightHandRing3",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/mixamorig:RightHandPinky1",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/mixamorig:RightHandPinky1/mixamorig:RightHandPinky2",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/mixamorig:RightHandPinky1/mixamorig:RightHandPinky2/mixamorig:RightHandPinky3",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/mixamorig:RightHandThumb1",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/mixamorig:RightHandThumb1/mixamorig:RightHandThumb2",
+      "Armature/mixamorig:Hips/mixamorig:Spine/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/mixamorig:RightHandThumb1/mixamorig:RightHandThumb2/mixamorig:RightHandThumb3"
+    ],
+    "rotations": [
+      {
+        "x": 0.6889108,
+        "y": -0.36703843,
+        "z": 0.35597444,
+        "w": 0.51377714
+      },
+      {
+        "x": 0.7658337,
+        "y": 0.0923845,
+        "z": -0.27152967,
+        "w": 0.57553065
+      },
+      {
+        "x": 0.7045454357198886,
+        "y": 2.7675200908738873E-08,
+        "z": 5.882887313325646E-09,
+        "w": 0.709658882144282
+      },
+      {
+        "x": 0.65603447,
+        "y": -0.39496636,
+        "z": 0.34794828,
+        "w": 0.5408812
+      },
+      {
+        "x": 0.7140676,
+        "y": 0.04055478,
+        "z": -0.17643934,
+        "w": 0.67626333
+      },
+      {
+        "x": -0.809799126232974,
+        "y": 1.2572239582731015E-08,
+        "z": 3.617388989158264E-08,
+        "w": 0.5867072312084709
+      },
+      {
+        "x": 0.6041148,
+        "y": -0.44501248,
+        "z": 0.4166974,
+        "w": 0.5131983
+      },
+      {
+        "x": 0.784364,
+        "y": 0.017727653,
+        "z": -0.23619343,
+        "w": 0.5732989
+      },
+      {
+        "x": 0.01768213518538684,
+        "y": 2.385535724513943E-08,
+        "z": 2.389469794753529E-08,
+        "w": 0.9998436588263608
+      },
+      {
+        "x": 0.5907346,
+        "y": -0.46195936,
+        "z": 0.3971618,
+        "w": 0.52904505
+      },
+      {
+        "x": 0.71252376,
+        "y": 0.029917644,
+        "z": -0.24148297,
+        "w": 0.65810394
+      },
+      {
+        "x": -0.7018242221921649,
+        "y": 3.361217859598753E-09,
+        "z": 2.1815032398368738E-08,
+        "w": 0.7123501675049725
+      },
+      {
+        "x": -0.056776684,
+        "y": 0.5802199,
+        "z": 0.47923884,
+        "w": 0.65608805
+      },
+      {
+        "x": 0.2739428,
+        "y": 0.24301961,
+        "z": 0.23777676,
+        "w": 0.89964384
+      },
+      {
+        "x": -0.02693197651001168,
+        "y": -3.38653424192259E-08,
+        "z": -1.5443303599103547E-08,
+        "w": 0.999637268533573
+      }
+    ],
+    "palmForward": {
+      "x": 0.0175636985234873,
+      "y": 0.9927143686694108,
+      "z": -0.11920466060325798
+    },
+    "palmInward": {
+      "x": -0.9984627829985804,
+      "y": 0.02368262873870372,
+      "z": 0.050111770810488905
+    }
+  },
+  "visible": [
+    "ARMOR_p2_i2.L",
+    "ARMOR_p2_i2.R",
+    "ARMOR_p4_i1.L",
+    "ARMOR_p4_i1.R",
+    "ARMOR_p6_i2.L",
+    "ARMOR_p6_i2.R",
+    "ARMOR_p22_i1.L",
+    "ARMOR_p22_i1.R",
+    "ARMOR_p27_i2.L",
+    "ARMOR_p27_i2.R",
+    "ARMOR_p28_i1.L",
+    "ARMOR_p28_i1.R",
+    "ARMOR_p30_i1.L",
+    "ARMOR_p30_i1.R",
+    "ARMOR_p33_i1.L",
+    "ARMOR_p33_i1.R",
+    "ARMOR_p34_i1.L",
+    "ARMOR_p34_i1.R",
+    "ARMOR_p35_i1.L",
+    "ARMOR_p35_i1.R",
+    "ARMOR_p38_i1.L",
+    "ARMOR_p38_i1.R",
+    "ARMOR_p40_i1.L",
+    "ARMOR_p40_i1.R",
+    "ARMOR_p44_i1.L",
+    "ARMOR_p44_i1.R",
+    "ARMOR_p46_i1.L",
+    "ARMOR_p46_i1.R",
+    "ARMOR_p47_i1.L",
+    "ARMOR_p47_i1.R",
+    "ARMOR_p52_i1.L",
+    "ARMOR_p52_i1.R",
+    "ARMOR_p57_i1.L",
+    "ARMOR_p57_i1.R",
+    "ARMOR_p62_i1.L",
+    "ARMOR_p62_i1.R",
+    "ARMOR_p64_i1.L",
+    "ARMOR_p64_i1.R",
+    "ARMOR_p66_i1.L",
+    "ARMOR_p66_i1.R",
+    "ARMOR_p68_i1.L",
+    "ARMOR_p68_i1.R",
+    "ARMOR_p70_i1.L",
+    "ARMOR_p70_i1.R",
+    "ARMOR_p74_i1.L",
+    "ARMOR_p74_i1.R",
+    "ARMOR_p84_i1.L",
+    "ARMOR_p84_i1.R",
+    "ARMOR_p85_i1.L",
+    "ARMOR_p85_i1.R",
+    "ARMOR_p88_i1.L",
+    "ARMOR_p88_i1.R",
+    "ARMOR_p95_i1.L",
+    "ARMOR_p95_i1.R",
+    "ARMOR_p97_i1.L",
+    "ARMOR_p97_i1.R",
+    "ARMOR_p103_i1.L",
+    "ARMOR_p103_i1.R",
+    "ARMOR_p106_i1.L",
+    "ARMOR_p106_i1.R",
+    "ARMOR_p128_i1.L",
+    "ARMOR_p128_i1.R",
+    "ARMOR_p147_i1.L",
+    "ARMOR_p147_i1.R",
+    "ARMOR_p153_i1.L",
+    "ARMOR_p153_i1.R",
+    "ARMOR_p157_i1.L",
+    "ARMOR_p157_i1.R",
+    "ARMOR_p163_i1.L",
+    "ARMOR_p163_i1.R",
+    "ARMOR_p166_i1.L",
+    "ARMOR_p166_i1.R",
+    "ARMOR_p167_i1.L",
+    "ARMOR_p167_i1.R",
+    "ARMOR_p168_i1.L",
+    "ARMOR_p168_i1.R",
+    "ARMOR_p169_i1.L",
+    "ARMOR_p169_i1.R",
+    "ARMOR_p172_i1.L",
+    "ARMOR_p172_i1.R",
+    "ARMOR_p175_i1.L",
+    "ARMOR_p175_i1.R",
+    "ARMOR_p177_i1.L",
+    "ARMOR_p177_i1.R",
+    "ARMOR_p181_i1.L",
+    "ARMOR_p181_i1.R",
+    "ARMOR_p183_i1.L",
+    "ARMOR_p183_i1.R",
+    "ARMOR_p184_i1.L",
+    "ARMOR_p184_i1.R",
+    "ARMOR_p186_i1.L",
+    "ARMOR_p186_i1.R",
+    "ARMOR_p190_i1.L",
+    "ARMOR_p190_i1.R",
+    "ARMOR_p191_i1.L",
+    "ARMOR_p191_i1.R",
+    "ARMOR_p200_i1.L",
+    "ARMOR_p200_i1.R",
+    "ARMOR_p201_i1.L",
+    "ARMOR_p201_i1.R",
+    "ARMOR_p204_i1.L",
+    "ARMOR_p204_i1.R",
+    "ARMOR_p205_i1.L",
+    "ARMOR_p205_i1.R",
+    "ARMOR_p208_i1.L",
+    "ARMOR_p208_i1.R",
+    "ARMOR_p209_i1.L",
+    "ARMOR_p209_i1.R",
+    "ARMOR_p215_i1.L",
+    "ARMOR_p215_i1.R",
+    "ARMOR_p233_i1.L",
+    "ARMOR_p233_i1.R",
+    "ARMOR_p234_i1.L",
+    "ARMOR_p234_i1.R",
+    "ARMOR_p237_i1.L",
+    "ARMOR_p237_i1.R",
+    "ARMOR_p240_i1.L",
+    "ARMOR_p240_i1.R",
+    "ARMOR_p241_i1.L",
+    "ARMOR_p241_i1.R",
+    "ARMOR_p242_i1.L",
+    "ARMOR_p242_i1.R",
+    "HOUSING_Forearm_Back_Walls_And_Rim_p95_i1.L",
+    "HOUSING_Forearm_Back_Walls_And_Rim_p95_i1.R",
+    "HOUSING_Forearm_Front_Walls_And_Rim_p95_i1.L",
+    "HOUSING_Forearm_Front_Walls_And_Rim_p95_i1.R",
+    "HOUSING_Shoulder_Back_Walls_And_Rim_p33_i1.L",
+    "HOUSING_Shoulder_Back_Walls_And_Rim_p33_i1.R",
+    "HOUSING_Shoulder_Front_Walls_And_Rim_p33_i1.L",
+    "HOUSING_Shoulder_Front_Walls_And_Rim_p33_i1.R",
+    "HOUSING_Upperarm_Walls_And_Rim_p28_i1.L",
+    "HOUSING_Upperarm_Walls_And_Rim_p28_i1.R",
+    "RED_Forearm_Back_Floor_p95_i1.L",
+    "RED_Forearm_Back_Floor_p95_i1.R",
+    "RED_Forearm_Front_Floor_p95_i1.L",
+    "RED_Forearm_Front_Floor_p95_i1.R",
+    "RED_Shoulder_Back_Floor_p33_i1.L",
+    "RED_Shoulder_Back_Floor_p33_i1.R",
+    "RED_Shoulder_Front_Floor_p33_i1.L",
+    "RED_Shoulder_Front_Floor_p33_i1.R",
+    "RED_Upperarm_Floor_p28_i1.L",
+    "RED_Upperarm_Floor_p28_i1.R"
+  ],
+  "hidden": [
+    "ARMOR_p0_i1.C",
+    "ARMOR_p5_i1.L",
+    "ARMOR_p5_i1.R",
+    "ARMOR_p6_i1.L",
+    "ARMOR_p6_i1.R",
+    "ARMOR_p7_i1.L",
+    "ARMOR_p7_i1.R",
+    "ARMOR_p8_i1.L",
+    "ARMOR_p8_i1.R",
+    "ARMOR_p9_i1.C",
+    "ARMOR_p10_i1.L",
+    "ARMOR_p10_i1.R",
+    "ARMOR_p17_i1.L",
+    "ARMOR_p17_i1.R",
+    "ARMOR_p19_i1.L",
+    "ARMOR_p19_i1.R",
+    "ARMOR_p20_i1.L",
+    "ARMOR_p20_i1.R",
+    "ARMOR_p25_i1.L",
+    "ARMOR_p25_i1.R",
+    "ARMOR_p31_i1.L",
+    "ARMOR_p31_i1.R",
+    "ARMOR_p39_i1.L",
+    "ARMOR_p39_i1.R",
+    "ARMOR_p43_i1.L",
+    "ARMOR_p43_i1.R",
+    "ARMOR_p54_i1.L",
+    "ARMOR_p54_i1.R",
+    "ARMOR_p56_i1.L",
+    "ARMOR_p56_i1.R",
+    "ARMOR_p60_i1.C",
+    "ARMOR_p65_i1.L",
+    "ARMOR_p65_i1.R",
+    "ARMOR_p71_i1.C",
+    "ARMOR_p72_i1.L",
+    "ARMOR_p72_i1.R",
+    "ARMOR_p75_i1.C",
+    "ARMOR_p77_i1.L",
+    "ARMOR_p77_i1.R",
+    "ARMOR_p80_i1.C",
+    "ARMOR_p83_i1.L",
+    "ARMOR_p83_i1.R",
+    "ARMOR_p89_i1.L",
+    "ARMOR_p89_i1.R",
+    "ARMOR_p91_i1.L",
+    "ARMOR_p91_i1.R",
+    "ARMOR_p93_i1.L",
+    "ARMOR_p93_i1.R",
+    "ARMOR_p98_i1.L",
+    "ARMOR_p98_i1.R",
+    "ARMOR_p100_i1.L",
+    "ARMOR_p100_i1.R",
+    "ARMOR_p104_i1.L",
+    "ARMOR_p104_i1.R",
+    "ARMOR_p105_i1.C",
+    "ARMOR_p108_i1.L",
+    "ARMOR_p108_i1.R",
+    "ARMOR_p111_i1.L",
+    "ARMOR_p111_i1.R",
+    "ARMOR_p114_i1.L",
+    "ARMOR_p114_i1.R",
+    "ARMOR_p115_i1.C",
+    "ARMOR_p118_i1.L",
+    "ARMOR_p118_i1.R",
+    "ARMOR_p119_i1.C",
+    "ARMOR_p120_i1.C",
+    "ARMOR_p122_i1.C",
+    "ARMOR_p125_i1.L",
+    "ARMOR_p125_i1.R",
+    "ARMOR_p127_i1.L",
+    "ARMOR_p127_i1.R",
+    "ARMOR_p131_i1.L",
+    "ARMOR_p131_i1.R",
+    "ARMOR_p133_i1.L",
+    "ARMOR_p133_i1.R",
+    "ARMOR_p135_i1.C",
+    "ARMOR_p137_i1.L",
+    "ARMOR_p137_i1.R",
+    "ARMOR_p139_i1.L",
+    "ARMOR_p139_i1.R",
+    "ARMOR_p141_i1.L",
+    "ARMOR_p141_i1.R",
+    "ARMOR_p143_i1.L",
+    "ARMOR_p143_i1.R",
+    "ARMOR_p145_i1.L",
+    "ARMOR_p145_i1.R",
+    "ARMOR_p152_i1.L",
+    "ARMOR_p152_i1.R",
+    "ARMOR_p155_i1.L",
+    "ARMOR_p155_i1.R",
+    "ARMOR_p156_i1.L",
+    "ARMOR_p156_i1.R",
+    "ARMOR_p162_i1.L",
+    "ARMOR_p162_i1.R",
+    "ARMOR_p173_i1.L",
+    "ARMOR_p173_i1.R",
+    "ARMOR_p174_i1.L",
+    "ARMOR_p174_i1.R",
+    "ARMOR_p188_i1.L",
+    "ARMOR_p188_i1.R",
+    "ARMOR_p189_i1.L",
+    "ARMOR_p189_i1.R",
+    "ARMOR_p192_i1.L",
+    "ARMOR_p192_i1.R",
+    "ARMOR_p193_i1.L",
+    "ARMOR_p193_i1.R",
+    "ARMOR_p197_i1.L",
+    "ARMOR_p197_i1.R",
+    "ARMOR_p198_i1.L",
+    "ARMOR_p198_i1.R",
+    "ARMOR_p202_i1.L",
+    "ARMOR_p202_i1.R",
+    "ARMOR_p236_i1.L",
+    "ARMOR_p236_i1.R",
+    "HOUSING_Chest_Triangle_Walls_And_Rim_p9_i1.C",
+    "HOUSING_Knee_Inner_Walls_And_Rim_p125_i1.L",
+    "HOUSING_Knee_Inner_Walls_And_Rim_p125_i1.R",
+    "HOUSING_Knee_Lower_Walls_And_Rim_p125_i1.L",
+    "HOUSING_Knee_Lower_Walls_And_Rim_p125_i1.R",
+    "HOUSING_Knee_Outer_Walls_And_Rim_p125_i1.L",
+    "HOUSING_Knee_Outer_Walls_And_Rim_p125_i1.R",
+    "HOUSING_Shin_Inner_Walls_And_Rim_p20_i1.L",
+    "HOUSING_Shin_Inner_Walls_And_Rim_p20_i1.R",
+    "HOUSING_Shin_Outer_Walls_And_Rim_p20_i1.L",
+    "HOUSING_Shin_Outer_Walls_And_Rim_p20_i1.R",
+    "HOUSING_Toe_Inner_Walls_And_Rim_p133_i1.L",
+    "HOUSING_Toe_Inner_Walls_And_Rim_p133_i1.R",
+    "HOUSING_Toe_Outer_Walls_And_Rim_p133_i1.L",
+    "HOUSING_Toe_Outer_Walls_And_Rim_p133_i1.R",
+    "HOUSING_Visor_Walls_And_Rim_p60_i1.C",
+    "HOUSING_Visor_Walls_And_Rim_p119_i1.C",
+    "RED_Chest_Triangle_Floor_p9_i1.C",
+    "RED_Knee_Inner_Floor_p125_i1.L",
+    "RED_Knee_Inner_Floor_p125_i1.R",
+    "RED_Knee_Lower_Floor_p125_i1.L",
+    "RED_Knee_Lower_Floor_p125_i1.R",
+    "RED_Knee_Outer_Floor_p125_i1.L",
+    "RED_Knee_Outer_Floor_p125_i1.R",
+    "RED_Ring_Back_Floor_p0_i1.C",
+    "RED_Ring_Front_Floor_p0_i1.C",
+    "RED_Shin_Inner_Floor_p20_i1.L",
+    "RED_Shin_Inner_Floor_p20_i1.R",
+    "RED_Shin_Outer_Floor_p20_i1.L",
+    "RED_Shin_Outer_Floor_p20_i1.R",
+    "RED_Toe_Inner_Floor_p133_i1.L",
+    "RED_Toe_Inner_Floor_p133_i1.R",
+    "RED_Toe_Outer_Floor_p133_i1.L",
+    "RED_Toe_Outer_Floor_p133_i1.R",
+    "RED_Visor_Floor_p119_i1.C"
+  ],
+  "source": "BossPlayerDerivedStatic.v1 / AlternatingCombo constant fingers + bind joint3",
+  "runtimeVerified": false
+}

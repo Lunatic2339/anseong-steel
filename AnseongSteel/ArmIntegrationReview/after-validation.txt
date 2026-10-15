@@ -1,0 +1,100 @@
+Unity=6000.3.24f1 mode=after; synthetic contact-pose visual inspection, no HMD.
+combat visual active skins=2
+PASS saved scene contains both active v026 arm skins and visual binding
+PASS normal v026 source GUID retained
+PASS nonempty mesh Combat Left Arm
+PASS valid bone/bindpose array Combat Left Arm
+PASS valid root/material/submesh slots Combat Left Arm
+PASS nonempty mesh Combat Right Arm
+PASS valid bone/bindpose array Combat Right Arm
+PASS valid root/material/submesh slots Combat Right Arm
+PASS two persistent default fists
+PASS 15 actual finger bones per hand
+PASS 15 actual finger bones per hand
+boss=Existing animated BossMecha pilots=2 cockpit=Cockpit_V02
+PASS pose neutral side 0 follows contact shoulder/elbow/hand
+PASS pose neutral closed fingers independent of attack button
+PASS pose neutral rigid wrist straightness <1 degree (0)
+PASS pose neutral side 1 follows contact shoulder/elbow/hand
+PASS pose neutral closed fingers independent of attack button
+PASS pose neutral rigid wrist straightness <1 degree (0)
+PASS pose neutral finite baked skin Combat Left Arm
+PASS pose neutral finite baked skin Combat Right Arm
+CAPTURE after-neutral-left blue pixels=401291
+ARM-ONLY VISIBILITY DIFFERENCE after-neutral-left pixels=403030
+PASS v026 arm geometry actually contributes pixels in after-neutral-left
+CAPTURE after-neutral-right blue pixels=413242
+ARM-ONLY VISIBILITY DIFFERENCE after-neutral-right pixels=403028
+PASS v026 arm geometry actually contributes pixels in after-neutral-right
+PASS pose left-jab side 0 follows contact shoulder/elbow/hand
+PASS pose left-jab closed fingers independent of attack button
+PASS pose left-jab rigid wrist straightness <1 degree (0)
+PASS pose left-jab side 1 follows contact shoulder/elbow/hand
+PASS pose left-jab closed fingers independent of attack button
+PASS pose left-jab rigid wrist straightness <1 degree (0)
+PASS pose left-jab finite baked skin Combat Left Arm
+PASS pose left-jab finite baked skin Combat Right Arm
+CAPTURE after-left-jab-left blue pixels=388167
+ARM-ONLY VISIBILITY DIFFERENCE after-left-jab-left pixels=382457
+PASS v026 arm geometry actually contributes pixels in after-left-jab-left
+CAPTURE after-left-jab-right blue pixels=363586
+ARM-ONLY VISIBILITY DIFFERENCE after-left-jab-right pixels=351015
+PASS v026 arm geometry actually contributes pixels in after-left-jab-right
+PASS pose right-jab side 0 follows contact shoulder/elbow/hand
+PASS pose right-jab closed fingers independent of attack button
+PASS pose right-jab rigid wrist straightness <1 degree (0)
+PASS pose right-jab side 1 follows contact shoulder/elbow/hand
+PASS pose right-jab closed fingers independent of attack button
+PASS pose right-jab rigid wrist straightness <1 degree (0)
+PASS pose right-jab finite baked skin Combat Left Arm
+PASS pose right-jab finite baked skin Combat Right Arm
+CAPTURE after-right-jab-left blue pixels=342519
+ARM-ONLY VISIBILITY DIFFERENCE after-right-jab-left pixels=350406
+PASS v026 arm geometry actually contributes pixels in after-right-jab-left
+CAPTURE after-right-jab-right blue pixels=387560
+ARM-ONLY VISIBILITY DIFFERENCE after-right-jab-right pixels=381894
+PASS v026 arm geometry actually contributes pixels in after-right-jab-right
+PASS pose left-hook side 0 follows contact shoulder/elbow/hand
+PASS pose left-hook closed fingers independent of attack button
+PASS pose left-hook rigid wrist straightness <1 degree (0)
+PASS pose left-hook side 1 follows contact shoulder/elbow/hand
+PASS pose left-hook closed fingers independent of attack button
+PASS pose left-hook rigid wrist straightness <1 degree (0)
+PASS pose left-hook finite baked skin Combat Left Arm
+PASS pose left-hook finite baked skin Combat Right Arm
+CAPTURE after-left-hook-left blue pixels=381262
+ARM-ONLY VISIBILITY DIFFERENCE after-left-hook-left pixels=374999
+PASS v026 arm geometry actually contributes pixels in after-left-hook-left
+CAPTURE after-left-hook-right blue pixels=356430
+ARM-ONLY VISIBILITY DIFFERENCE after-left-hook-right pixels=343785
+PASS v026 arm geometry actually contributes pixels in after-left-hook-right
+PASS pose right-hook side 0 follows contact shoulder/elbow/hand
+PASS pose right-hook closed fingers independent of attack button
+PASS pose right-hook rigid wrist straightness <1 degree (0)
+PASS pose right-hook side 1 follows contact shoulder/elbow/hand
+PASS pose right-hook closed fingers independent of attack button
+PASS pose right-hook rigid wrist straightness <1 degree (0)
+PASS pose right-hook finite baked skin Combat Left Arm
+PASS pose right-hook finite baked skin Combat Right Arm
+CAPTURE after-right-hook-left blue pixels=336072
+ARM-ONLY VISIBILITY DIFFERENCE after-right-hook-left pixels=344619
+PASS v026 arm geometry actually contributes pixels in after-right-hook-left
+CAPTURE after-right-hook-right blue pixels=381100
+ARM-ONLY VISIBILITY DIFFERENCE after-right-hook-right pixels=375632
+PASS v026 arm geometry actually contributes pixels in after-right-hook-right
+PASS pose both-guard side 0 follows contact shoulder/elbow/hand
+PASS pose both-guard closed fingers independent of attack button
+PASS pose both-guard rigid wrist straightness <1 degree (0)
+PASS pose both-guard side 1 follows contact shoulder/elbow/hand
+PASS pose both-guard closed fingers independent of attack button
+PASS pose both-guard rigid wrist straightness <1 degree (0)
+PASS pose both-guard finite baked skin Combat Left Arm
+PASS pose both-guard finite baked skin Combat Right Arm
+CAPTURE after-both-guard-left blue pixels=336114
+ARM-ONLY VISIBILITY DIFFERENCE after-both-guard-left pixels=316559
+PASS v026 arm geometry actually contributes pixels in after-both-guard-left
+CAPTURE after-both-guard-right blue pixels=185072
+ARM-ONLY VISIBILITY DIFFERENCE after-both-guard-right pixels=156344
+PASS v026 arm geometry actually contributes pixels in after-both-guard-right
+PASS existing pure combat and integrated rules executed on this worktree
+Saved scene hash unchanged by validation=True

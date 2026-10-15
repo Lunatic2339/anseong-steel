@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using AnseongSteel.PlayerMotion;
 
 namespace AnseongSteel.RobotPlay
 {
@@ -13,6 +14,17 @@ namespace AnseongSteel.RobotPlay
         public Camera cockpitCamera;
         public Transform seat;
         public float motionScale=2.6f;
+        [Header("Local personal reach: control-point measurements, not anatomical arm length")]
+        public bool usePersonalCalibration=true;
+        public bool compensateHeadTranslation=true;
+        public Vector3 gripToControlPoint=Vector3.zero;
+        public Vector3 shoulderProbeOffset=Vector3.zero;
+        public Vector3 leftShoulderEstimate=new Vector3(-.18f,-.2f,0);
+        public Vector3 rightShoulderEstimate=new Vector3(.18f,-.2f,0);
+        public InputAction leftReach=new InputAction("Save left reach",InputActionType.Button,"<XRController>{LeftHand}/primaryButton");
+        public InputAction rightReach=new InputAction("Save right reach",InputActionType.Button,"<XRController>{RightHand}/primaryButton");
+        public InputAction leftShoulder=new InputAction("Left shoulder reference",InputActionType.Button,"<XRController>{LeftHand}/thumbstickClicked");
+        public InputAction rightShoulder=new InputAction("Right shoulder reference",InputActionType.Button,"<XRController>{RightHand}/thumbstickClicked");
         [Header("Editable XR bindings. Trigger = boost edge; opposite stick = provisional movement")]
         public InputAction leftPosition=new InputAction("Left pose",InputActionType.Value,"<XRController>{LeftHand}/devicePosition",expectedControlType:"Vector3");
         public InputAction rightPosition=new InputAction("Right pose",InputActionType.Value,"<XRController>{RightHand}/devicePosition",expectedControlType:"Vector3");
@@ -31,6 +43,7 @@ namespace AnseongSteel.RobotPlay
         public InputAction rightStick=new InputAction("Right stick",InputActionType.Value,"<XRController>{RightHand}/thumbstick",expectedControlType:"Vector2");
         public InputAction headPosition=new InputAction("Head position",InputActionType.Value,"<XRHMD>/centerEyePosition",expectedControlType:"Vector3");
         public InputAction headRotation=new InputAction("Head rotation",InputActionType.Value,"<XRHMD>/centerEyeRotation",expectedControlType:"Quaternion");
+        public InputAction headTrackingState=new InputAction("Head tracking flags",InputActionType.Value,"<XRHMD>/trackingState",expectedControlType:"Integer");
         public InputAction recenter=new InputAction("Recenter",InputActionType.Button,"<XRController>{LeftHand}/secondaryButton");
         public enum Startup { Offline, Host, Client }
         public Startup startup;
@@ -42,6 +55,53 @@ namespace AnseongSteel.RobotPlay
         Vector3 headBaseline;
         Quaternion trackingToRobot=Quaternion.identity;
         bool headCalibrated;
+        readonly ArmReachCalibration[] reachProfiles={new ArmReachCalibration(),new ArmReachCalibration()};
+        readonly Vector3[] bodyPoints=new Vector3[2],shoulderPoints=new Vector3[2];
+        readonly Quaternion[] bodyRotations={Quaternion.identity,Quaternion.identity};
+        readonly bool[] shoulderCaptured=new bool[2],guardRequested=new bool[2];
+        readonly float[] poseAt={-100,-100};
+        Vector3 currentHead;
+        public const float PersonalDeltaLimit=2.8f; // At most two valid shoulder radii, without the legacy transport cap.
+        public string LastCalibrationMessage {get;private set;}="";
+        public float LastCalibrationMessageAt {get;private set;}=-100;
+        public bool HeadTracked {get;private set;}
+        readonly bool[] handsTracked=new bool[2],reachPressed=new bool[2];
+        public bool HandTracked(int side)=>side>=0&&side<2&&handsTracked[side];
+        public bool NeedsBothCalibration=>OwnsBoth;
+        public bool NeedsGripRelease(int side)=>releaseAfterLoss[side];
+        public bool TryGetCalibratedControlDelta(int side,out Vector3 delta)
+        {
+            delta=Vector3.zero;
+            if(side<0||side>1||!RequiresPersonalCalibration||!HeadTracked||!handsTracked[side]||!reachProfiles[side].IsComplete||Time.time-poseAt[side]>.1f)return false;
+            delta=bodyPoints[side]-reachProfiles[side].Guard;return PunchTrajectoryRecognizer.Finite(delta);
+        }
+        void CalibrationFeedback(string value){LastCalibrationMessage=value;LastCalibrationMessageAt=Time.unscaledTime;}
+        string HandName(int side)=>side==0?"왼팔":"오른팔";
+        static string KoreanReason(string reason)
+        {
+            if(reason=="Capture your comfortable guard first.")return "먼저 편한 가드에서 Y를 눌러 주세요.";
+            if(reason=="Extend comfortably farther than guard; check the shoulder reference if necessary.")return "가드보다 조금 더 뻗은 위치가 필요합니다. 무리하게 뻗지 말고 가드와 어깨 기준을 확인해 주세요.";
+            if(reason=="Check the shoulder estimate and hold a comfortable bent-arm guard.")return "팔을 편하게 굽힌 가드와 어깨 기준을 확인해 주세요.";
+            return "머리와 손의 추적을 확인한 뒤 다시 눌러 주세요.";
+        }
+        public bool RequiresPersonalCalibration=>usePersonalCalibration&&source!=PrototypeInput.DesktopBoth&&session&&!session.NetworkActive;
+        bool OwnsBoth=>source==PrototypeInput.XRLocalBoth&&!session.NetworkActive;
+        public ArmReachCalibration ReachProfile(int side)=>reachProfiles[side];
+        public bool PersonalInputArmed=>!RequiresPersonalCalibration||(OwnsBoth
+            ?reachProfiles[0].IsComplete&&reachProfiles[1].IsComplete&&!releaseAfterLoss[0]&&!releaseAfterLoss[1]
+            :reachProfiles[(int)offlineSide].IsComplete&&!releaseAfterLoss[(int)offlineSide]);
+        public string CalibrationStatus
+        {
+            get
+            {
+                if(!RequiresPersonalCalibration)return session&&session.NetworkActive?"LAN: legacy pose; personal reach/rotation sync not supported":"Legacy input";
+                if(!headCalibrated)return "WAIT FOR HEAD/CONTROLLER TRACKING / FACE FORWARD TO CALIBRATE";
+                int first=OwnsBoth?0:(int)offlineSide,last=OwnsBoth?1:first;
+                for(int side=first;side<=last;side++)if(!reachProfiles[side].HasGuard)return "HOLD COMFORTABLE GUARD / Y: SAVE GUARD";
+                for(int side=first;side<=last;side++)if(!reachProfiles[side].IsComplete)return side==0?"EXTEND LEFT COMFORTABLY / X: SAVE REACH":"EXTEND RIGHT COMFORTABLY / A: SAVE REACH";
+                return PersonalInputArmed?"REACH READY / SHOULDER REFERENCE IS APPROXIMATE":"REACH SAVED / RELEASE GRIP AND RETURN TO GUARD";
+            }
+        }
         float nextSend;
         uint sequence;
         int lastSide=-1;uint connectionEpoch;
@@ -50,61 +110,131 @@ namespace AnseongSteel.RobotPlay
         public Vector3 SeatOffset => (session.NetworkActive?session.LocalSide==1:PreviewRight)?rightSeatOffset:Vector3.zero;
         public void SetCockpitOrigin(Vector3 left,Vector3 rightOffset,bool previewRight){cameraOrigin=left;rightSeatOffset=rightOffset;PreviewRight=previewRight;cockpitCamera.transform.localPosition=cameraOrigin+SeatOffset;}
         public Vector3 CameraOrigin => cameraOrigin;
-        InputAction[] Actions => new[]{leftPosition,rightPosition,leftRotation,rightRotation,leftTracked,rightTracked,leftTrackingState,rightTrackingState,leftAttack,rightAttack,leftBoost,rightBoost,leftStick,rightStick,headPosition,headRotation,recenter};
+        public Vector3 RightSeatOffset => rightSeatOffset;
+        InputAction[] Actions => new[]{leftPosition,rightPosition,leftRotation,rightRotation,leftTracked,rightTracked,leftTrackingState,rightTrackingState,leftAttack,rightAttack,leftBoost,rightBoost,leftStick,rightStick,headPosition,headRotation,headTrackingState,recenter,leftReach,rightReach,leftShoulder,rightShoulder};
         void OnEnable(){foreach(var action in Actions)action.Enable();}
         void OnDisable(){foreach(var action in Actions)action.Disable();Recenter();}
         void Start(){cameraOrigin=cockpitCamera.transform.localPosition;if(startup!=Startup.Offline)session.StartNetwork(startup==Startup.Host);}
-        public void Recenter(){calibrated[0]=calibrated[1]=headCalibrated=false;pendingBoost[0]=pendingBoost[1]=releaseAfterLoss[0]=releaseAfterLoss[1]=false;}
+        public void Recenter()
+        {
+            calibrated[0]=calibrated[1]=headCalibrated=false;
+            for(int side=0;side<2;side++)
+            {
+                pendingBoost[side]=guardRequested[side]=shoulderCaptured[side]=false;
+                releaseAfterLoss[side]=true;poseAt[side]=-100;reachProfiles[side].Reset();
+                if(session){session.ClearPersonalReach(side);session.LoseTracking(side);}
+            }
+            LastCalibrationMessage="";LastCalibrationMessageAt=-100;
+        }
         void Update()
         {
             if(!session)return;
             int side=session.NetworkActive?session.LocalSide:(int)offlineSide;
             if(side!=lastSide||connectionEpoch!=session.ConnectionEpoch){lastSide=side;connectionEpoch=session.ConnectionEpoch;sequence=0;Recenter();cockpitCamera.transform.localPosition=cameraOrigin+SeatOffset;}
-            if(seat)seat.localPosition=new Vector3(side==0?-.48f:.48f,0,-1.8f);
+            if(seat&&!session.PracticeActive)seat.localPosition=new Vector3(side==0?-.48f:.48f,0,-1.8f);
+            if(source!=PrototypeInput.DesktopBoth&&Keyboard.current!=null&&Keyboard.current.f8Key.wasPressedThisFrame)Recenter();
+            HeadTracked=ArmMotionInput.ReadTrackedPose(headPosition,headRotation,headTrackingState,out _,out var headQ)&&ValidRotation(headQ);
+            for(int i=0;i<2;i++){handsTracked[i]=ReadController(i,out _,out _);reachPressed[i]=(i==0?leftReach:rightReach).WasPressedThisFrame();guardRequested[i]=false;}
+            if(recenter.WasPressedThisFrame())
+            {
+                if(RequiresPersonalCalibration)
+                {
+                    int first=OwnsBoth?0:side,last=OwnsBoth?1:side;
+                    bool available=HeadTracked;
+                    for(int i=first;i<=last;i++)available&=handsTracked[i];
+                    if(!available)CalibrationFeedback("가드 저장 실패: 머리와 필요한 손의 추적을 확인하고 Y를 다시 눌러 주세요.");
+                    else for(int i=first;i<=last;i++)guardRequested[i]=true;
+                }
+                else Recenter();
+            }
             if (source == PrototypeInput.XRLocalBoth)
             {
                 // Debug input owns both arms only while offline. LAN roles remain unchanged.
-                if (recenter.WasPressedThisFrame()) Recenter();
                 if(session.NetworkActive)ReadXR(side);else {ReadXR(0);ReadXR(1);}
                 if(Time.time>=nextSend)nextSend = Time.time + .02f;
             }
             else if(source==PrototypeInput.XRSinglePilot)ReadXR(side);else ReadDesktop();
+            // A guard request belongs only to the frame of Y, never to a later recovered pose.
+            guardRequested[0]=guardRequested[1]=false;
         }
         void ReadXR(int side)
         {
-            if(source != PrototypeInput.XRLocalBoth && recenter.WasPressedThisFrame())Recenter();
-            var position=side==0?leftPosition:rightPosition;
-            var tracked=side==0?leftTracked:rightTracked;
             var button=side==0?leftBoost:rightBoost;
-            if(headPosition.activeControl!=null && headRotation.activeControl!=null)
+            if(!ArmMotionInput.ReadTrackedPose(headPosition,headRotation,headTrackingState,out var hp,out var hq)||!ValidRotation(hq))
             {
-                Vector3 hp=headPosition.ReadValue<Vector3>();
-                Quaternion rotation=headRotation.ReadValue<Quaternion>();
-                if(AnseongSteel.PlayerMotion.PunchTrajectoryRecognizer.Finite(hp)&&ValidRotation(rotation)){
-                if(!headCalibrated){headBaseline=hp;trackingToRobot=Quaternion.Inverse(Quaternion.Euler(0,rotation.eulerAngles.y,0));headCalibrated=true;}
-                cockpitCamera.transform.localPosition=cameraOrigin+SeatOffset+trackingToRobot*(hp-headBaseline);
-                cockpitCamera.transform.localRotation=trackingToRobot*rotation;}
+                if(headCalibrated){Recenter();CalibrationFeedback("머리 추적이 끊겨 보정을 초기화했습니다. 추적 복구 후 다시 보정해 주세요.");}LoseHandTracking(side);
+                if(RequiresPersonalCalibration&&recenter.WasPressedThisFrame())CalibrationFeedback("가드 저장 실패: 머리 추적을 확인하고 Y를 다시 눌러 주세요.");
+                if(RequiresPersonalCalibration&&reachPressed[side])CalibrationFeedback(HandName(side)+" 저장 실패: 머리 추적을 확인하고 다시 눌러 주세요.");
+                return;
             }
-            var flags=side==0?leftTrackingState:rightTrackingState;
-            var rotationAction=side==0?leftRotation:rightRotation;
-            // Both measured pose channels are required; identity is not a rotation measurement.
-            if(!tracked.IsPressed()||flags.activeControl==null||position.activeControl==null||rotationAction.activeControl==null
-                ||(flags.ReadValue<int>()&3)!=3)
-            {LoseHandTracking(side);return;}
-            Vector3 p=position.ReadValue<Vector3>();
-            if(!AnseongSteel.PlayerMotion.PunchTrajectoryRecognizer.Finite(p)){LoseHandTracking(side);return;}
-            var handRotation=trackingToRobot*rotationAction.ReadValue<Quaternion>();
-            if(!ValidRotation(handRotation)){LoseHandTracking(side);return;}
-            handRotation=handRotation.normalized;
-            if(!calibrated[side]){baseline[side]=p;rotationBaseline[side]=handRotation;calibrated[side]=true;return;}
-            session.SetLocalHandRotation(side,handRotation*Quaternion.Inverse(rotationBaseline[side]));
+            currentHead=hp;
+            hq=hq.normalized;
+            if(!headCalibrated){headBaseline=hp;trackingToRobot=Quaternion.Inverse(Quaternion.Euler(0,hq.eulerAngles.y,0));headCalibrated=true;}
+            cockpitCamera.transform.localPosition=cameraOrigin+SeatOffset+trackingToRobot*(hp-headBaseline);
+            cockpitCamera.transform.localRotation=trackingToRobot*hq;
+            if(!ReadController(side,out var p,out var q))
+            {
+                LoseHandTracking(side);
+                if(RequiresPersonalCalibration&&reachPressed[side])CalibrationFeedback(HandName(side)+" 저장 실패: 손 추적을 확인하고 다시 눌러 주세요.");
+                return;
+            }
+            var handRotation=(trackingToRobot*q).normalized;
+            bodyPoints[side]=ControlInBody(p,q,gripToControlPoint);bodyRotations[side]=handRotation;poseAt[side]=Time.time;
+            if(!PunchTrajectoryRecognizer.Finite(bodyPoints[side])){LoseHandTracking(side);return;}
+            if(RequiresPersonalCalibration)
+            {
+                if((side==0?leftShoulder:rightShoulder).WasPressedThisFrame())CaptureShoulder(side);
+                if(guardRequested[side]){guardRequested[side]=false;CaptureGuard(side);}
+                if(reachPressed[side])CaptureReach(side);
+                if(!reachProfiles[side].IsComplete)return;
+                calibrated[side]=true;
+            }
+            else if(!calibrated[side]){baseline[side]=p;rotationBaseline[side]=handRotation;calibrated[side]=true;return;}
+            Vector3 delta=RequiresPersonalCalibration?bodyPoints[side]-reachProfiles[side].Guard:trackingToRobot*(p-baseline[side]);
+            Quaternion rotationDelta=handRotation*Quaternion.Inverse(RequiresPersonalCalibration?reachProfiles[side].GuardRotation:rotationBaseline[side]);
+            session.SetLocalHandRotation(side,rotationDelta);
             var attack=side==0?leftAttack:rightAttack;if(!attack.IsPressed())releaseAfterLoss[side]=false;
             pendingBoost[side]|=!releaseAfterLoss[side]&&button.WasPressedThisFrame();
             if(Time.time<nextSend)return;
             if(source != PrototypeInput.XRLocalBoth)nextSend=Time.time+.02f;
-            session.Submit(side,Vector3.ClampMagnitude(trackingToRobot*(p-baseline[side])*motionScale,2.45f),pendingBoost[side],(session.tuning.cooperativeMovement?(side==0?leftStick:rightStick):(side==0?rightStick:leftStick)).ReadValue<Vector2>(),++sequence,
+            float transportScale=RequiresPersonalCalibration?session.tuning.controllerMotionScale:motionScale;
+            session.Submit(side,RequiresPersonalCalibration?Vector3.ClampMagnitude(delta,PersonalDeltaLimit)*transportScale:Vector3.ClampMagnitude(delta*transportScale,2.45f),pendingBoost[side],(session.tuning.cooperativeMovement?(side==0?leftStick:rightStick):(side==0?rightStick:leftStick)).ReadValue<Vector2>(),++sequence,
                 attack.IsPressed()&&!releaseAfterLoss[side]);
             pendingBoost[side]=false;
+        }
+        bool ReadController(int side,out Vector3 p,out Quaternion q)
+        {
+            p=default;q=Quaternion.identity;
+            return (side==0?leftTracked:rightTracked).IsPressed()
+                &&ArmMotionInput.ReadTrackedPose(side==0?leftPosition:rightPosition,side==0?leftRotation:rightRotation,
+                    side==0?leftTrackingState:rightTrackingState,out p,out q)&&ValidRotation(q);
+        }
+        Vector3 ControlInBody(Vector3 p,Quaternion q,Vector3 offset)
+            =>trackingToRobot*(p+q*offset-(compensateHeadTranslation?currentHead:headBaseline));
+        bool CaptureAllowed(int side)
+            =>side>=0&&side<2&&(OwnsBoth||side==(int)offlineSide)&&RequiresPersonalCalibration&&headCalibrated&&Time.time-poseAt[side]<=.1f;
+        public bool CaptureShoulder(int side)
+        {
+            if(!CaptureAllowed(side)||!ReadController(1-side,out var p,out var q)){CalibrationFeedback("어깨 기준 저장 실패: 양손 추적이 필요합니다.");return false;}
+            shoulderPoints[side]=ControlInBody(p,q,shoulderProbeOffset);shoulderCaptured[side]=true;
+            reachProfiles[side].Reset();session.ClearPersonalReach(side);session.LoseTracking(side);pendingBoost[side]=false;releaseAfterLoss[side]=true;
+            CalibrationFeedback("어깨 근사 기준 저장됨. 편한 가드에서 Y를 다시 눌러 주세요.");return true;
+        }
+        public bool CaptureGuard(int side)
+        {
+            if(!CaptureAllowed(side)){CalibrationFeedback("가드 저장 실패: 머리와 손 추적을 확인해 주세요.");return false;}
+            Vector3 shoulder=shoulderCaptured[side]?shoulderPoints[side]:(side==0?leftShoulderEstimate:rightShoulderEstimate);
+            bool ok=reachProfiles[side].CaptureGuard(shoulder,bodyPoints[side],bodyRotations[side],shoulderCaptured[side]?ShoulderReference.AuxiliaryControlPoint:ShoulderReference.HeadRelativeEstimate,out var reason);
+            if(ok){session.ClearPersonalReach(side);session.LoseTracking(side);pendingBoost[side]=false;releaseAfterLoss[side]=true;}
+            CalibrationFeedback(ok?HandName(side)+" 가드 저장됨. 편하게 최대한 뻗은 위치를 저장해 주세요.":HandName(side)+" 가드 저장 실패: "+KoreanReason(reason));return ok;
+        }
+        public bool CaptureReach(int side)
+        {
+            if(!CaptureAllowed(side)){CalibrationFeedback(HandName(side)+" 저장 실패: 머리와 손 추적을 확인해 주세요.");return false;}
+            if(!reachProfiles[side].CaptureReach(bodyPoints[side],out var reason)){CalibrationFeedback(HandName(side)+" 저장 실패: "+KoreanReason(reason));return false;}
+            if(!session.SetPersonalReach(side,reachProfiles[side])){reachProfiles[side].Reset();CalibrationFeedback("로봇 팔 준비 실패: 장면의 팔 연결을 확인해야 합니다.");return false;}
+            session.LoseTracking(side);pendingBoost[side]=false;releaseAfterLoss[side]=true;
+            CalibrationFeedback(HandName(side)+" 최대 도달점 저장됨. 그립을 놓고 가드로 돌아오세요.");return true;
         }
         void LoseHandTracking(int side)
         {

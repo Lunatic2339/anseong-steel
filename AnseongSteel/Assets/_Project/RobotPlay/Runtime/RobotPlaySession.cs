@@ -33,6 +33,23 @@ namespace AnseongSteel.RobotPlay
         public Renderer targetMarker;
         public bool trainingWindow=true;
         public bool externalBossTimeline;
+        public bool PracticeActive { get; private set; }
+        Vector3[] practiceGuards;
+        public bool AttackHeld(int side)=>side>=0&&side<2&&attacks[side]&&FreshInput(side);
+        public Vector3 LocalControlDelta(int side)=>FreshInput(side)?input[side]/Mathf.Max(.1f,tuning.controllerMotionScale):Vector3.zero;
+        public void CancelPracticeTargetLag(int side){if(PracticeActive&&side>=0&&side<2&&followers[side])followers[side].CancelTargetLag();}
+        // The input adapter still submits per-arm poses. Practice changes the
+        // local rig/contact sink, without changing LAN arm ownership or RPCs.
+        public void ConfigurePractice(bool active,MechaVRBossTarget practiceTarget,MechaVRBossContact.Arm[] arms,Vector3[] guards)
+        {
+            if(NetworkActive)throw new InvalidOperationException("Disconnect before changing practice mode.");
+            if(arms==null||arms.Length!=2||!practiceTarget)throw new ArgumentException("Two bound arms and a target are required.");
+            if(active&&(guards==null||guards.Length!=2))throw new ArgumentException("Practice needs two authored guard anchors.");
+            if(target)target.onHit.RemoveListener(OnContact);
+            for(int i=0;i<2;i++){ClearPersonalReach(i);ClearInput(i);followers[i]=null;}
+            PracticeActive=active;practiceGuards=guards;target=practiceTarget;contact.boss=practiceTarget;contact.arms=arms;
+            target.onHit.AddListener(OnContact);contact.ResetContactState();
+        }
         public void SetBossWindow(bool open,int side,bool dual){phase=open?1:0;attackSide=side;both=dual;}
         public float telegraphSeconds=2f,recoverySeconds=3.8f,guardBonusSeconds=1.5f;
         public float movementSpeed=.6f;
@@ -69,6 +86,7 @@ namespace AnseongSteel.RobotPlay
         readonly ControllerArmFollower[] followers = new ControllerArmFollower[2];
         readonly ControllerElbowHint[] elbowHints = { new ControllerElbowHint(), new ControllerElbowHint() };
         readonly Quaternion[] localRotations = { Quaternion.identity, Quaternion.identity };
+        readonly ArmReachCalibration[] personalReach = new ArmReachCalibration[2];
         public bool NetworkActive => !OfflineAllowed || (NetworkManager.Singleton && NetworkManager.Singleton.IsListening);
         public bool Authority => !NetworkActive || (ConnectionState == LanState.Connected && IsSpawned && IsServer);
         public int LocalSide => NetworkActive && !requestedHost ? 1 : 0;
@@ -105,6 +123,7 @@ namespace AnseongSteel.RobotPlay
             accepted[side] = input[side] = Vector3.zero; boost[side] = false;
             attacks[side]=false;movements[side]=Vector2.zero;elbowHints[side].Reset();localRotations[side]=Quaternion.identity;
             Combat?.Invalidate(side);
+            if(followers[side])followers[side].ResetTransientPose();
             if (side == 0) move = Vector2.zero;
         }
         void Connected(ulong id)
@@ -172,7 +191,7 @@ namespace AnseongSteel.RobotPlay
             response.Reason = allowed ? "" : "Two pilot prototype is full";
             if (allowed && !localHost) { reservedClient = request.ClientNetworkId; reservedAt = Time.realtimeSinceStartup; }
         }
-        public bool CanStartNetwork => ConnectionState != LanState.Starting && ConnectionState != LanState.Connected
+        public bool CanStartNetwork => !PracticeActive && ConnectionState != LanState.Starting && ConnectionState != LanState.Connected
             && ConnectionState != LanState.Stopping && NetworkManager.Singleton
             && !NetworkManager.Singleton.IsListening && !NetworkManager.Singleton.ShutdownInProgress;
         public void StartNetwork(bool host)
@@ -255,7 +274,10 @@ namespace AnseongSteel.RobotPlay
         public static bool Authorized(int side,ulong sender,ulong host,ulong right) => side==0?sender==host:side==1&&right!=ulong.MaxValue&&sender==right;
         void Accept(int side,Vector3 offset,bool edge,Vector2 movement,uint sequence,bool attackHeld)
         {
-            if(side<0||side>1||!RobotCombat.Finite(offset)||offset.magnitude>2.5f||!float.IsFinite(movement.x)||!float.IsFinite(movement.y)||!IntegratedLanRules.IsNewSequence(sequence,sequences[side]))return;
+            if(side<0||side>1)return;
+            float inputLimit=!NetworkActive&&personalReach[side]!=null&&personalReach[side].IsComplete
+                ?Mathf.Max(.1f,tuning.controllerMotionScale)*RobotPilotInput.PersonalDeltaLimit:2.5f;
+            if(!RobotCombat.Finite(offset)||offset.magnitude>inputLimit||!float.IsFinite(movement.x)||!float.IsFinite(movement.y)||!IntegratedLanRules.IsNewSequence(sequence,sequences[side]))return;
             float elapsed=Time.time-received[side];
             if(elapsed<.008f)return;
             if(elapsed<.25f && Vector3.Distance(accepted[side],offset)>Mathf.Max(.15f,elapsed*12f))return;
@@ -272,10 +294,10 @@ namespace AnseongSteel.RobotPlay
                 {
                     if(now-received[side]>.25f)
                     { if(Combat.arms[side].initialized)Combat.Invalidate(side);input[side]=Vector3.zero;movements[side]=Vector2.zero;attacks[side]=false;boost[side]=false;if(side==0)move=Vector2.zero; }
-                    else if(received[side]>Combat.arms[side].lastSample)Combat.Sample(side,input[side],boost[side],received[side],attacks[side]);
+                    else if(received[side]>Combat.arms[side].lastSample)Combat.Sample(side,input[side],PracticeActive?false:boost[side],received[side],attacks[side]);
                     boost[side]=false;Pose(side,input[side]);
                 }
-                if(Combat.RobotHealth>0&&Combat.BossHealth>0&&(!NetworkActive||!GetComponent<IntegratedOnlineState>()||GetComponent<IntegratedOnlineState>().IsBattle))
+                if(!PracticeActive&&Combat.RobotHealth>0&&Combat.BossHealth>0&&(!NetworkActive||!GetComponent<IntegratedOnlineState>()||GetComponent<IntegratedOnlineState>().IsBattle))
                 {
                     if(tuning.cooperativeMovement)move=CooperativeMove(movements[0],movements[1]);
                     Vector3 p=robotRoot.position+robotRoot.TransformDirection(new Vector3(move.x,0,move.y))*movementSpeed*Time.deltaTime;
@@ -284,13 +306,13 @@ namespace AnseongSteel.RobotPlay
                 }
                 contact.ConstrainPose();
                 // Confirm an initially ambiguous stroke only while fist contact continues.
-                for(int side=0;side<2;side++)if(contact.arms[side].IsBlocked && now-received[side]<=.25f)TryPunchContact(side);
+                if(!PracticeActive)for(int side=0;side<2;side++)if(contact.arms[side].IsBlocked && now-received[side]<=.25f)TryPunchContact(side);
                 offline=new RobotSnapshot {bossHealth=Combat.BossHealth,robotHealth=Combat.RobotHealth,combo=Combat.ComboStep,next=Combat.NextSide,hits=Combat.HitCount,phase=phase,attackSide=attackSide,both=both,leftGuard=Combat.arms[0].guarding,rightGuard=Combat.arms[1].guarding,left=input[0],right=input[1],body=robotRoot.position};
                 if(IsSpawned&&IsServer&&now>=nextPublish){replicated.Value=offline;nextPublish=now+.033f;}
             }
             else if(IsSpawned)
             {var s=State;robotRoot.position=s.body;Pose(0,s.left);Pose(1,s.right);contact.ConstrainPose();}
-            UpdateDisplay();
+            if(!PracticeActive)UpdateDisplay();
         }
         public void LoseTracking(int side)
         {
@@ -321,7 +343,7 @@ namespace AnseongSteel.RobotPlay
         }
         void OnContact()
         {
-            if(!Authority)return;
+            if(PracticeActive||!Authority)return;
             int side=target.LastArm=="L"?0:target.LastArm=="R"?1:-1;
             if(side<0||!contact.arms[side].ContactPart.Contains("Fist"))return;
             TryPunchContact(side);
@@ -341,13 +363,15 @@ namespace AnseongSteel.RobotPlay
             Combat.Reset();phase=0;attackCount=0;attackSide=0;both=false;phaseEnd=Time.time+telegraphSeconds;
             for(int i=0;i<2;i++){received[i]=-100;input[i]=Vector3.zero;boost[i]=false;attacks[i]=false;movements[i]=Vector2.zero;sequences[i]=0;elbowHints[i].Reset();localRotations[i]=Quaternion.identity;}
             move=Vector2.zero;if(robotRoot)robotRoot.position=Vector3.zero;if(contact)contact.ResetContactState();
+            for(int side=0;side<2;side++)ClearPersonalReach(side);
+            var pilot=GetComponent<RobotPilotInput>();if(pilot)pilot.Recenter();
         }
         // Two rigid segments. The existing contact solver restricts these requested rotations.
         public void SetLocalHandRotation(int side,Quaternion delta)
         {
             if(!NetworkActive && side>=0 && side<2 && PunchTrajectoryRecognizer.Finite(delta))localRotations[side]=delta;
         }
-        public void Pose(int side,Vector3 offset)
+        ControllerArmFollower EnsureFollower(int side)
         {
             var arm=contact.arms[side];
             if(!followers[side])
@@ -355,21 +379,44 @@ namespace AnseongSteel.RobotPlay
                 var follower=arm.upperArm.GetComponent<ControllerArmFollower>();
                 if(!follower)follower=arm.upperArm.gameObject.AddComponent<ControllerArmFollower>();
                 follower.upper=arm.upperArm;follower.forearm=arm.forearm;follower.hand=arm.hand;follower.robotFrame=robotRoot;
-                follower.neutralTarget=Neutral(side);follower.bendDirection=new Vector3(side==0?-1:1,-1,0);
+                follower.neutralTarget=PracticeActive?practiceGuards[side]:Neutral(side);follower.bendDirection=new Vector3(side==0?-1:1,-1,0);
                 follower.Initialize();followers[side]=follower;
             }
+            return followers[side];
+        }
+        public bool SetPersonalReach(int side,ArmReachCalibration calibration)
+        {
+            // Existing LAN RPC still carries physical offsets only. Do not make
+            // a remote arm appear personally calibrated without its profile.
+            if(NetworkActive||side<0||side>1||!contact||contact.arms==null||contact.arms.Length<=side
+                ||!contact.arms[side].upperArm||!contact.arms[side].forearm||!contact.arms[side].hand)return false;
+            if(!EnsureFollower(side).SetPersonalReach(calibration))return false;
+            personalReach[side]=calibration;return true;
+        }
+        public void ClearPersonalReach(int side)
+        {
+            if(side<0||side>1)return;personalReach[side]=null;
+            if(followers[side])followers[side].ClearPersonalReach();
+        }
+        public void Pose(int side,Vector3 offset)
+        {
+            var follower=EnsureFollower(side);
             var delta=offset/Mathf.Max(.1f,tuning.controllerMotionScale);
-            followers[side].elbowLift=elbowHints[side].Update(delta,Time.deltaTime);
-            followers[side].strictPunchPose=true;
-            followers[side].punchPose=Combat.arms[side].attackHeld&&(Combat.arms[side].attackAttempt||Combat.arms[side].contactConsumed)&&Combat.arms[side].trajectory.Phase!=MotionPhase.Ready;
-            followers[side].Follow(delta,NetworkActive?Quaternion.identity:localRotations[side]);
+            var hintDelta=personalReach[side]!=null&&personalReach[side].IsComplete?delta*(.65f/personalReach[side].EffectiveReach):delta;
+            follower.elbowLift=elbowHints[side].Update(hintDelta,Time.deltaTime);
+            follower.strictPunchPose=true;
+            follower.punchPose=Combat.arms[side].attackHeld;
+            follower.Follow(delta,NetworkActive?Quaternion.identity:localRotations[side]);
         }
         void PublishFeedback(FeedbackKind kind,PilotSide side,float strength)
         {
+            if(PracticeActive)return;
             var online=GetComponent<IntegratedOnlineState>();if(online&&Authority)online.RecordFeedback(kind,side,strength);
             if(IsSpawned&&IsServer)FeedbackRpc((int)kind,(int)side,strength);
             else ReceiveFeedback(kind,side,strength);
         }
+        public void PracticeHitFeedback(int side)
+        {if(PracticeActive&&side>=0&&side<2)Feedback?.Invoke(FeedbackKind.Hit,(PilotSide)side,1);}
         [Rpc(SendTo.Everyone,InvokePermission=RpcInvokePermission.Server)] void FeedbackRpc(int kind,int side,float strength) => ReceiveFeedback((FeedbackKind)kind,(PilotSide)side,strength);
         void ReceiveFeedback(FeedbackKind kind,PilotSide side,float strength)
         {LastFeedback=$"{side} {kind} {strength:0}";Feedback?.Invoke(kind,side,strength);}

@@ -1,0 +1,93 @@
+현재 프로젝트 구현 지도와 사용자 확인 순서
+2026-10-14 / develop f942d53 기준 / 총괄 읽기 전용 조사
+
+0. 최신 소유권 경계
+사용자 설명: VR_test는 팀원이 작업하는 프로젝트이므로 수정하지 않는다. 모델도 동일하다. 거기서 얻을 부분만 검토하여 사용자 프로젝트 AnseongSteel에 별도로 반영한다.
+VR_test의 코드·씬·ProjectSettings·패키지·모델·meta 및 팀원 모델 원본은 참고만 한다. ArtSource/PlayerV01, PlayerSwordV01, PlayerShieldV01 등 이번 팀원 변경도 원본을 덮어쓰지 않는다. 사용자 소유가 확인되지 않은 공동 모델 원본 역시 임의 수정하지 않는다.
+채택이 필요한 경우 AnseongSteel용 별도 자산·어댑터와 명확한 출처를 두고 격리 개발한다. 팀원 프로젝트 전체, SDK 전체, 씬 및 GUID를 일괄 덮어쓰는 방식은 쓰지 않는다. 원본 공유 참조를 통해 수정이 역전파되지 않게 한다. 자산 출처/이용 조건이 불명확하면 채택 시 확인한다.
+이번 작업은 코드·씬·모델 수정이나 복사·통합을 하지 않았다.
+
+1. 핵심 결론
+메인 게임은 AnseongSteel, VR_test는 팀원 실험 프로젝트, ArtSource는 모델 제작 원본이다. Unity 프로젝트는 저장소 최상위가 아니라 각 프로젝트 폴더를 Hub에서 연다.
+메인 Unity 버전: AnseongSteel/ProjectSettings/ProjectVersion.txt = 6000.3.24f1. 참고 프로젝트 VR_test = 6000.3.26f1. VR_test/MechaVR_Setup.md의 6000.6.0f1 및 D드라이브 경로는 현재 설정과 달라 그대로 사용하지 않는다.
+메인에는 팔 입력/펀치/콤보/가드/보스/콕핏/HUD/LAN 기반이 있지만 전체 시연이 검증된 완성본은 아니다. 검·방패 장착 실험이 저장소에 들어온 것과 메인 통합 전투에 연결된 것은 다르다.
+git diff 42e05e4 HEAD -- AnseongSteel/Assets/_Project/01_Scripts, RobotPlay, 04_Scenes 결과 차이 없음. 이전 감사에서 확인한 핵심 코드/씬 문제를 최근 merge가 해결했다고 볼 수 없다. 팔 시각 복구·상태별 피해 차단은 별도 개발 작업폴더 결과이며 현재 메인에 반영되지 않았다.
+메인 Build Settings 첫 enabled 씬은 여전히 Assets/Scenes/SampleScene.unity다. 이후 RobotPlay, sunwoo_IntegratedPlay가 있다. 현재 기본 Build/Run을 최종 게임 진입으로 평가하지 않는다.
+
+2. 사용자 프로젝트의 씬 지도 — 아래는 AnseongSteel/Assets 기준
+실제 씬 파일 존재, 주요 스크립트 GUID 연결을 확인했다. 연결 존재는 활성 상태/정상 실행 보증이 아니다.
+
+전체 게임 흐름:
+- _Project/04_Scenes/sunwoo_IntegratedPlay.unity: 최우선 통합 대상. 콕핏/팔/펀치 전투/보스/학습 단계/승패·재시작/HUD/접속 기능이 함께 연결되어 있다. 현재 저장 씬의 시각 팔 누락 등은 이전 실행 감사에서 재현됐으며 수정본 통합이 먼저다.
+- _Project/RobotPlay/Scenes/RobotPlay.unity: 로봇 전투/LAN 프로토타입. 전체 연출 평가보다 판정·세션 분리 확인용.
+- _Project/RobotPlay/Scenes/LocalPunchTest.unity: 로컬 펀치 테스트. 실제 2인 네트워크 결과를 대신하지 않는다.
+
+팔 조작:
+- _Project/04_Scenes/ArmMotionTest.unity: 입력, 손/팔 추종, 잽·훅 궤적, 가드, 리치와 시야 비교 실험. 메인 RobotPilotInput과 다른 ArmMotionInput 경로이므로 여기만 통과해도 통합 완료가 아니다.
+
+보스:
+- _BossPrototype/Scenes/BossModelTest.unity: 보스 모델·검·애니메이션·공격 패턴 실험실. BossCombatController 및 14개 패턴, 테스트 UI 참조가 있다. Play 중 개별 공격/검 꺼내기/수납/거리 조정 UI로 동작 관찰하도록 작성돼 있다.
+- BossAttackTest.unity, BossMovementTest.unity, BossRotationTest.unity: 기본 공격·이동·회전 분리 테스트.
+
+콕핏:
+- CockpitVariants/A_CloseArc/Scenes/Cockpit_Preview_A_CloseArc.unity
+- CockpitVariants/B_RearDome/Scenes/Cockpit_Preview_B_RearDome.unity
+- CockpitVariants/C_SideDome/Scenes/Cockpit_Preview_C_SideDome.unity
+- _Project/02_Art/CockpitV01/Scenes/Cockpit_Preview.unity 및 CockpitV02/Scenes/Cockpit_Preview_V02.unity: 이전 비교본.
+외형/프레임/배치 비교용이다. 미리보기에서 외형을 보는 것과 통합 전장의 크기·깊이·HMD 편안함 검증을 구분한다. B/C 상하 영상 누락은 이전 실행 감사에서 재현됐다.
+
+HUD/조종사:
+- _Project/04_Scenes/sunwoo_HUDTest.unity, _Project/HudUI/Scenes/Hud_V02_Test.unity: HUD 배치·읽기·가림 확인.
+- _Project/02_Art/PilotV04/Scenes/PilotWristReview_v04.unity: 최신 조종사 손목·리그 검토.
+- PilotV03/Scenes/PilotRigReview_v03.unity, PilotV01/Scenes/PilotReview_v01.unity: 이전 비교본.
+- Assets/Scenes/SampleScene.unity, BasicScene.unity 및 _Recovery 씬은 현재 사용자 검증 우선순위가 아니다.
+
+3. 주요 스크립트와 현재 구현 수준
+AnseongSteel/Assets/_Project/01_Scripts/01_Core/PunchTrajectoryRecognizer.cs: 궤적으로 잽/훅 분류.
+_Project/01_Scripts/04_VR/ArmMotionInput.cs, ControllerArmFollower.cs, CockpitPilotAvatar.cs, DefaultFistPose.cs: 실험 입력·팔 IK/회전·조종사·기본 주먹. 개인별 어깨/상완/전완 길이를 충분히 측정하는 통합 보정 흐름은 아직 없다.
+_Project/RobotPlay/Runtime/RobotPilotInput.cs: 통합 XR/키보드 입력. XR grip 유지=공격, trigger=추가 부스트, 왼쪽 secondary(Y)=재중립. 키보드 F/G 공격 유지, 1/2 좌우 잽, 3/4 좌우 훅, Q/E 부스트, Z/C 가드, WASD 이동. 이 값은 현 코드 기본이며 최종 버튼 확정 요구가 아니다.
+RobotCombat.cs, RobotPlaySession.cs: 체력·콤보·가드·판정·세션·네트워크 권한. 현 develop은 비전투 피해 차단 수정 전 코드다.
+IntegratedPlayFlow.cs: 보정→전투→승리/패배, 학습 진행, R 또는 B 재시작, F1 키보드/로컬 XR 전환. targetDurationSeconds=300은 코드 임시값이고 사용자 제한시간 확정이 아니다.
+IntegratedBossEncounter.cs: 통합 보스 교전. 별도 보스 실험실의 모든 공격 패턴이 메인에서 쓰이는 것은 아니다.
+IntegratedOnlineState.cs, IntegratedLanRules.cs: 접속 준비/시작/동기화. 이전 실행에서 손 회전·머리 자세·추적 유실/보조손 입력 문제가 보고됐다. 실제 2PC/2Quest 합격은 아직 없다.
+CockpitLiveView.cs, CockpitViewPosition.cs, RobotViewComparison.cs, IntegratedCockpitSelector.cs: 외부 중계·관찰 위치·비교·콕핏 선택. 현재 공통 단안 영상/UV 표시와 눈 위치의 관계가 왜곡·거리 단서 문제 후보. 13번 검토 참조.
+IntegratedCombatHud.cs, IntegratedPunchCue.cs, IntegratedFeedback.cs, HudUI 계열: HUD와 피드백 연결. 담당자·실패 이유·가림/겹침과 HMD 가독성은 보강 대상.
+_BossPrototype/Runtime/Combat/BossCombatController.cs, BossSwordEquip.cs, BossSwordAttachment.cs 및 Patterns/*: 독립 보스 공격·검 장착·패턴 기반. 행동 파일 수를 메인 게임 완성도로 환산하지 않는다.
+Editor/*의 Builder/Setup/Installer는 씬·모델을 생성하거나 저장할 수 있다. 단순 보기 위해 실행할 메뉴가 아니다.
+
+4. 모델 지도와 확인할 것
+플레이어 메카: ArtSource/Mecha/mecha-finger-rig-mixamo-v026.blend 및 메인 _Project/02_Art/01_Models/mecha-finger-rig-mixamo-v026.fbx 등. v025/이름 변형 파일도 함께 있어 이름만으로 채택본을 판정하지 않는다. 확인: 기본 주먹, 손가락/손목/팔꿈치 관절, 갑옷 간섭, 훅 실루엣과 실제 씬 연결. 이전 검사와 별도 복구 결과를 현재 통합 씬 정상 상태로 혼동하지 않는다.
+조종사: ArtSource/PilotV01/V03/V04와 메인 PilotV04 FBX/QuestCandidate/상세·축소 프리팹. 확인: 자기 몸과 옆 사람의 크기, 어깨/손목, 손과 컨트롤러 위치, 좌우 체형/시야 가림. 이전 V03/V04 리그 검증은 있으나 실착용 검증은 미완료.
+보스: 메인 _BossPrototype/Models/BossUpdatedCompatible.fbx, Generated/BossMecha.prefab, Models/Sword/BossGreatsword.fbx. ArtSource/BossV11/Boss_v011.blend는 최신 제작 원본이며 메인의 호환 보스와 자동으로 같지 않다. 확인: 원하는 외형 선택, 공격 전조 구분, 관절 깨짐, 검 그립/발도·납도, 거리별 공격 범위.
+콕핏: ArtSource/CockpitV01/V02/V03 및 메인 CockpitVariants FBX/프리팹. 확인: 사람 두 명 공간, 몸·동료·팔 가림, 같은 상대의 각크기/거리감, 좌우 왜곡. 큰 화면으로 적이 확대되어 보이면 실패다.
+팀원 신규 모델(참고만): ArtSource/PlayerV01/Player_v01.blend, PlayerSwordV01/Player_Sword_v01.blend, PlayerShieldV01/Player_Shield_v01.blend 및 VR_test/Assets/mecha_arms_PCVR.fbx, Weapons/CapstoneSword·CapstoneShield. 가져올 경우 손잡이·축·스케일·좌우 역할·재질·콜라이더·리깅을 사용자 게임 기준으로 별도 검사한다. 원본 수정하지 않는다.
+
+5. 팀원 작업에서 얻을 후보 — 통합되었다는 뜻 아님
+- MechaVRHandTarget: grip 회전 기준, 좌표계 대응, F8 기준 자세 재보정, 최대 신전 완화. Calibrate는 현재 기준 위치/회전을 기록하며 실제 사용자 팔 길이 측정이 아니다.
+- MechaArmStability: 팔 길이 94%부터 신전 완화, 최대 99%에 접근하는 제한, 팔꿈치 힌트 안정화. 현재 훅 문제와 비교할 후보다.
+- MechaBodyElbowHints: Meta OVRSkeleton 팔꿈치 위치를 IK 힌트로 쓰고 데이터 없으면 기본값으로 전환. SDK 추정값의 실제 품질/실행 플랫폼 조건은 검증 필요하며 실측 팔꿈치 정답으로 취급하지 않는다.
+- MechaVRSwordEquip: 오른손을 등쪽 영역에 넣고 A 버튼으로 장착/수납, 영역 진입 진동. 손이 머리 뒤로 가는 동작의 추적과 외골격 움직임 범위가 사용자 게임에 적합한지 검토 후 채택한다.
+- MechaVRShieldDeploy: 왼쪽 X 버튼 토글, 시선의 수평 방향에 맞춘 방패 자세/전개 효과. 현재 사용자 확정은 유지 전개/해제 축소이므로 입력을 그대로 가져오면 안 된다. 팔 방향과 머리 방향 중 무엇을 따라야 자연스러운지도 별도 검토한다.
+- MechaVRArmLengthSetup: 로봇 상완·전완을 20% 늘리고 메시/씬을 저장하는 모델 편집 도구다. 개인별 사용자 팔길이 캘리브레이션과 다르며 팀원 프로젝트에서 실행하지 않는다.
+- 검/방패 장착과 시각 전개가 존재해도 막기→밀치기→베기/찌르기, 잡고 베기, 보스 HP와의 협동 판정까지 구현됐다는 증거는 아니다.
+
+6. 사용자 확인 순서와 구체적인 피드백
+1순위 — AnseongSteel의 ArmMotionTest에서 편한 가드, 가까운 훅, 반쯤 뻗은 잽, 최대 리치, 손목만 회전, 같은 주먹 위치에서 팔꿈치 올리기를 좌우 각각 확인. 알려줄 것: 어느 손/동작, 주먹 거리, 팔꿈치가 펴지거나 뒤집히는 순간, 보정 전후 차이. 합격 의도: 가까운 훅에서 팔꿈치가 굽고 최대 리치 전까지 갑자기 펴지지 않으며 손목만 꺾어 동작을 소비하지 않는다.
+2순위 — 팔 복구/피해 차단을 통합한 검토본 준비 후 sunwoo_IntegratedPlay. 지금 깨진 팔·미연결 아바타를 사용자의 취향 선택 문제로 넘기지 않는다. 확인: 기본 가드 팔, 자기 몸·동료, 무입력 오타격, 잽잽훅/추가 부스트, 해당 팔 가드, 공격 시점 실제 회피, 학습/승패/재시작.
+3순위 — BossModelTest의 모델/공격 보기. 알려줄 것: 선호 보스 외형, 일반·강·회피 공격을 움직임만으로 구분 가능한지, 검 크기/쥐는 위치/팔 궤적의 어색함. 확정 안 된 패턴 모두를 한꺼번에 구현 요청할 필요는 없다.
+4순위 — 콕핏/HUD 비교. 같은 적·거리·팔 자세를 유지한 상태에서 좌우/머리 이동을 비교한다. 알려줄 것: 적이 과대해 보이는지, 가까운/먼 목표 거리 구분, 주먹이 닿을 순간 예상, 텍스트/구조물 가림, 불편감이 생긴 동작. A/B/C를 당장 최종 선택할 필요 없다.
+5순위 — 기본 기능 통합 뒤 2PC/2Quest. 서로의 팔/머리 동기화, 역할 중복, 같은 방향 공동 이동, 연결 끊김/재접속, 한 판 종료/다음 참가자 초기화, 프레임·편안함. 현재 단계의 최종 합격 검증이다.
+사용자는 팀원 VR_test를 열어 수정할 필요 없다. 필요한 비교용 자산·기능을 메인 검토 씬에 준비하는 것은 담당 개발 채팅의 일이다.
+
+7. 다음에 내릴 개발 지시 — 총괄 권장 순서
+A. 기존 팔 시각 복구·전투 상태 차단을 최신 develop 기준으로 재대조·통합하고 메인 검토 씬을 준비하라. 완료물은 별도 작업폴더에 있으므로 그대로 최종 적용됐다고 보고하지 말 것.
+B. 팀원 원본을 보존하면서 팔 추적/리치/팔꿈치 안정화에서 유효한 방식만 비교하고, 개인별 어깨·가드·최대리치 측정과 공격 유지 손목 정렬을 메인 입력 경로에 구현하라.
+C. 같은 실내에서 개인별 양안 직접 외부 보기와 눈 위치에 맞춘 중계의 비교안을 준비하라. 팔 추적 우선순위를 뒤집지 말 것.
+D. 맨손 시연이 연결된 뒤 검방패 협동 판정과 후속 페이즈를 배정하라. 팀원 장착·시각 효과는 재사용 후보이며 사용자 최신 입력 기획을 따른다.
+이미 확정한 맨손 우선/2인 협동/방패 유지 입력/큰 화면은 시야 확장이라는 방향은 재질문하지 않는다. 사용자 결정이 필요한 것은 실제 착용 비교의 선호·불편점, 최종 시연 길이, 플랫폼/운영 동선 및 후속 페이즈 범위다.
+
+8. 이번 확인의 범위
+현재 Git 상태/변경 비교, 씬 파일 목록·스크립트 및 프리팹 GUID 참조, 주요 구현 본문, 모델 파일 목록, 버전·Build Settings와 기존 보고서를 대조했다. 이번 턴에 Unity/Blender/Quest를 새로 실행하거나 최신 모델을 다시 리깅 검사한 것은 아니다. 이전 실행 결과는 당시 커밋/작업폴더 기준이다. 새 Unity 버전·팀원 변경에 대한 현재 메인 전체 실행 합격은 별도로 검증해야 한다.
+
+최신 반영 상태 — 2026-10-14
+이 문서의 이전 f942d53 조사 후 v026 시각 팔 복구가 메인 AnseongSteel에 로컬 미커밋으로 반영됐다. 통합 씬 경로는 Assets/_Project/04_Scenes/sunwoo_IntegratedPlay.unity 그대로이며 양팔 표시·본/메시·기본 주먹 검증72와 기존 검사54 통과. 상태별 피해 차단/개인별 리치·훅·손목 기능 개선은 이번 통합 범위 밖이다. 파일 정리와 Main/Tests 이동은 사용자 지시로 보류. 최신 근거와 잔존 콘솔 오류는 17_ARM_INTEGRATION_AND_SCENE_ORGANIZATION.txt 참조.

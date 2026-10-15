@@ -32,6 +32,7 @@ namespace AnseongSteel.RobotPlay
             var go=new GameObject("Encounter objective",typeof(RectTransform));go.transform.SetParent(bridge.Hud.HelmetCanvas.transform,false);
             var rect=go.GetComponent<RectTransform>();rect.anchorMin=rect.anchorMax=new Vector2(.5f,.5f);rect.anchoredPosition=new Vector2(0,280);rect.sizeDelta=new Vector2(600,75);go.layer=AnseongSteel.Hud.SuitHudController.HelmetLayer;
             objective=go.AddComponent<Text>();var source=bridge.Hud.HelmetCanvas.GetComponentInChildren<Text>();objective.font=source.font;objective.material=source.material;objective.fontSize=17;objective.alignment=TextAnchor.MiddleCenter;objective.color=new Color(.45f,.84f,1);objective.raycastTarget=false;
+            ReachCalibrationGuide.Attach(pilot,this);
             Retry();
         }
         void OnDestroy(){if(bridge)bridge.Confirmed-=Confirmed;}
@@ -69,7 +70,7 @@ namespace AnseongSteel.RobotPlay
             else if(State==RunState.Waiting){State=RunState.Calibrating;readySince=-1;}
             else if(State==RunState.Calibrating)
             {
-                bool ready=session.Combat.arms[0].trajectory.Phase==MotionPhase.Ready&&session.Combat.arms[1].trajectory.Phase==MotionPhase.Ready;
+                bool ready=pilot.PersonalInputArmed&&session.Combat.arms[0].trajectory.Phase==MotionPhase.Ready&&session.Combat.arms[1].trajectory.Phase==MotionPhase.Ready;
                 if(!ready)readySince=-1;else if(readySince<0)readySince=Time.time;
                 if(readySince>=0&&Time.time-readySince>.35f&&(!session.NetworkActive||GetComponent<IntegratedOnlineState>().StartRequested)){State=RunState.Battle;began=Time.time;boss.Begin(openingGraceSeconds);}
             }
@@ -83,7 +84,8 @@ namespace AnseongSteel.RobotPlay
             }
             string tip=CurrentLesson==Lesson.Jab?"HOLD GRIP + STRAIGHT PUNCH":CurrentLesson==Lesson.Hook?"HOLD GRIP + OUTWARD THEN CURVED HOOK":CurrentLesson==Lesson.Defence?"READ THE THREAT / GUARD OR COOPERATIVE SIDESTEP":CurrentLesson==Lesson.CooperativeCombo?"RETURN READY / L JAB > R JAB > L HOOK (OR REVERSE)":"FINISH THE BOSS / TRIGGER AFTER FINAL HOOK FOR BOOST";
             Objective=State==RunState.Waiting?"LAN / WAIT FOR BOTH PILOTS / HOST START":State==RunState.Calibrating&&session.NetworkActive?"READY BOTH HANDS / HOST: ENTER OR START RUN":State==RunState.Calibrating?(pilot.source==PrototypeInput.DesktopBoth?"KEYBOARD / HOLD F/G TO ATTACK / 1-4: PUNCH\nRETURN TO READY AFTER EACH STRIKE / F1: VR":"READY BOTH HANDS / Y: RECENTER\nGRIP: ATTACK / TRIGGER: BOOST / F1: KEYBOARD"):State==RunState.Won?"VICTORY / B OR R: RESTART":State==RunState.Lost?"ROBOT DEFEATED / B OR R: RETRY":"DEFEAT THE BOSS  |  "+Mathf.FloorToInt(Elapsed)+"s  /  TARGET ~"+Mathf.RoundToInt(targetDurationSeconds/60)+"m\n"+tip;
-            if(objective){objective.text=Objective;objective.rectTransform.anchoredPosition=new Vector2(0,bridge.Hud.HelmetCanvas.GetComponent<RectTransform>().sizeDelta.y*.5f-65);objective.gameObject.SetActive(!bridge.Hud.MenuOpen);}
+            if(State==RunState.Calibrating&&pilot.RequiresPersonalCalibration)Objective=pilot.CalibrationStatus+"\nGRIP: ATTACK / TRIGGER: SEPARATE BOOST / F8: RESET ALL";
+            if(objective){objective.text=Objective;objective.rectTransform.anchoredPosition=new Vector2(0,bridge.Hud.HelmetCanvas.GetComponent<RectTransform>().sizeDelta.y*.5f-65);objective.gameObject.SetActive(!bridge.Hud.MenuOpen&&!(State==RunState.Calibrating&&pilot.RequiresPersonalCalibration));}
         }
     }
 }

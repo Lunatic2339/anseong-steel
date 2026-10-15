@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39f74142d5fa4123893c7f4977b0ce4a, type: 3}
+  m_Name: SoloPracticeSettings
+  m_EditorClassIdentifier: Assembly-CSharp::AnseongSteel.RobotPlay.SoloPracticeSettings
+  startInPractice: 1
+  scenePath: Assets/_Project/04_Scenes/sunwoo_IntegratedPlay.unity
+  sessionObjectName: Robot Combat Authority
+  playerPrefab: {fileID: 0}
+  rigProfile: {fileID: 4900000, guid: 241d29f71726473abc68af510f9611ae, type: 3}
+  viewOffset: {x: 0, y: 0.04, z: 0.12}
+  guardReachFraction: 0.48
+  armReachPerSecond: 1.2
+  armResponseSeconds: 0.14
+  pillarWidth: 0.65

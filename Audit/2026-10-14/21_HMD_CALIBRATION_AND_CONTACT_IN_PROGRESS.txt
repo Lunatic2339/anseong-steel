@@ -1,0 +1,136 @@
+2026-10-14 VR calibration and visible contact follow-up — IN PROGRESS
+
+User acceptance is outstanding. Automatic PASS counts are diagnostics, not HMD acceptance.
+User still reports that the arm will not fully straighten/jab. Exterior-feed motion is
+owned by the cockpit chat; boss appearance is owned by the art chat. Neither camera
+code nor visual model assets were changed for the experiments below.
+
+MAIN, already integrated before the latest user HMD test:
+- Independent head-camera WorldSpace Korean calibration guide, depth-independent
+  stereo-compatible shader and NanumGothic OFL font. Tracks per-hand guard/reach,
+  tracking loss, rejected capture and grip-release/battle gate. Visibility in the
+  user's actual HMD remains unconfirmed.
+- Personal calibrated reach uses 12-degree full reach / 8-degree tail, and long
+  physical reach no longer hits the old desktop transport cap.
+- Guard/reach rejected during tracking loss cannot silently capture a later pose.
+- Synthetic fixtures suspend and restore existing XR devices without replacing
+  InputSystem settings. Main saved-scene diagnostics: 130 PASS, scene bytes and
+  settings preserved. Earlier runtime regression: 161 PASS.
+- Physical F1 bidirectional switching and R restart were already confirmed in
+  report20. New incoming replies say center text changes with F1 and R restarts;
+  these replies do not invalidate the earlier confirmation. Do not describe the
+  old verified controls as unverified.
+
+ISOLATED ONLY, not copied into main:
+Workspace: C:/Users/anthony/.codex/worktrees/personal-reach-calibration/anseong-steel
+- Full reach candidate 3 degrees / overreach 2 degrees; personal IK inset is
+  .00001 times limb length rather than the legacy fixed 5mm inset. Legacy mode
+  retains its 5mm safety inset. Reach remains strictly below total bone length.
+- Actual displayed and contact limbs: full flex3.000027deg, extension .999657.
+  Both long1.3m and short.42m profiles, hooks, hand/head tracking loss checked.
+  721-sample noisy reach/controller-rotation sweeps on both arms at root yaw
+  0/90/180: maximum elbow/wrist sample movement <1.45cm; no nonfinite poses,
+  overshoot or sudden elbow flip. Full usability run136 PASS. GPU evidence in
+  isolated evidence/21_hmd_calibration/straight-3deg.
+- Original enemy placement still stops the old query fist at ~71 degrees flex.
+  Free-space straightness alone does not resolve the reported play issue.
+
+CONTACT EVIDENCE:
+- Boss active meshes: 78,165 triangles, all rigid single-bone triangles. No
+  runtime per-frame BakeMesh or triangle-ray collision code introduced.
+- Actual closed v026 hand/finger geometry extends .5869m from the wrist;
+  the old query fist is a .32m wrist-centered Box. Fitting the closed hand-weighted
+  envelope in the query collider frame yields size .56/.73/.52m and an offset
+  center around +/- .02,.22,-.05. Fitted-envelope isolated run passes diagnostics,
+  but original distance now stops around97deg: correct size exposes the spacing
+  problem instead of solving it. This is an experimental box, not final collision.
+- Original boss Box frontz1.65, versus actual mesh sampled surfaces z1.729 left /
+  1.710 right at y1.3164; center ray has no visible surface. Original Box fills gaps.
+- Offline 255-ray proxy comparisons (no asset or scene saves):
+  bone Box49: meanAbs .126m, maxEarly .424m, gapFill64;
+  bone convex49/98 support directions: meanAbs .0354m, maxEarly .250m,
+  maxLate .201m, gapFill11/miss4;
+  armor-piece convex287: meanAbs .0141m, maxEarly .177m, maxLate .201m,
+  gapFill7/miss4. 113ms editor construction is not steady XR cost evidence.
+  These are comparison candidates; none integrated or accepted.
+
+NEXT REQUIRED:
+- Keep a bounded, minimal contact candidate for the existing protected region;
+  demonstrate surface error composed with the closed-fist envelope. Avoid growing
+  into a whole-body precision-collider project. Any narrower demo scope must be
+  explicit and reviewed by coordinator, not silently remove protection.
+- Measure candidate simultaneous-arm queries, steady CPU/GC, initial preparation,
+  animated-boss motion, approach/retreat, guard noncontact and normal reach.
+- Compare original versus minimum usable distance. Approx .6m is a hypothesis,
+  not a chosen move. Validate boss attack reach/guard/damage before any main move.
+- Report concrete minimal b–d changes and before/after evidence to coordinator
+  before main integration. Actual user HMD acceptance remains necessary.
+- Never save/rebuild scene, change original/model/v026 assets, shared XR settings,
+  cockpit code or art files, or commit/push as part of this follow-up.
+
+Later isolated composed-path evidence:
+- A large closed-fist envelope can touch neighboring armour despite an individual
+  ray falling into a gap. Compared49 bone-convex candidates with an exact combined
+  boss mesh used ONLY as an offline reference: most first-contact fractions match,
+  some differ by .005, over3 physical reaches/2 arms/8 offsets.
+- Binary search at full3deg for this one guard/direction: both candidate and exact
+  reference contact boundary is target shift+.871714m left / +.861849m right.
+  This is not a universal chosen initial offset or a user acceptance result.
+- Original PunchImpact clip event2.066667s sampled with Editor AnimationMode:
+  hitPoint(-.40,2.22,.53), radius.75 hits Shared Robot Body at original spacing;
+  target+.6/.8/.9/1m all miss. Offline risk evidence, not a full Play attack check.
+  Moving the target alone is therefore unacceptable. A spacing candidate must
+  include verified approach/retreat or existing player movement, preserving
+  incoming attacks and guard. Increasing attack radius to hide the miss is not
+  proposed. Coordinator informed; no distance/runtime-contact integration made.
+- Main UI inspected: Scene, Play stopped, scene has no unsaved star or modal.
+  Main checks idle; UI/file changes held for coordinator-directed cockpit-only
+  integration interval. Protected17 unchanged;5 approved runtime differences only.
+
+Independent integration plan (held while cockpit owns main UI):
+- Runtime paths ONLY for3deg candidate:
+  Assets/_Project/01_Scripts/04_VR/ArmReachCalibration.cs
+  Assets/_Project/01_Scripts/04_VR/ControllerArmFollower.cs
+- Matching diagnostic paths:
+  Assets/_Project/RobotPlay/Editor/PersonalReachValidation.cs (new radial ceiling)
+  Assets/_Project/RobotPlay/Editor/CalibrationUsabilityValidation.cs (3deg geometry,
+  noise/rotation stability sweep; envelope experiment is opt-in batch flag only)
+- No new runtime guide/camera/scene/model/settings modifications needed for3deg.
+  Guide already in main is independent. Nothing from this plan copied yet.
+- Fist envelope and boss surface proxy changes remain Editor-only experiments;
+  no proposed hand/boss collider change is cleared by the following benchmark.
+- Coordinator explicitly holds global initial-distance movement. This VR part
+  must not develop boss approach/retreat/timeline independently. Combat owner
+  reviews existing movement and impact-coordinate reuse. The+.87m number is
+  only a geometric dependency for the tested guard/direction, not a gameplay plan.
+
+Actual saved contact-solver benchmark, isolated Editor, no rendering/XR:
+- 120 warmup +240 measured frames per case; both arms jab/hook/rotate, boss Punch
+  animation sampled each frame, requested avatar approach/retreat +/- .15m.
+  GC measured around ConstrainPose only. Candidate hand Box rounded to the
+  measured envelope dimensions; exact geometry acceptance remains outstanding.
+- Original oneBox: median .078ms / p95 .130ms, average66/max162 queries at original
+  spacing; zero managed bytes, recovery failures or residual>1mm penetration.
+-49 convex+fitted hand, original spacing: median6.29ms/p95 14.17ms/max16.49ms,
+  average7,319/max14,259 native penetration queries; zero managed bytes;
+  38 recovery failures and37 residual>1mm penetration frames out of240.
+-49 convex+fitted hand, hypothetical+.86m: median3.05ms/p95 7.40ms/max10.99ms,
+  average4,702/max14,994 queries, zero managed bytes, recovery failures or residual
+  penetration. This hypothetical offset is NOT adopted.
+- Reject current49 candidate for integration: composed static accuracy alone
+  does not establish stable animated contact; CPU and recovery are unacceptable.
+  No protection silently removed, no collider deleted, no runtime collision
+  redesign integrated. Keep this failure as evidence for a smaller scoped
+  candidate. Metrics are PC Editor contact CPU, not XR end-to-end performance.
+
+USER OVERRIDE — no further Unity verification:
+- Coordinator relayed explicit user instruction that Unity verification is too
+  slow and must stop. This supersedes earlier Unity check requirements.
+- No more UI/Play/menu inspection, batchmode tests, rendering or compile-check
+  runs unless user explicitly requests verification again. Continue code/file/
+  diff development. Mark new unexecuted behavior as unverified.
+- Last owned isolated batchPID7668 was already finished at minimal cleanup;
+  interactive Unity was not stopped, saved, discarded or inspected again.
+- Preserve previous evidence and modifications. Main3deg integration remains
+  coordinated separately from cockpit file ownership; no collision/spacing
+  candidate cleared merely because execution verification is now prohibited.

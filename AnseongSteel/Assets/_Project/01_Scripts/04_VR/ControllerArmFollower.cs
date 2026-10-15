@@ -28,6 +28,29 @@ namespace AnseongSteel.PlayerMotion
         bool alignGuard;
         Quaternion guardFrameLocal;
         readonly RigidWristConstraint wristConstraint = new RigidWristConstraint();
+        ArmReachCalibration personalReach;
+        [Min(0)] public float targetSpeedLimit;
+        [Min(0)] public float targetSmoothSeconds;
+        Vector3 filteredTarget,targetVelocity;bool hasFilteredTarget;
+        public void CancelTargetLag(){hasFilteredTarget=IsReady;filteredTarget=hand?hand.position:Vector3.zero;targetVelocity=Vector3.zero;}
+        public bool PersonalReachActive => personalReach != null && personalReach.IsComplete;
+        public float EffectiveReachMetres => PersonalReachActive ? personalReach.EffectiveReach : 0;
+
+        public bool SetPersonalReach(ArmReachCalibration calibration)
+        {
+            if (!IsReady) Initialize();
+            if (!IsReady || calibration == null || !calibration.IsComplete) return false;
+            float length = (upperLength + forearmLength) / robotFrame.lossyScale.x;
+            if (Vector3.Distance(robotFrame.InverseTransformPoint(upper.position), neutralTarget) / length >= .9f) return false;
+            personalReach = calibration; ResetTransientPose(); return true;
+        }
+
+        public void ClearPersonalReach() { personalReach = null; ResetTransientPose(); }
+        public void ResetTransientPose()
+        {
+            wristConstraint.Reset(); smoothRotation = Quaternion.identity; previousBend = Vector3.zero;
+            CancelTargetLag();
+        }
 
         public void Initialize()
         {
@@ -58,14 +81,33 @@ namespace AnseongSteel.PlayerMotion
         {
             if (!IsReady) Initialize();
             if (!IsReady || !PunchTrajectoryRecognizer.Finite(controllerDelta) || !PunchTrajectoryRecognizer.Finite(controllerRotationDelta)) return;
-            // Wrist stays rigid; controller roll guides the estimated elbow only outside a strike.
-            if(strictPunchPose){var targetRotation=punchPose?Quaternion.identity:controllerRotationDelta;
+            // Relative wrist alignment is enforced below. Preserve measured
+            // orientation to guide the elbow/forearm even while attack is held.
+            if(strictPunchPose){var targetRotation=controllerRotationDelta;
             smoothRotation=Quaternion.RotateTowards(smoothRotation,Quaternion.Slerp(smoothRotation,targetRotation,1-Mathf.Exp(-Mathf.Max(0,Time.deltaTime)/(punchPose?rotationSmoothing:returnSmoothing))),450*Mathf.Max(0,Time.deltaTime));
             controllerRotationDelta=smoothRotation;}
-            RequestedTarget = robotFrame.TransformPoint(MapWorkspace(robotFrame.InverseTransformPoint(upper.position), neutralTarget, controllerDelta, (upperLength + forearmLength) / robotFrame.lossyScale.x, motionScale, transverseScale));
+            Vector3 shoulder = robotFrame.InverseTransformPoint(upper.position);
+            float length = (upperLength + forearmLength) / robotFrame.lossyScale.x;
+            float fullRatio = ArmReachCalibration.DistanceForBend(upperLength, forearmLength, ArmReachCalibration.FullReachBendDegrees) / (upperLength + forearmLength);
+            // A fixed 5mm inset forces an 8.3 degree bend on the authored 1.9m
+            // limb. Personal reach retains a positive, length-relative inset;
+            // calibrated full reach remains away from the straight IK singularity.
+            float lengthInset = PersonalReachActive ? (upperLength + forearmLength) * .00001f : .005f;
+            float limitRatio = Mathf.Min(ArmReachCalibration.DistanceForBend(upperLength, forearmLength, ArmReachCalibration.OverreachBendDegrees), upperLength + forearmLength - lengthInset) / (upperLength + forearmLength);
+            RequestedTarget = robotFrame.TransformPoint(PersonalReachActive
+                ? personalReach.Map(controllerDelta, shoulder, neutralTarget, length, fullRatio, limitRatio)
+                : MapWorkspace(shoulder, neutralTarget, controllerDelta, length, motionScale, transverseScale));
+            if(targetSpeedLimit>0)
+            {
+                if(!hasFilteredTarget){filteredTarget=hand.position;hasFilteredTarget=true;}
+                filteredTarget=targetSmoothSeconds>0
+                    ?Vector3.SmoothDamp(filteredTarget,RequestedTarget,ref targetVelocity,targetSmoothSeconds,targetSpeedLimit,Mathf.Max(0,Time.deltaTime))
+                    :Vector3.MoveTowards(filteredTarget,RequestedTarget,targetSpeedLimit*Mathf.Max(0,Time.deltaTime));
+                RequestedTarget=filteredTarget;
+            }
             Vector3 fromShoulder = RequestedTarget - upper.position;
             Vector3 axis = fromShoulder.sqrMagnitude > .00001f ? fromShoulder.normalized : robotFrame.forward;
-            float distance = Mathf.Clamp(fromShoulder.magnitude, Mathf.Abs(upperLength - forearmLength) + .005f, upperLength + forearmLength - .005f);
+            float distance = Mathf.Clamp(fromShoulder.magnitude, Mathf.Abs(upperLength - forearmLength) + .005f, upperLength + forearmLength - lengthInset);
             Vector3 goal = upper.position + axis * distance;
             var raisedBend = new Vector3(Mathf.Sign(bendDirection.x), .2f, -.3f);
             Vector3 bend = Vector3.ProjectOnPlane(robotFrame.TransformDirection(Vector3.Lerp(bendDirection, raisedBend, elbowLift)), axis);

@@ -18,6 +18,7 @@ public sealed class MechaVRBossContact : MonoBehaviour
         public BoxCollider[] volumes = Array.Empty<BoxCollider>();
         public bool IsBlocked { get; internal set; }
         public string ContactPart { get; internal set; }
+        public BoxCollider ContactVolume { get; internal set; }
         internal readonly Quaternion[] accepted = new Quaternion[3];
         internal readonly Quaternion[] desired = new Quaternion[3];
         internal bool wasBlocked;
@@ -91,6 +92,7 @@ public sealed class MechaVRBossContact : MonoBehaviour
             {
                 Array.Copy(arm.desired, arm.accepted, 3);
                 arm.wasBlocked = arm.IsBlocked = false;
+                arm.ContactVolume=null;
                 foreach (var volume in arm.volumes)
                 {
                     if (!volume) continue;
@@ -137,6 +139,7 @@ public sealed class MechaVRBossContact : MonoBehaviour
             arm.IsBlocked = armHit || (bodyHit && bodyContact.arm == i);
             Contact contact = armHit ? armContact : bodyContact;
             arm.ContactPart = arm.IsBlocked && contact.volume ? contact.volume.transform.parent.name : "";
+            arm.ContactVolume=arm.IsBlocked?contact.volume:null;
             float speed = arm.requestedSpeed;
             if (arm.IsBlocked && !arm.wasBlocked && speed >= minimumHitSpeed && Time.unscaledTime >= arm.lastHitTime + hitCooldown)
             {

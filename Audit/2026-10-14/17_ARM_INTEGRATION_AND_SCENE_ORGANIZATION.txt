@@ -1,0 +1,63 @@
+v026 시각 팔 메인 통합 완료 / 씬 정리 보류
+2026-10-14 한국시간 / Unity 6000.3.24f1
+
+실제 반영 위치와 범위
+C:\Users\anthony\Desktop\Capstone\anseong-steel\AnseongSteel
+develop HEAD f942d5351f943c168bb48aab5b3158b5a19c7d7e 위의 로컬 미커밋 변경. 브랜치 전환·커밋·스테이징·푸시 없음.
+준비: C:\Users\anthony\.codex\worktrees\integrated-arm-repair\anseong-steel, codex/integrated-arm-repair / 기준42e05e4. 42e05e4→현재 HEAD의 AnseongSteel tracked 파일 차이 없음을 확인했고 메인 로컬 변경도 따로 대조했다.
+사용자 “일단 파일정리는 나중에하고 실질개발부터 시작해보자”에 따라 정리는 보류. 세 씬은 Assets/_Project/04_Scenes/sunwoo_IntegratedPlay.unity, ArmMotionTest.unity, sunwoo_HUDTest.unity 그대로다. 이동/리네임/정리 목적 경로 수정/Build Settings 변경 없음.
+팔 표시 복구만 통합. VR_test·팀원 원본 모델·_BossPrototype 공동 구조, 전투 상태 차단·개인별 리치/훅 기능은 변경/통합하지 않았다.
+
+반영 파일과 동작 (이하 AnseongSteel 기준)
+1. Assets/_Project/04_Scenes/sunwoo_IntegratedPlay.unity
+Shared Robot Body 아래 깨진 playable 시각 모델을 유효한 정상 v026 양팔로 교체. 기존 객체 변경은 Transform1473419226의 자식 연결 한 개. 깨진 표시10블록 제거, 복구 표시50블록 추가, 나머지 기존 객체 블록 비교상 동일. 옛 씬 전체 덮어쓰기가 아니라 현재 씬에 블록 변경만 병합. 씬 meta GUID036237d00b4966544a97d82e15846afb 보존.
+2. Assets/_Project/05_Prefabs/IntegratedPlayerArmsV026 폴더 및 .meta
+파생 LeftArm/RightArm 메시, BlueArmor/BlueTrim/DarkMetal/RedInsert 재질. 각각18본(팔3+손가락15), 8,881삼각형, 좌16,197/우16,198정점. 정상 v026 FBX/meta는 변경하지 않았다. 원본291스킨은 disabled로 보존하고 표시 스킨2개 사용.
+3. Assets/_Project/RobotPlay/Runtime/RobotRigVisual.cs
+원래 LateUpdate 내용 그대로 public Synchronize에 두고 LateUpdate에서 호출. 검증 진입점 추가, contact pose 소유권/전투 동작 변경 없음.
+4. Assets/_Project/RobotPlay/Editor/IntegratedArmRepair.cs / Builder.cs / Validation.cs 및 각각 .meta
+기존 도구 반입. 씬 경로 유지. Validation은 미저장 씬 또는 Play 상태에서 시작을 거부하고 interactive Unity를 종료하지 않도록 보완. 출력 ArmIntegrationReview. 이번 메인 통합에 Builder 또는 UpdateOwnedScene을 실행하지 않았다. 이미 복구됐으므로 Verify saved integrated v026 arms 메뉴로 검증한다.
+5. CURRENT_HANDOFF 및 15/16 보고서
+최신 반영 상태와 정리 보류를 짧게 갱신/추가, 초기 조사 사실 유지.
+임시 ArmIntegrationStateProbe는 상태를 읽기만 했으며 검사 후 소스와 meta 제거.
+
+실제 검증
+- 격리 프로젝트에서 보완한 도구 컴파일 및 저장 씬 Play: 표시72 PASS, 기존 전투27/통합규칙27 PASS.
+- 사용자의 메인 Unity에서 Assets Refresh, 변경 씬 Reload, Verify saved integrated v026 arms 메뉴 실행. 메인 표시72 PASS/FAIL0, 기존 전투27/통합규칙27 PASS/FAIL0.
+- 양팔 메시·재질/submesh·rootBone/bindpose·본 참조, 양손15개 기본 주먹 회전, 여섯 합성 자세(기본/좌우 잽/좌우 훅/양팔 가드) 검사. 어깨/팔꿈치/손 오차1mm미만, 손목 정렬1도미만, finite BakeMesh 통과. 새 팔만 숨겼을 때 화면 차이를 비교해 좌우 좌석에서 실제 팔 픽셀 기여 확인. 사용자 컨트롤러 입력/타격 체감 검사가 아니라 합성 contact-pose 표시 검사다.
+- 실제 main Unity 일반 Play에 들어가 왼쪽 화면 및 RIGHT VIEW 버튼으로 오른쪽 화면의 파란 양팔/기본 주먹을 직접 확인. 종료 후 원래 Scene 뷰로 복귀, Unity는 열어 둠. 창 이동/전체화면/다른 모니터 조작 없음. Escape 중단 때 즉시 멈췄고 사용자 재개 허가 후 이어갔다.
+- 콘솔과 Editor.log 오류/경고 원문·호출 위치 확인. 이번 검증에서 컴파일 오류나 새 팔 코드의 NullReferenceException을 발견하지 않았다. 전체 콘솔 오류0을 주장하지 않는다.
+- 반입 전/검증 종료 후 loaded=True, dirty=False, playing=False. 검증 및 일반 Play 후 저장 씬 해시는 통합 직후와 동일. 기존 OpenXR 로컬 파일 SHA256 a6509090631fc78cf58ffc54f8fb5916e8b68b37b09177b30d1677bd5b88ef40 그대로 유지. 기존 변경을 저장/복원/덮어쓰지 않았다.
+
+사용자가 요청한 동시 콘솔 오류 진단
+1) 빨간 오류: Problem detected while opening the Scene file 및 Missing Prefab Asset: Uploaded rig target visual (replace here), GUID6bac2a1fb3671154babb96bd29e3fad7.
+복구한 playable 팔이 아닌 기존 Replaceable Enemy Target의 구형 시각 fixture 참조. PrefabInstance149018294와 stripped Transform149018295에 남아 있다. Play 시작/종료 때 반복돼 red 항목 수가 늘어난다. 이번 허용 범위에서 삭제/치환하지 않았고 별도 표적 복구/정리가 필요하다.
+2) 노란 경고: URP에서 Camera.stereoTargetEye 사용.
+기존 CockpitLiveView.cs:26의 세 외부 feed 카메라 설정이 OnEnable/콕핏 뷰 전환마다 호출된다. 이번 팔 코드에서 발생하지 않음. 콕핏 렌더 방식과 함께 수정할 대상이며 이번에 파일 변경하지 않았다.
+3) XR 환경: OpenXR Display 초기화 실패, xrGetSystem의 XR_ERROR_FORM_FACTOR_UNAVAILABLE.
+현재 런타임에서 요청한 XR 기기를 얻지 못함. XR audio output driver 실패 후 기본값 fallback도 동반. 데스크톱 Play는 계속 실행됐으나 HMD 합격을 뜻하지 않는다. 기존 OpenXR 설정을 임의로 끄거나 바꾸지 않았다.
+4) NoSubscription 메시지: com.unity.ai.assistant 패키지 ModelSelectorSuperProxyActions.cs:495의 모델 목록 요청 로그.
+게임 팔 코드의 예외가 아니다. 구독/계정/패키지 설정 변경하지 않았다.
+
+남은 제한
+Play 전 Game 뷰는 초기화 전 직접 파란 팔 메시가 화면을 크게 가리는 표시 정책 문제가 여전하다. 실제 Play 후 콕핏 중계 화면으로 전환하는 것을 확인. 가드/훅 시야 가림, HUD/LAN 패널 겹침, 밝기/주먹 디테일은 별도 체감 조정 대상. 표시 PASS는 시각 품질 최종 승인과 다르다.
+구형 TrackedRobotArms 및 ArmMotion/HUD/RobotPlay/LocalPunch 씬 공통 누락, 아바타 Follow/원격 회전, 돔 검은 영역, boost render callback의 시각 rig 타이밍은 이번 통합으로 해결하지 않았다. 개인별 리치/훅/손목 개선은 VR 담당 후속 개발.
+실제 Quest/HMD, 두 PC LAN, 성능·멀미·햅틱·실제 컨트롤러 정확도 미검증.
+격리 선행 검사 후 OpenXR/RT/일부 ProjectSettings의 자동 재직렬화가 생겼다. 선택 경로 복원 요청은 자동 승인 검토가 기존 변경 손실 위험을 이유로 거절하여 수행하지 않았다. 우회/반복 시도 없이 해당 source worktree 변경을 보존했고 메인 통합에는 가져오지 않았다. 메인의 기존 OpenXR 변경은 위 해시로 보존 확인.
+
+증거 (메인 저장소 기준)
+Audit/2026-10-14/evidence/17_ARM_INTEGRATION/integration-plan.json 및 integration-applied.json: 현재 씬 블록 병합·보호 해시.
+같은 폴더 main-verification.json, editor-state-before.txt, editor-state-after.txt, console-excerpts.txt: 이번 메인 수치·상태·오류 원문.
+AnseongSteel/ArmIntegrationReview/after-validation.txt: 메인 표시72 및 저장 씬 해시 불변.
+같은 폴더 after-*.png14장: 여섯 자세×두 좌석12장, 양 주먹 근접2장. 양팔 가드·좌우 훅·양 주먹 근접을 직접 열어 육안 확인.
+AnseongSteel/RobotPlayValidation/combat-checks.txt 및 integrated-rules-checks.txt: 이번 메인 각각27 PASS.
+격리 선행 로그: C:\Users\anthony\.codex\worktrees\integrated-arm-repair\anseong-steel\AnseongSteel\ArmIntegrationReview/preintegration.log.
+
+다음 VR 통합 인계
+Assets/_Project/04_Scenes/sunwoo_IntegratedPlay.unity 경로 유지. Root Combat Authority/contact의 pose 본과 Shared Robot Body의 Player v026 - blue combat arms/RobotRigVisual을 구분한다. 후속 입력/IK 변경은 contact pose와 기본 주먹 요구를 유지하며 이 검증 메뉴로 표시를 재확인. source FBX GUID5f2a703d67e284b49a38486f82cad5b1, 파생 팔 Assets/_Project/05_Prefabs/IntegratedPlayerArmsV026.
+다른 담당 미통합 씬을 통째로 덮어쓰지 말고 최신 메인에 필요한 delta만 병합한다. 정리 보류 유지. 총괄에 한 번 완료 보고하고 사용자 요약을 요청한다.
+최종 정적/컴파일 검사 보충
+새 자산/meta의 GUID 충돌0, 세 씬 기존 경로 유지, 씬/meta/OpenXR 보호 해시 일치, 임시 probe 제거 확인. Unity가 EditorBuildSettings를 줄바꿈 재직렬화하여 Git status에 M으로 표시했지만 LF 정규화 내용은 HEAD와 동일하고 등록 경로/순서/enable 값은 유지했다. 임의 복원하지 않았다. build-settings-preservation.json 및 final-integrity.json 참조.
+git diff --check는 그대로 보존한 기존 객체 블록의 빈 YAML 값 뒤 공백8곳을 지적했다. 해당 객체 내용은 원래와 동일하며 보호 범위 밖 형식 정리는 하지 않았다. 새 runtime 코드의 diff 검사는 통과.
+임시 도구 제거 후 메인 Unity에서 다시 Refresh/컴파일했고 Editor assembly는 18:54:13에 갱신됐다. 실제 화면에서 컴파일 완료·Play 종료 상태를 확인했다. 도메인 재로드로 콘솔 기록이 초기화됐지만 앞서 재현한 Missing Prefab 등의 원인이 해결됐다는 뜻은 아니다.
+최종 로그 검색: 컴파일 오류(error CS), NullReferenceException, MissingReferenceException 일치0. 최종 컴파일 build success 확인. 총괄 01a1354a-5a6a-79a1-8eb2-7e52129ff608에 완료 내용을 한 번 전달했고 도구 성공을 확인했다. 사용자 요약 및 후속 VR UI 조작 담당 조율을 요청했다.

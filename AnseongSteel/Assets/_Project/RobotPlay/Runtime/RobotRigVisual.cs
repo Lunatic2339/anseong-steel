@@ -13,7 +13,10 @@ namespace AnseongSteel.RobotPlay
         }
         public RobotPlaySession session;
         public Binding[] arms=new Binding[2];
-        void LateUpdate()
+        void LateUpdate() => Synchronize();
+
+        // Also used by the editor saved-scene verifier; never owns gameplay pose.
+        public void Synchronize()
         {
             if(!session||!session.contact)return;
             for(int i=0;i<2;i++)
