@@ -14,6 +14,7 @@ namespace AnseongSteel.PlayerMotion
         public Quaternion GuardRotation { get; private set; }
         public float EffectiveReach { get; private set; }
         public Vector3 ReachPoint { get; private set; }
+        public Quaternion ReachRotation { get; private set; }=Quaternion.identity;
         public ShoulderReference Reference { get; private set; }
         public float GuardRatio => IsComplete ? Vector3.Distance(Guard, Shoulder) / EffectiveReach : 0;
 
@@ -24,6 +25,7 @@ namespace AnseongSteel.PlayerMotion
             GuardRotation = Quaternion.identity;
             EffectiveReach = 0;
             ReachPoint=Vector3.zero;
+            ReachRotation=Quaternion.identity;
             Reference = ShoulderReference.HeadRelativeEstimate;
         }
 
@@ -37,20 +39,23 @@ namespace AnseongSteel.PlayerMotion
             if (distance < .04f || distance > 1.4f)
             { reason = "Check the shoulder estimate and hold a comfortable bent-arm guard."; return false; }
             Shoulder = shoulder; Guard = controlPoint; GuardRotation = rotation.normalized;
-            Reference = reference; HasGuard = true; IsComplete = false; EffectiveReach = 0;ReachPoint=Vector3.zero;
+            Reference = reference; HasGuard = true; IsComplete = false; EffectiveReach = 0;ReachPoint=Vector3.zero;ReachRotation=Quaternion.identity;
             return true;
         }
 
         public bool CaptureReach(Vector3 controlPoint, out string reason)
+            =>CaptureReach(controlPoint,GuardRotation,out reason);
+
+        public bool CaptureReach(Vector3 controlPoint,Quaternion rotation,out string reason)
         {
             reason = "";
             if (!HasGuard) { reason = "Capture your comfortable guard first."; return false; }
-            if (!PunchTrajectoryRecognizer.Finite(controlPoint)) { reason = "A valid tracked pose is required."; return false; }
+            if (!PunchTrajectoryRecognizer.Finite(controlPoint)||!ValidRotation(rotation)) { reason = "A valid tracked pose is required."; return false; }
             float reach = Vector3.Distance(controlPoint, Shoulder);
             float guard = Vector3.Distance(Guard, Shoulder);
             if (reach < .2f || reach > 1.4f || reach - guard < .08f || guard / reach > .85f)
             { reason = "Extend comfortably farther than guard; check the shoulder reference if necessary."; return false; }
-            EffectiveReach = reach;ReachPoint=controlPoint; IsComplete = true; return true;
+            EffectiveReach = reach;ReachPoint=controlPoint;ReachRotation=rotation.normalized; IsComplete = true; return true;
         }
 
         public static bool ValidRotation(Quaternion q)
@@ -100,6 +105,38 @@ namespace AnseongSteel.PlayerMotion
             }
             float tail = limitRatio - fullRatio;
             return fullRatio + tail * (1 - Mathf.Exp(-(ratio - 1) / (tail / endSlope)));
+        }
+
+        // Practice has two directional anchors: the user's own guard and saved
+        // reach. Full reach means shoulder-height robot-forward, not the bent
+        // model guard direction. Guard height remains independently calibrated.
+        public float ReachBlend(Vector3 delta)
+        {
+            if(!IsComplete)return 0;
+            float guard=Vector3.Distance(Guard,Shoulder);
+            float current=(Guard-Shoulder+delta).magnitude;
+            return Mathf.SmoothStep(0,1,Mathf.Clamp01((current-guard)/Mathf.Max(.001f,EffectiveReach-guard)));
+        }
+        public Vector3 MapPractice(Vector3 delta,Vector3 modelShoulder,Vector3 modelGuard,float modelLength,float fullRatio,float limitRatio)
+        {
+            if(!IsComplete||!PunchTrajectoryRecognizer.Finite(delta)||modelLength<=.01f)return modelGuard;
+            var current=Guard-Shoulder+delta;
+            var mapping=PracticeDirectionMap(delta,modelShoulder,modelGuard);
+            float radius=MapRadius(current.magnitude/EffectiveReach,GuardRatio,(modelGuard-modelShoulder).magnitude/modelLength,fullRatio,limitRatio);
+            return modelShoulder+mapping*(current.sqrMagnitude>1e-10f?current.normalized:(Guard-Shoulder).normalized)*(radius*modelLength);
+        }
+        public Quaternion PracticeDirectionMap(Vector3 delta,Vector3 modelShoulder,Vector3 modelGuard)
+        {
+            if(!IsComplete)return Quaternion.identity;
+            var guardMap=DirectionFrame(modelGuard-modelShoulder)*Quaternion.Inverse(DirectionFrame(Guard-Shoulder));
+            var reachMap=DirectionFrame(Vector3.forward)*Quaternion.Inverse(DirectionFrame(ReachPoint-Shoulder));
+            return Quaternion.Slerp(guardMap,reachMap,ReachBlend(delta));
+        }
+        static Quaternion DirectionFrame(Vector3 direction)
+        {
+            var forward=direction.normalized;var up=Vector3.ProjectOnPlane(Vector3.up,forward);
+            if(up.sqrMagnitude<.001f)up=Vector3.ProjectOnPlane(Vector3.right,forward);
+            return Quaternion.LookRotation(forward,up.normalized);
         }
 
         static float Hermite(float t, float a, float b, float ma, float mb)

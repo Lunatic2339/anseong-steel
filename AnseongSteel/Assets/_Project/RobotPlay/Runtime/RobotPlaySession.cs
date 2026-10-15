@@ -86,6 +86,8 @@ namespace AnseongSteel.RobotPlay
         readonly ControllerArmFollower[] followers = new ControllerArmFollower[2];
         readonly ControllerElbowHint[] elbowHints = { new ControllerElbowHint(), new ControllerElbowHint() };
         readonly Quaternion[] localRotations = { Quaternion.identity, Quaternion.identity };
+        readonly Quaternion[] localGripFrames={Quaternion.identity,Quaternion.identity};
+        readonly float[] gripReceived={-100,-100};
         readonly ArmReachCalibration[] personalReach = new ArmReachCalibration[2];
         public bool NetworkActive => !OfflineAllowed || (NetworkManager.Singleton && NetworkManager.Singleton.IsListening);
         public bool Authority => !NetworkActive || (ConnectionState == LanState.Connected && IsSpawned && IsServer);
@@ -122,6 +124,7 @@ namespace AnseongSteel.RobotPlay
             received[side] = -100; sequences[side] = 0;
             accepted[side] = input[side] = Vector3.zero; boost[side] = false;
             attacks[side]=false;movements[side]=Vector2.zero;elbowHints[side].Reset();localRotations[side]=Quaternion.identity;
+            gripReceived[side]=-100;if(followers[side])followers[side].ClearTrackedGripFrame();
             Combat?.Invalidate(side);
             if(followers[side])followers[side].ResetTransientPose();
             if (side == 0) move = Vector2.zero;
@@ -305,6 +308,9 @@ namespace AnseongSteel.RobotPlay
                     UpdateBoss(now);
                 }
                 contact.ConstrainPose();
+                if(PracticeActive)for(int side=0;side<2;side++)
+                    if(followers[side]&&(contact.arms[side].IsBlocked||contact.BodyBlocked||contact.RecoveryFailed||followers[side].InsideMinimumReach))
+                        followers[side].ReconcilePracticeAcceptedPose();
                 // Confirm an initially ambiguous stroke only while fist contact continues.
                 if(!PracticeActive)for(int side=0;side<2;side++)if(contact.arms[side].IsBlocked && now-received[side]<=.25f)TryPunchContact(side);
                 offline=new RobotSnapshot {bossHealth=Combat.BossHealth,robotHealth=Combat.RobotHealth,combo=Combat.ComboStep,next=Combat.NextSide,hits=Combat.HitCount,phase=phase,attackSide=attackSide,both=both,leftGuard=Combat.arms[0].guarding,rightGuard=Combat.arms[1].guarding,left=input[0],right=input[1],body=robotRoot.position};
@@ -361,7 +367,7 @@ namespace AnseongSteel.RobotPlay
             if(Combat==null || !Authority)return;
             var cue=GetComponent<IntegratedPunchCue>();if(cue)cue.ResetPresentation();
             Combat.Reset();phase=0;attackCount=0;attackSide=0;both=false;phaseEnd=Time.time+telegraphSeconds;
-            for(int i=0;i<2;i++){received[i]=-100;input[i]=Vector3.zero;boost[i]=false;attacks[i]=false;movements[i]=Vector2.zero;sequences[i]=0;elbowHints[i].Reset();localRotations[i]=Quaternion.identity;}
+            for(int i=0;i<2;i++){received[i]=-100;input[i]=Vector3.zero;boost[i]=false;attacks[i]=false;movements[i]=Vector2.zero;sequences[i]=0;elbowHints[i].Reset();localRotations[i]=Quaternion.identity;gripReceived[i]=-100;if(followers[i])followers[i].ClearTrackedGripFrame();}
             move=Vector2.zero;if(robotRoot)robotRoot.position=Vector3.zero;if(contact)contact.ResetContactState();
             for(int side=0;side<2;side++)ClearPersonalReach(side);
             var pilot=GetComponent<RobotPilotInput>();if(pilot)pilot.Recenter();
@@ -370,6 +376,11 @@ namespace AnseongSteel.RobotPlay
         public void SetLocalHandRotation(int side,Quaternion delta)
         {
             if(!NetworkActive && side>=0 && side<2 && PunchTrajectoryRecognizer.Finite(delta))localRotations[side]=delta;
+        }
+        public void SetLocalGripFrame(int side,Quaternion bodyFistFrame)
+        {
+            if(PracticeActive&&!NetworkActive&&side>=0&&side<2&&ArmReachCalibration.ValidRotation(bodyFistFrame))
+            {localGripFrames[side]=bodyFistFrame.normalized;gripReceived[side]=Time.time;}
         }
         ControllerArmFollower EnsureFollower(int side)
         {
@@ -380,6 +391,7 @@ namespace AnseongSteel.RobotPlay
                 if(!follower)follower=arm.upperArm.gameObject.AddComponent<ControllerArmFollower>();
                 follower.upper=arm.upperArm;follower.forearm=arm.forearm;follower.hand=arm.hand;follower.robotFrame=robotRoot;
                 follower.neutralTarget=PracticeActive?practiceGuards[side]:Neutral(side);follower.bendDirection=new Vector3(side==0?-1:1,-1,0);
+                follower.usePracticePoseFrame=PracticeActive;
                 follower.Initialize();followers[side]=follower;
             }
             return followers[side];
@@ -406,6 +418,8 @@ namespace AnseongSteel.RobotPlay
             follower.elbowLift=elbowHints[side].Update(hintDelta,Time.deltaTime);
             follower.strictPunchPose=true;
             follower.punchPose=Combat.arms[side].attackHeld;
+            if(PracticeActive&&Time.time-gripReceived[side]<=.1f)follower.SetTrackedGripFrame(localGripFrames[side]);
+            else follower.ClearTrackedGripFrame();
             follower.Follow(delta,NetworkActive?Quaternion.identity:localRotations[side]);
         }
         void PublishFeedback(FeedbackKind kind,PilotSide side,float strength)

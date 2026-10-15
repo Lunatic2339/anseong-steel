@@ -3,7 +3,7 @@ using UnityEngine;
 namespace AnseongSteel.PlayerMotion
 {
     // Pose input only. There is deliberately no reference to the punch recognizer.
-    public sealed class ControllerArmFollower : MonoBehaviour
+    public sealed partial class ControllerArmFollower : MonoBehaviour
     {
         public Transform upper, forearm, hand, robotFrame, targetMarker, actualMarker;
         public Vector3 bendDirection = new Vector3(-1, -.5f, -.2f);
@@ -32,7 +32,7 @@ namespace AnseongSteel.PlayerMotion
         [Min(0)] public float targetSpeedLimit;
         [Min(0)] public float targetSmoothSeconds;
         Vector3 filteredTarget,targetVelocity;bool hasFilteredTarget;
-        public void CancelTargetLag(){hasFilteredTarget=IsReady;filteredTarget=hand?hand.position:Vector3.zero;targetVelocity=Vector3.zero;}
+        public void CancelTargetLag(){hasFilteredTarget=IsReady;filteredTarget=hand?hand.position:Vector3.zero;targetVelocity=Vector3.zero;if(usePracticePoseFrame&&robotFrame)ResetPracticeLagFrame();}
         public bool PersonalReachActive => personalReach != null && personalReach.IsComplete;
         public float EffectiveReachMetres => PersonalReachActive ? personalReach.EffectiveReach : 0;
 
@@ -68,6 +68,7 @@ namespace AnseongSteel.PlayerMotion
             alignGuard = true;
             wristConstraint.Reset();smoothRotation=Quaternion.identity;
             IsReady = upperLength > .01f && forearmLength > .01f;
+            if(IsReady&&usePracticePoseFrame)InitializePracticeFrames();
             float length = (upperLength + forearmLength) / robotFrame.lossyScale.x;
             transverseScale = length / .65f; // Approximate human shoulder-to-wrist length.
             // Only forward extension uses the reach calibration; rearward and lateral
@@ -81,6 +82,7 @@ namespace AnseongSteel.PlayerMotion
         {
             if (!IsReady) Initialize();
             if (!IsReady || !PunchTrajectoryRecognizer.Finite(controllerDelta) || !PunchTrajectoryRecognizer.Finite(controllerRotationDelta)) return;
+            if(usePracticePoseFrame){FollowPracticePose(controllerDelta,controllerRotationDelta);return;}
             // Relative wrist alignment is enforced below. Preserve measured
             // orientation to guide the elbow/forearm even while attack is held.
             if(strictPunchPose){var targetRotation=controllerRotationDelta;

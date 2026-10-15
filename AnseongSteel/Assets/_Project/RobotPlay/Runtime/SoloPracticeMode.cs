@@ -152,12 +152,13 @@ namespace AnseongSteel.RobotPlay
                 {
                     var a=session.contact.arms[i];var p=pilot.ReachProfile(i);float upper=Vector3.Distance(a.upperArm.position,a.forearm.position),lower=Vector3.Distance(a.forearm.position,a.hand.position);
                     var shoulder=session.robotRoot.InverseTransformPoint(a.upperArm.position);
-                    var goal=p.Map(p.ReachPoint-p.Guard,shoulder,practiceGuards[i],upper+lower,ArmReachCalibration.DistanceForBend(upper,lower,3)/(upper+lower),ArmReachCalibration.DistanceForBend(upper,lower,2)/(upper+lower));
-                    var forward=(a.hand.position-a.forearm.position).normalized;var box=a.volumes[a.volumes.Length-1];
+                    var goal=p.MapPractice(p.ReachPoint-p.Guard,shoulder,practiceGuards[i],(upper+lower)/session.robotRoot.lossyScale.x,ArmReachCalibration.DistanceForBend(upper,lower,3)/(upper+lower),ArmReachCalibration.DistanceForBend(upper,lower,2)/(upper+lower));
+                    var fistPose=a.hand.GetComponent<DefaultFistPose>();
+                    var forward=fistPose?a.hand.TransformDirection(fistPose.palmForwardLocal).normalized:(a.hand.position-a.forearm.position).normalized;var box=a.volumes[a.volumes.Length-1];
                     var e=box.size*.5f;
                     float extent=Mathf.Abs(Vector3.Dot(box.transform.TransformVector(Vector3.right*e.x),forward))+Mathf.Abs(Vector3.Dot(box.transform.TransformVector(Vector3.up*e.y),forward))+Mathf.Abs(Vector3.Dot(box.transform.TransformVector(Vector3.forward*e.z),forward));
                     float tip=Vector3.Dot(box.transform.TransformPoint(box.center)-a.hand.position,forward)+extent;
-                    tips[i]=goal+(goal-shoulder).normalized*Mathf.Max(0,tip);
+                    tips[i]=goal+(goal-shoulder).normalized*(Mathf.Max(0,tip)/session.robotRoot.lossyScale.x);
                 }
                 width=Mathf.Max(width,Mathf.Abs(tips[0].x-tips[1].x)+.15f);height=Mathf.Max(height,Mathf.Max(tips[0].y,tips[1].y)+.3f);
                 distance=Mathf.Min(tips[0].z,tips[1].z)-reach*.0005f+width*.5f;x=(tips[0].x+tips[1].x)*.5f;

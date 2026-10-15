@@ -19,6 +19,10 @@ namespace AnseongSteel.RobotPlay
         public bool compensateHeadTranslation=true;
         public Vector3 gripToControlPoint=Vector3.zero;
         public Vector3 shoulderProbeOffset=Vector3.zero;
+        [Header("Fixed OpenXR grip axes in Unity coordinates; never reset by Y/X/A")]
+        public Vector3 gripFistForwardLocal=Vector3.down;
+        public Vector3 leftGripDorsalLocal=Vector3.left;
+        public Vector3 rightGripDorsalLocal=Vector3.right;
         public Vector3 leftShoulderEstimate=new Vector3(-.18f,-.2f,0);
         public Vector3 rightShoulderEstimate=new Vector3(.18f,-.2f,0);
         public InputAction leftReach=new InputAction("Save left reach",InputActionType.Button,"<XRController>{LeftHand}/primaryButton");
@@ -186,10 +190,15 @@ namespace AnseongSteel.RobotPlay
                 if((side==0?leftShoulder:rightShoulder).WasPressedThisFrame())CaptureShoulder(side);
                 if(guardRequested[side]){guardRequested[side]=false;CaptureGuard(side);}
                 if(reachPressed[side])CaptureReach(side);
+                SubmitGripFrame(side,handRotation);
                 if(!reachProfiles[side].IsComplete)return;
                 calibrated[side]=true;
             }
-            else if(!calibrated[side]){baseline[side]=p;rotationBaseline[side]=handRotation;calibrated[side]=true;return;}
+            else
+            {
+                SubmitGripFrame(side,handRotation);
+                if(!calibrated[side]){baseline[side]=p;rotationBaseline[side]=handRotation;calibrated[side]=true;return;}
+            }
             Vector3 delta=RequiresPersonalCalibration?bodyPoints[side]-reachProfiles[side].Guard:trackingToRobot*(p-baseline[side]);
             Quaternion rotationDelta=handRotation*Quaternion.Inverse(RequiresPersonalCalibration?reachProfiles[side].GuardRotation:rotationBaseline[side]);
             session.SetLocalHandRotation(side,rotationDelta);
@@ -208,6 +217,18 @@ namespace AnseongSteel.RobotPlay
             return (side==0?leftTracked:rightTracked).IsPressed()
                 &&ArmMotionInput.ReadTrackedPose(side==0?leftPosition:rightPosition,side==0?leftRotation:rightRotation,
                     side==0?leftTrackingState:rightTrackingState,out p,out q)&&ValidRotation(q);
+        }
+        void SubmitGripFrame(int side,Quaternion bodyGrip)
+        {
+            if(!session.PracticeActive||session.NetworkActive)return;
+            // deviceRotation is /input/grip/pose, not pointer/aim. In Unity's
+            // converted grip space +Z runs little-finger->thumb; -Y runs toward
+            // the knuckles. Dorsal is -X left / +X right. Only this fixed device
+            // basis and the model's measured palm basis are corrected.
+            var forward=gripFistForwardLocal.normalized;
+            var dorsal=Vector3.ProjectOnPlane(side==0?leftGripDorsalLocal:rightGripDorsalLocal,forward);
+            if(forward.sqrMagnitude<.5f||dorsal.sqrMagnitude<.001f)return;
+            session.SetLocalGripFrame(side,(bodyGrip*Quaternion.LookRotation(forward,dorsal.normalized)).normalized);
         }
         Vector3 ControlInBody(Vector3 p,Quaternion q,Vector3 offset)
             =>trackingToRobot*(p+q*offset-(compensateHeadTranslation?currentHead:headBaseline));
@@ -231,7 +252,7 @@ namespace AnseongSteel.RobotPlay
         public bool CaptureReach(int side)
         {
             if(!CaptureAllowed(side)){CalibrationFeedback(HandName(side)+" 저장 실패: 머리와 손 추적을 확인해 주세요.");return false;}
-            if(!reachProfiles[side].CaptureReach(bodyPoints[side],out var reason)){CalibrationFeedback(HandName(side)+" 저장 실패: "+KoreanReason(reason));return false;}
+            if(!reachProfiles[side].CaptureReach(bodyPoints[side],bodyRotations[side],out var reason)){CalibrationFeedback(HandName(side)+" 저장 실패: "+KoreanReason(reason));return false;}
             if(!session.SetPersonalReach(side,reachProfiles[side])){reachProfiles[side].Reset();CalibrationFeedback("로봇 팔 준비 실패: 장면의 팔 연결을 확인해야 합니다.");return false;}
             session.LoseTracking(side);pendingBoost[side]=false;releaseAfterLoss[side]=true;
             CalibrationFeedback(HandName(side)+" 최대 도달점 저장됨. 그립을 놓고 가드로 돌아오세요.");return true;
